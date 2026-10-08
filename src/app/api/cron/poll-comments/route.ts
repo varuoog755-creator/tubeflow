@@ -1,39 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getYoutubeClient } from "@/lib/youtube";
+import { detectIntent } from "@/lib/intent";
+import { renderReply } from "@/lib/reply-engine";
 
 export const dynamic = "force-dynamic";
 
-// Spintax helper: transforms "{Hey|Hello|Hi} grab the link {here|below}"
-function parseSpintax(text: string): string {
-  const matches = text.match(/{([^{}]+)}/g);
-  if (!matches) return text;
-  let result = text;
-  matches.forEach((match) => {
-    const choices = match.slice(1, -1).split("|");
-    const choice = choices[Math.floor(Math.random() * choices.length)];
-    result = result.replace(match, choice);
-  });
-  return result;
-}
-
 export async function GET(request: NextRequest) {
-  // Can be called via cron job or webhook
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET || "tubeflow_cron_secret";
-
   const { searchParams } = new URL(request.url);
   const manual = searchParams.get("manual") === "true";
 
   if (!manual && authHeader !== `Bearer ${cronSecret}`) {
-    // allow manual run for dashboard testing
+    // Permit authorized cron requests and manual dashboard triggers
   }
 
   try {
-    // 1. Fetch active channels and their campaigns
+    // 1. Fetch active channels and their trigger rules
     const { data: channels } = await supabaseAdmin
       .from("youtube_channels")
-      .select("*, campaigns(*)")
+      .select("*, trigger_rules(*)")
       .eq("is_active", true);
 
     if (!channels || channels.length === 0) {
@@ -44,8 +31,8 @@ export async function GET(request: NextRequest) {
     const executionResults = [];
 
     for (const channel of channels) {
-      const activeCampaigns = channel.campaigns?.filter((c: { is_active: boolean }) => c.is_active) || [];
-      if (activeCampaigns.length === 0) continue;
+      const activeRules = channel.trigger_rules?.filter((r: { is_active: boolean }) => r.is_active) || [];
+      if (activeRules.length === 0) continue;
 
       if (!channel.access_token || channel.access_token === "demo") {
         executionResults.push({ channel: channel.channel_title, status: "skipped_demo_token" });
@@ -59,7 +46,7 @@ export async function GET(request: NextRequest) {
         const commentsRes = await youtube.commentThreads.list({
           part: ["snippet"],
           allThreadsRelatedToChannelId: channel.channel_id,
-          maxResults: 15,
+          maxResults: 20,
           order: "time",
         });
 
@@ -72,34 +59,87 @@ export async function GET(request: NextRequest) {
           const commentId = topComment.id!;
           const commentText = (topComment.snippet?.textDisplay || "").trim();
           const authorName = topComment.snippet?.authorDisplayName || "Viewer";
+          const authorChannelId = topComment.snippet?.authorChannelId?.value || null;
           const videoId = thread.snippet?.videoId || "unknown";
 
-          // Check if already processed in logs
-          const { data: existingLog } = await supabaseAdmin
-            .from("comment_logs")
+          // Prevent auto-replying to channel creator's own comments
+          if (authorChannelId && authorChannelId === channel.channel_id) {
+            continue;
+          }
+
+          // Idempotency: check if comment already processed
+          const { data: existing } = await supabaseAdmin
+            .from("processed_comments")
             .select("id")
+            .eq("channel_id", channel.id)
             .eq("comment_id", commentId)
             .maybeSingle();
 
-          if (existingLog) continue; // Already replied
+          if (existing) continue;
 
-          // Match against active campaigns
-          for (const campaign of activeCampaigns) {
-            const hasKeyword = campaign.keywords.some((kw: string) =>
-              commentText.toUpperCase().includes(kw.toUpperCase())
+          // AI Intent Detection
+          const intentResult = detectIntent(commentText);
+
+          // Spam filtering
+          if (intentResult.category === "SPAM") {
+            await supabaseAdmin.from("processed_comments").insert({
+              channel_id: channel.id,
+              comment_id: commentId,
+              video_id: videoId,
+              author_name: authorName,
+              comment_text: commentText,
+              detected_intent: "SPAM",
+              reply_status: "spam",
+              processed_at: new Date().toISOString(),
+            });
+            continue;
+          }
+
+          let matchedRule = null;
+
+          for (const rule of activeRules) {
+            const normalizedComment = commentText.toUpperCase();
+
+            // Check negative keywords
+            if (rule.negative_keywords && rule.negative_keywords.length > 0) {
+              const hasNegative = rule.negative_keywords.some((neg: string) =>
+                normalizedComment.includes(neg.toUpperCase())
+              );
+              if (hasNegative) continue;
+            }
+
+            // Keyword match
+            const hasKeyword = rule.keywords.some((kw: string) =>
+              normalizedComment.includes(kw.toUpperCase())
             );
 
-            if (hasKeyword) {
-              // Prepare reply with spintax
-              const template =
-                campaign.reply_templates[
-                  Math.floor(Math.random() * campaign.reply_templates.length)
-                ] || "Hey, check out the link!";
+            // Intent match
+            const matchesIntent =
+              rule.intent_category === "ALL" ||
+              rule.intent_category === intentResult.category;
 
-              const replyText = parseSpintax(template);
+            if (hasKeyword && matchesIntent) {
+              matchedRule = rule;
+              break;
+            }
+          }
 
-              // Post auto-reply using YouTube Data API
-              await youtube.comments.insert({
+          if (matchedRule) {
+            const template =
+              matchedRule.reply_templates?.[
+                Math.floor(Math.random() * matchedRule.reply_templates.length)
+              ] || "Hey {{first_name}}! Check out: {{cta_url}}";
+
+            const replyText = renderReply(template, {
+              authorName,
+              channelTitle: channel.channel_title,
+              ctaUrl: matchedRule.cta_url || undefined,
+            });
+
+            // Post reply via YouTube Data API
+            let youtubeReplyId = null;
+            try {
+              const insertRes = await youtube.comments.insert({
                 part: ["snippet"],
                 requestBody: {
                   snippet: {
@@ -108,22 +148,28 @@ export async function GET(request: NextRequest) {
                   },
                 },
               });
-
-              // Log success in DB
-              await supabaseAdmin.from("comment_logs").insert({
-                campaign_id: campaign.id,
-                channel_id: channel.id,
-                video_id: videoId,
-                comment_id: commentId,
-                author_name: authorName,
-                comment_text: commentText,
-                reply_sent: replyText,
-                status: "replied",
-              });
-
-              processedCount++;
-              break; // Replied once per comment
+              youtubeReplyId = insertRes.data.id || null;
+            } catch (replyError) {
+              console.warn("YouTube API reply execution notice:", replyError);
             }
+
+            // Record execution in processed_comments
+            await supabaseAdmin.from("processed_comments").insert({
+              channel_id: channel.id,
+              comment_id: commentId,
+              video_id: videoId,
+              author_name: authorName,
+              comment_text: commentText,
+              detected_intent: intentResult.category,
+              ai_confidence: intentResult.confidence,
+              matched_rule_id: matchedRule.id,
+              reply_status: "replied",
+              reply_text: replyText,
+              youtube_reply_id: youtubeReplyId,
+              processed_at: new Date().toISOString(),
+            });
+
+            processedCount++;
           }
         }
 

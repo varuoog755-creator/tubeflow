@@ -16,507 +16,1323 @@ import {
   Zap,
   Radio,
   Clock,
+  TrendingUp,
+  Users,
+  Compass,
+  Bot,
+  Layers,
+  CreditCard,
+  HelpCircle,
+  LogOut,
+  ChevronRight,
+  Filter,
+  Check,
+  AlertCircle,
 } from "lucide-react";
 
-interface Campaign {
+interface Channel {
   id: string;
-  name: string;
-  keywords: string[];
-  target_mode: string;
-  reply_templates: string[];
+  channel_id: string;
+  channel_title: string;
+  thumbnail_url: string | null;
+  custom_url: string | null;
+  subscriber_count: number;
+  video_count: number;
+  view_count: number;
   is_active: boolean;
 }
 
-interface Log {
+interface TriggerRule {
+  id: string;
+  name: string;
+  keywords: string[];
+  negative_keywords: string[];
+  match_type: string;
+  target_mode: string;
+  reply_templates: string[];
+  cta_url: string | null;
+  intent_category: string;
+  delay_seconds: number;
+  is_active: boolean;
+}
+
+interface ProcessedLog {
   id: string;
   author_name: string;
   comment_text: string;
-  reply_sent: string;
+  reply_text: string | null;
   video_id: string;
-  status: string;
-  processed_at: string;
+  reply_status: string;
+  detected_intent: string | null;
+  processed_at: string | null;
+  created_at: string;
 }
 
+interface TrackedLinkItem {
+  id: string;
+  slug: string;
+  destination_url: string;
+  campaign_name: string;
+  clicks_count: number;
+  conversions_count: number;
+  revenue_generated: string;
+}
+
+interface Competitor {
+  id: string;
+  competitor_channel_id: string;
+  channel_title: string;
+  custom_url: string | null;
+  thumbnail_url: string | null;
+  subscriber_count: number;
+  video_count: number;
+  total_views: number;
+}
+
+type TabType =
+  | "overview"
+  | "channels"
+  | "rules"
+  | "logs"
+  | "conversions"
+  | "analytics"
+  | "competitors"
+  | "copilot"
+  | "templates"
+  | "billing"
+  | "settings";
+
 export default function DashboardPage() {
-  const [connected, setConnected] = useState(false);
-  const [channelTitle, setChannelTitle] = useState("Tech Talks & Tutorials");
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
-  const [channelId, setChannelId] = useState<string | null>(null);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [logs, setLogs] = useState<Log[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<{ email: string; full_name?: string; avatar_url?: string } | null>(null);
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [rules, setRules] = useState<TriggerRule[]>([]);
+  const [logs, setLogs] = useState<ProcessedLog[]>([]);
+  const [trackedLinks, setTrackedLinks] = useState<TrackedLinkItem[]>([]);
+  const [competitors, setCompetitors] = useState<Competitor[]>([]);
+
   const [stats, setStats] = useState({
-    totalReplies: 1842,
-    activeRules: 2,
-    heartsLikes: 2150,
-    quotaUsed: 1400,
+    connectedChannels: 0,
+    commentsMonitored: 0,
+    commentsMatched: 0,
+    repliesSent: 0,
+    replySuccessRate: 100,
+    clicks: 0,
+    conversions: 0,
+    revenue: 0,
   });
 
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Rule Creation Modal State
+  const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
   const [ruleName, setRuleName] = useState("");
-  const [ruleKeywords, setRuleKeywords] = useState("LINK, GUIDE, PDF");
-  const [ruleReply, setRuleReply] = useState("Hey! Get the complete free guide here: https://tubeflow.in/free-download");
-  const [ruleTarget, setRuleTarget] = useState("shorts_only");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pollingStatus, setPollingStatus] = useState<string | null>(null);
+  const [ruleKeywords, setRuleKeywords] = useState("LINK, PRICE, GUIDE");
+  const [ruleNegative, setRuleNegative] = useState("fake, scam");
+  const [ruleMatchType, setRuleMatchType] = useState("contains");
+  const [ruleIntent, setRuleIntent] = useState("ALL");
+  const [ruleReply, setRuleReply] = useState("Hey {{first_name}}! {Here is the official link|Grab it right here}: {{cta_url}}");
+  const [ruleCta, setRuleCta] = useState("https://tubeflow-nine.vercel.app");
+  const [ruleDelay, setRuleDelay] = useState("0");
+  const [isSubmittingRule, setIsSubmittingRule] = useState(false);
 
-  const fetchDashboardData = async () => {
+  // Link Modal State
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [newDestinationUrl, setNewDestinationUrl] = useState("");
+  const [newCampaignName, setNewCampaignName] = useState("");
+
+  // Competitor Modal State
+  const [isCompModalOpen, setIsCompModalOpen] = useState(false);
+  const [compHandle, setCompHandle] = useState("");
+
+  // AI Copilot State
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [aiThinking, setAiThinking] = useState(false);
+
+  // Action status message
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  const fetchAllData = async () => {
+    setLoading(true);
     try {
-      const res = await fetch("/api/campaigns");
-      const data = await res.json();
-      if (data.authenticated && data.channel) {
-        setConnected(true);
-        setChannelTitle(data.channel.channel_title);
-        setThumbnailUrl(data.channel.thumbnail_url || null);
-        setChannelId(data.channel.channel_id || null);
+      // 1. Dashboard summary
+      const dRes = await fetch("/api/dashboard");
+      const dData = await dRes.json();
+      if (dData.authenticated) {
+        setProfile(dData.profile);
+        setChannels(dData.channels || []);
+        setRules(dData.rules || []);
+        setLogs(dData.logs || []);
+        if (dData.stats) setStats(dData.stats);
       }
-      if (data.campaigns && data.campaigns.length > 0) {
-        setCampaigns(data.campaigns);
-      } else {
-        setCampaigns([
-          {
-            id: "1",
-            name: "Shorts Viral Lead Magnet",
-            keywords: ["LINK", "GUIDE", "PDF"],
-            target_mode: "shorts_only",
-            reply_templates: ["Hey! Grab the complete PDF guide here: https://tubeflow.in/resource"],
-            is_active: true,
-          },
-          {
-            id: "2",
-            name: "Source Code Drop",
-            keywords: ["CODE", "REPO", "GITHUB"],
-            target_mode: "all",
-            reply_templates: ["Here is the full repository source code: https://github.com/varuoog755-creator/tubeflow"],
-            is_active: true,
-          },
-        ]);
-      }
-      if (data.logs && data.logs.length > 0) {
-        setLogs(data.logs);
-      } else {
-        setLogs([
-          {
-            id: "l1",
-            author_name: "Rahul Verma",
-            comment_text: "Bro please send link for this template!",
-            reply_sent: "Hey! Grab the complete PDF guide here: https://tubeflow.in/resource",
-            video_id: "dQw4w9WgXcQ",
-            status: "replied",
-            processed_at: "Just now",
-          },
-          {
-            id: "l2",
-            author_name: "Sarah Chen",
-            comment_text: "Where is the CODE link?",
-            reply_sent: "Here is the full repository source code: https://github.com/varuoog755-creator/tubeflow",
-            video_id: "X3y8u9Kq1Lp",
-            status: "replied",
-            processed_at: "3 mins ago",
-          },
-        ]);
-      }
-      if (data.stats) {
-        setStats(data.stats);
-      }
-    } catch {
-      // Fallback
+
+      // 2. Tracked links / conversions
+      const cRes = await fetch("/api/conversions");
+      const cData = await cRes.json();
+      if (cData.links) setTrackedLinks(cData.links);
+
+      // 3. Competitors
+      const compRes = await fetch("/api/competitors");
+      const compData = await compRes.json();
+      if (compData.competitors) setCompetitors(compData.competitors);
+    } catch (err) {
+      console.error("Dashboard data load error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    let ignore = false;
-    const load = async () => {
-      try {
-        const res = await fetch("/api/campaigns");
-        const data = await res.json();
-        if (!ignore) {
-          if (data.authenticated && data.channel) {
-            setConnected(true);
-            setChannelTitle(data.channel.channel_title);
-            setThumbnailUrl(data.channel.thumbnail_url || null);
-            setChannelId(data.channel.channel_id || null);
-          }
-          if (data.campaigns && data.campaigns.length > 0) {
-            setCampaigns(data.campaigns);
-          }
-          if (data.logs && data.logs.length > 0) {
-            setLogs(data.logs);
-          }
-          if (data.stats) {
-            setStats(data.stats);
-          }
-        }
-      } catch {
-        // Fallback
-      }
-    };
-    load();
-    return () => {
-      ignore = true;
-    };
+    fetchAllData();
   }, []);
 
   const handleCreateRule = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    if (!ruleName.trim()) return;
+    setIsSubmittingRule(true);
     try {
-      const res = await fetch("/api/campaigns", {
+      const res = await fetch("/api/rules", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: ruleName,
-          keywords: ruleKeywords,
-          replyTemplate: ruleReply,
-          targetMode: ruleTarget,
+          keywords: ruleKeywords.split(",").map((s) => s.trim()),
+          negativeKeywords: ruleNegative.split(",").map((s) => s.trim()),
+          matchType: ruleMatchType,
+          intentCategory: ruleIntent,
+          replyTemplates: [ruleReply],
+          ctaUrl: ruleCta,
+          delaySeconds: parseInt(ruleDelay, 10),
         }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setIsModalOpen(false);
+      if (res.ok) {
+        setIsRuleModalOpen(false);
         setRuleName("");
-        fetchDashboardData();
+        setActionNotice("Rule created successfully");
+        fetchAllData();
       }
     } catch (err) {
-      console.error(err);
+      console.error("Create rule error:", err);
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingRule(false);
     }
   };
 
-  const handleTriggerPoll = async () => {
-    setPollingStatus("Polling YouTube API...");
+  const handleToggleRule = async (ruleId: string, currentActive: boolean) => {
+    try {
+      await fetch("/api/rules", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: ruleId, is_active: !currentActive }),
+      });
+      fetchAllData();
+    } catch (err) {
+      console.error("Toggle rule error:", err);
+    }
+  };
+
+  const handleDeleteRule = async (ruleId: string) => {
+    if (!confirm("Are you sure you want to delete this rule?")) return;
+    try {
+      await fetch(`/api/rules?id=${ruleId}`, { method: "DELETE" });
+      fetchAllData();
+    } catch (err) {
+      console.error("Delete rule error:", err);
+    }
+  };
+
+  const handleCreateTrackedLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDestinationUrl.trim()) return;
+    try {
+      const res = await fetch("/api/conversions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          destinationUrl: newDestinationUrl,
+          campaignName: newCampaignName || "General Link Campaign",
+        }),
+      });
+      if (res.ok) {
+        setIsLinkModalOpen(false);
+        setNewDestinationUrl("");
+        setNewCampaignName("");
+        fetchAllData();
+      }
+    } catch (err) {
+      console.error("Link create error:", err);
+    }
+  };
+
+  const handleAddCompetitor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!compHandle.trim()) return;
+    try {
+      await fetch("/api/competitors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channelHandleOrId: compHandle }),
+      });
+      setIsCompModalOpen(false);
+      setCompHandle("");
+      fetchAllData();
+    } catch (err) {
+      console.error("Add competitor error:", err);
+    }
+  };
+
+  const handleAskCopilot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiPrompt.trim()) return;
+    setAiThinking(true);
+    setAiResponse(null);
+    try {
+      const res = await fetch("/api/ai/copilot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: aiPrompt }),
+      });
+      const data = await res.json();
+      setAiResponse(data.response || "No response received");
+    } catch (err) {
+      console.error("AI error:", err);
+      setAiResponse("Unable to generate advice right now.");
+    } finally {
+      setAiThinking(false);
+    }
+  };
+
+  const handleTriggerManualPolling = async () => {
+    setActionNotice("Polling YouTube comments...");
     try {
       const res = await fetch("/api/cron/poll-comments?manual=true");
       const data = await res.json();
-      setPollingStatus(`Success! Checked comments. Processed: ${data.processedCount || 0}`);
-      setTimeout(() => setPollingStatus(null), 4000);
-      fetchDashboardData();
+      setActionNotice(`Poll finished. Processed ${data.processedCount || 0} new comment(s).`);
+      fetchAllData();
     } catch {
-      setPollingStatus("Poll completed with status ok");
-      setTimeout(() => setPollingStatus(null), 3000);
+      setActionNotice("Poll execution failed.");
     }
   };
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-800 bg-slate-900/50 p-6 flex flex-col justify-between hidden md:flex">
-        <div className="space-y-8">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="bg-red-600 p-2 rounded-lg text-white">
-              <Video className="w-5 h-5" />
-            </div>
-            <span className="font-bold text-xl tracking-tight text-white">TubeFlow</span>
-          </Link>
+  const activeChannel = channels[0] || null;
 
-          <nav className="space-y-1">
-            <a
-              href="#"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-red-600/10 text-red-400 font-medium text-sm border border-red-500/20"
-            >
-              <Activity className="w-4 h-4" /> Overview
-            </a>
-            <a
-              href="#rules"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 font-medium text-sm transition-colors"
-            >
-              <MessageSquare className="w-4 h-4" /> Trigger Rules
-            </a>
-            <a
-              href="#logs"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 font-medium text-sm transition-colors"
-            >
-              <PlaySquare className="w-4 h-4" /> Reply Logs
-            </a>
-            <a
-              href="#"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 font-medium text-sm transition-colors"
-            >
-              <Settings className="w-4 h-4" /> Settings
-            </a>
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row font-sans">
+      {/* Sidebar Navigation */}
+      <aside className="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0">
+        <div>
+          {/* Brand Logo */}
+          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-600/30 font-black">
+                TF
+              </div>
+              <div>
+                <span className="font-extrabold text-base tracking-tight text-white block">
+                  TubeFlow
+                </span>
+                <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">
+                  SaaS Control Center
+                </span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Navigation Items */}
+          <nav className="p-4 space-y-1">
+            {[
+              { id: "overview", label: "Overview", icon: Activity },
+              { id: "channels", label: "YouTube Channels", icon: Video },
+              { id: "rules", label: "Trigger Rules", icon: Zap },
+              { id: "logs", label: "Reply Logs", icon: MessageSquare },
+              { id: "conversions", label: "Conversions & Links", icon: TrendingUp },
+              { id: "competitors", label: "Competitor Intel", icon: Compass },
+              { id: "copilot", label: "AI YouTube Copilot", icon: Bot },
+              { id: "templates", label: "Template Library", icon: Layers },
+              { id: "billing", label: "Plans & Billing", icon: CreditCard },
+              { id: "settings", label: "Settings", icon: Settings },
+            ].map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id as TabType)}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    isActive
+                      ? "bg-red-600/15 text-red-400 border border-red-500/20 shadow-sm"
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
           </nav>
         </div>
 
-        <div className="p-4 rounded-xl border border-slate-800 bg-slate-950 text-xs text-slate-400">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-slate-200">YouTube Quota</span>
-            <span className="text-emerald-400 font-medium">Healthy</span>
+        {/* User Account / Logout */}
+        <div className="p-4 border-t border-slate-800">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/50 border border-slate-800/60">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-300 shrink-0">
+                {profile?.email?.[0]?.toUpperCase() || "U"}
+              </div>
+              <div className="truncate">
+                <span className="text-xs font-semibold text-white block truncate">
+                  {profile?.full_name || profile?.email?.split("@")[0] || "Active User"}
+                </span>
+                <span className="text-[10px] text-slate-400 truncate block">
+                  {profile?.email || "Authenticated"}
+                </span>
+              </div>
+            </div>
+            <Link
+              href="/api/auth/logout"
+              title="Log out"
+              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </Link>
           </div>
-          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-1">
-            <div className="bg-emerald-500 h-full w-[14%]"></div>
-          </div>
-          <p className="text-[11px] text-slate-500">1,400 / 10,000 units used today</p>
         </div>
       </aside>
 
-      {/* Main Area */}
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8">
+        {/* Top Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Channel Automations</h1>
-            <p className="text-sm text-slate-400">Live background polling, keyword triggers, and conversion links.</p>
+            <h1 className="text-2xl font-black text-white capitalize">
+              {activeTab === "rules" ? "Trigger Rules & Automations" : activeTab}
+            </h1>
+            <p className="text-slate-400 text-xs mt-1">
+              {activeChannel
+                ? `Connected to: ${activeChannel.channel_title}`
+                : "No active YouTube channel connected."}
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
             <button
-              onClick={handleTriggerPoll}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors border border-slate-700"
+              onClick={handleTriggerManualPolling}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-semibold text-slate-200 transition-all shadow-sm"
             >
-              <RefreshCw className="w-4 h-4 text-slate-400" /> Check Comments Now
+              <RefreshCw className="w-3.5 h-3.5 text-red-400" />
+              <span>Poll YouTube Now</span>
             </button>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-lg transition-colors shadow-lg shadow-red-600/20"
-            >
-              <PlusCircle className="w-4 h-4" /> New Rule
-            </button>
-          </div>
-        </header>
 
-        {pollingStatus && (
-          <div className="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-center gap-2">
-            <Radio className="w-4 h-4 animate-pulse text-red-400" />
-            {pollingStatus}
+            <Link
+              href="/api/auth/google?mode=connect_youtube"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-bold text-white transition-all shadow-lg shadow-red-600/20"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Connect Channel</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Global Action Notification */}
+        {actionNotice && (
+          <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-800/50 text-red-200 text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-red-400" />
+              <span>{actionNotice}</span>
+            </div>
+            <button
+              onClick={() => setActionNotice(null)}
+              className="text-slate-400 hover:text-white text-xs"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
-        {/* Channel Banner Card */}
-        <div className="p-6 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-950 backdrop-blur-md mb-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
-          <div className="flex items-center gap-4">
-            {thumbnailUrl ? (
-              <img
-                src={thumbnailUrl}
-                alt={channelTitle}
-                className="w-14 h-14 rounded-full border-2 border-red-500/40 object-cover shadow-lg shrink-0"
-              />
+        {/* TAB 1: OVERVIEW */}
+        {activeTab === "overview" && (
+          <div className="space-y-8">
+            {/* Real Metrics Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                <span className="text-xs font-semibold text-slate-400 block mb-2">Connected Channels</span>
+                <span className="text-3xl font-black text-white">{stats.connectedChannels}</span>
+                <span className="text-[11px] text-slate-500 block mt-1">Real synced channels</span>
+              </div>
+              <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                <span className="text-xs font-semibold text-slate-400 block mb-2">Comments Monitored</span>
+                <span className="text-3xl font-black text-white">{stats.commentsMonitored}</span>
+                <span className="text-[11px] text-slate-500 block mt-1">Evaluated across Shorts</span>
+              </div>
+              <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                <span className="text-xs font-semibold text-slate-400 block mb-2">Replies Sent</span>
+                <span className="text-3xl font-black text-emerald-400">{stats.repliesSent}</span>
+                <span className="text-[11px] text-slate-500 block mt-1">Automated with CTA</span>
+              </div>
+              <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                <span className="text-xs font-semibold text-slate-400 block mb-2">Tracked CTA Clicks</span>
+                <span className="text-3xl font-black text-cyan-400">{stats.clicks}</span>
+                <span className="text-[11px] text-slate-500 block mt-1">From auto-reply links</span>
+              </div>
+            </div>
+
+            {/* Channel Connection Banner */}
+            {activeChannel ? (
+              <div className="bg-gradient-to-r from-slate-900 to-slate-900/50 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  {activeChannel.thumbnail_url ? (
+                    <img
+                      src={activeChannel.thumbnail_url}
+                      alt={activeChannel.channel_title}
+                      className="w-14 h-14 rounded-full border-2 border-red-500"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center font-bold text-red-400 text-lg">
+                      YT
+                    </div>
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-extrabold text-lg text-white">{activeChannel.channel_title}</h3>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+                        Live Polling Active
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {activeChannel.subscriber_count.toLocaleString()} Subscribers • {activeChannel.video_count} Videos • {activeChannel.view_count.toLocaleString()} Total Views
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Link
+                    href={`https://youtube.com/channel/${activeChannel.channel_id}`}
+                    target="_blank"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300"
+                  >
+                    <span>View on YouTube</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
             ) : (
-              <div className="w-14 h-14 rounded-full bg-red-600/20 border border-red-500/30 flex items-center justify-center font-bold text-red-400 shrink-0">
-                <Video className="w-7 h-7" />
+              <div className="p-8 rounded-2xl bg-slate-900/40 border border-dashed border-slate-800 text-center">
+                <Video className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                <h3 className="font-bold text-white text-base">No YouTube Channel Connected</h3>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
+                  Connect your YouTube channel via Google OAuth to enable real comment monitoring and automated link delivery.
+                </p>
+                <Link
+                  href="/api/auth/google?mode=connect_youtube"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg shadow-red-600/20"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Connect Channel Now</span>
+                </Link>
               </div>
             )}
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h3 className="font-bold text-lg text-white">{channelTitle}</h3>
-                <span className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full flex items-center gap-1.5 ${
-                  connected
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                    : "bg-amber-500/10 text-amber-400 border border-amber-500/30"
-                }`}>
-                  <span className={`w-2 h-2 rounded-full ${connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`}></span>
-                  {connected ? "Channel Active & Polling" : "Not Connected"}
-                </span>
+
+            {/* Quick Trigger Rules Table */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-base text-white">Active Trigger Rules</h3>
+                  <p className="text-xs text-slate-400">Automations actively scanning incoming comments</p>
+                </div>
+                <button
+                  onClick={() => setIsRuleModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600/20 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-600 hover:text-white transition-all"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>New Rule</span>
+                </button>
               </div>
-              <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
-                <span>YouTube Data API v3 Verified</span>
-                {channelId && (
-                  <>
-                    <span>•</span>
-                    <a
-                      href={`https://youtube.com/channel/${channelId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-red-400 hover:text-red-300 flex items-center gap-1 font-medium transition-colors"
-                    >
-                      View on YouTube <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </>
-                )}
-              </p>
+
+              {rules.length === 0 ? (
+                <div className="p-6 text-center text-slate-500 text-xs">
+                  No trigger rules created yet. Click "New Rule" to set up your first keyword responder.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400">
+                        <th className="pb-3 font-semibold">Rule Name</th>
+                        <th className="pb-3 font-semibold">Trigger Keywords</th>
+                        <th className="pb-3 font-semibold">Intent</th>
+                        <th className="pb-3 font-semibold">Status</th>
+                        <th className="pb-3 font-semibold text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {rules.slice(0, 5).map((r) => (
+                        <tr key={r.id}>
+                          <td className="py-3 font-medium text-white">{r.name}</td>
+                          <td className="py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {r.keywords.map((kw, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded bg-slate-800 text-red-400 font-mono text-[10px]">
+                                  {kw}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-3 text-slate-300 font-mono text-[11px]">{r.intent_category}</td>
+                          <td className="py-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              r.is_active ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-500"
+                            }`}>
+                              {r.is_active ? "Active" : "Paused"}
+                            </span>
+                          </td>
+                          <td className="py-3 text-right">
+                            <button
+                              onClick={() => handleToggleRule(r.id, r.is_active)}
+                              className="text-xs text-slate-400 hover:text-white mr-3"
+                            >
+                              {r.is_active ? "Pause" : "Activate"}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteRule(r.id)}
+                              className="text-xs text-red-400 hover:text-red-300"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
+        )}
 
-          <div className="flex items-center gap-3">
-            <a
-              href="/api/auth/google"
-              className="text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-2.5 rounded-xl transition-all font-semibold flex items-center gap-2"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Reconnect / Switch Channel
-            </a>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          <div className="p-5 rounded-xl border border-slate-800 bg-slate-900/40">
-            <p className="text-xs font-medium text-slate-400 mb-1">Total Auto-Replies Sent</p>
-            <p className="text-2xl font-bold text-white">{stats.totalReplies}</p>
-            <p className="text-[11px] text-emerald-400 mt-1 font-medium">+24% viewer conversion rate</p>
-          </div>
-
-          <div className="p-5 rounded-xl border border-slate-800 bg-slate-900/40">
-            <p className="text-xs font-medium text-slate-400 mb-1">Active Keyword Rules</p>
-            <p className="text-2xl font-bold text-white">{campaigns.length} Rules</p>
-            <p className="text-[11px] text-slate-500 mt-1">LINK, GUIDE, PDF, CODE, GITHUB</p>
-          </div>
-
-          <div className="p-5 rounded-xl border border-slate-800 bg-slate-900/40">
-            <p className="text-xs font-medium text-slate-400 mb-1">Engagement Heart/Likes</p>
-            <p className="text-2xl font-bold text-white">{stats.heartsLikes}</p>
-            <p className="text-[11px] text-emerald-400 mt-1 font-medium">Boosting YouTube Shorts reach</p>
-          </div>
-        </div>
-
-        {/* Active Rules Table */}
-        <div id="rules" className="border border-slate-800 rounded-2xl bg-slate-900/40 overflow-hidden mb-8">
-          <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-            <h3 className="font-semibold text-white text-sm">Active Trigger Rules</h3>
-            <span className="text-xs text-slate-400 flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5 text-amber-400" /> Auto-replies instant with spintax rotation
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-950/60 text-xs text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th className="px-6 py-3 font-medium">Rule Name</th>
-                  <th className="px-6 py-3 font-medium">Keywords</th>
-                  <th className="px-6 py-3 font-medium">Target</th>
-                  <th className="px-6 py-3 font-medium">Auto-Reply Text</th>
-                  <th className="px-6 py-3 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {campaigns.map((camp) => (
-                  <tr key={camp.id}>
-                    <td className="px-6 py-4 font-medium text-white">{camp.name}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {camp.keywords.map((kw, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 rounded bg-slate-800 text-[11px] font-mono text-amber-300"
-                          >
-                            {kw}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-slate-400 capitalize">
-                      {camp.target_mode.replace("_", " ")}
-                    </td>
-                    <td className="px-6 py-4 text-xs text-slate-300 max-w-xs truncate">
-                      {camp.reply_templates[0]}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        Active
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Live Processed Logs */}
-        <div id="logs" className="border border-slate-800 rounded-2xl bg-slate-900/40 overflow-hidden">
-          <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-            <h3 className="font-semibold text-white text-sm">Real-time Reply Logs</h3>
-            <span className="text-xs text-slate-400 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-slate-400" /> Monitored 24/7
-            </span>
-          </div>
-
-          <div className="divide-y divide-slate-800/60">
-            {logs.map((log) => (
-              <div key={log.id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-white">{log.author_name}</span>
-                    <span className="text-xs text-slate-500">• {log.processed_at}</span>
-                  </div>
-                  <p className="text-xs text-slate-300 bg-slate-950/50 p-2 rounded border border-slate-800/80">
-                    &quot;{log.comment_text}&quot;
-                  </p>
-                  <p className="text-xs text-emerald-400 flex items-center gap-1.5 mt-1">
-                    <Send className="w-3 h-3" /> Replied: {log.reply_sent}
-                  </p>
-                </div>
-                <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
-                  Sent ✓
-                </span>
+        {/* TAB 2: CHANNELS */}
+        {activeTab === "channels" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">Connected YouTube Channels</h2>
+                <p className="text-xs text-slate-400">Manage multiple creator channels from one dashboard</p>
               </div>
-            ))}
+              <Link
+                href="/api/auth/google?mode=connect_youtube"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Add Channel</span>
+              </Link>
+            </div>
+
+            {channels.length === 0 ? (
+              <div className="p-12 text-center rounded-2xl bg-slate-900 border border-slate-800">
+                <p className="text-sm text-slate-400 mb-4">No channels connected yet.</p>
+                <Link
+                  href="/api/auth/google?mode=connect_youtube"
+                  className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold"
+                >
+                  Connect YouTube Channel
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {channels.map((ch) => (
+                  <div key={ch.id} className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+                    <div className="flex items-center gap-4">
+                      {ch.thumbnail_url ? (
+                        <img src={ch.thumbnail_url} alt={ch.channel_title} className="w-12 h-12 rounded-full border border-slate-700" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center font-bold text-red-400">
+                          YT
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="font-bold text-white text-base">{ch.channel_title}</h4>
+                        <span className="text-xs text-slate-500 font-mono">{ch.channel_id}</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-slate-950/60 rounded-xl text-center text-xs">
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Subscribers</span>
+                        <span className="font-bold text-white">{ch.subscriber_count.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Videos</span>
+                        <span className="font-bold text-white">{ch.video_count}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Views</span>
+                        <span className="font-bold text-white">{ch.view_count.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                      <span className="text-xs text-emerald-400 font-medium">● Polling Active</span>
+                      <Link
+                        href={`https://youtube.com/channel/${ch.channel_id}`}
+                        target="_blank"
+                        className="text-xs text-slate-400 hover:text-white flex items-center gap-1"
+                      >
+                        Open Channel <ExternalLink className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        )}
+
+        {/* TAB 3: TRIGGER RULES */}
+        {activeTab === "rules" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">Trigger Rule Automations</h2>
+                <p className="text-xs text-slate-400">Configure keywords, negative filters, intent categories, and reply templates</p>
+              </div>
+              <button
+                onClick={() => setIsRuleModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Create Rule</span>
+              </button>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th className="p-4 font-semibold">Rule Name</th>
+                    <th className="p-4 font-semibold">Keywords</th>
+                    <th className="p-4 font-semibold">Negative Keywords</th>
+                    <th className="p-4 font-semibold">Intent</th>
+                    <th className="p-4 font-semibold">Reply Template Preview</th>
+                    <th className="p-4 font-semibold">Status</th>
+                    <th className="p-4 font-semibold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {rules.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-slate-500">
+                        No trigger rules found. Create a rule to start replying automatically.
+                      </td>
+                    </tr>
+                  ) : (
+                    rules.map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-800/30">
+                        <td className="p-4 font-bold text-white">{r.name}</td>
+                        <td className="p-4">
+                          <div className="flex flex-wrap gap-1 max-w-xs">
+                            {r.keywords.map((kw, i) => (
+                              <span key={i} className="px-1.5 py-0.5 rounded bg-slate-800 text-red-400 font-mono text-[10px]">
+                                {kw}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-slate-400 font-mono text-[10px]">
+                            {r.negative_keywords?.length > 0 ? r.negative_keywords.join(", ") : "None"}
+                          </span>
+                        </td>
+                        <td className="p-4 font-mono text-slate-300">{r.intent_category}</td>
+                        <td className="p-4 max-w-xs truncate text-slate-300" title={r.reply_templates[0]}>
+                          {r.reply_templates[0] || "Default template"}
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            r.is_active ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-500"
+                          }`}>
+                            {r.is_active ? "Active" : "Paused"}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right space-x-2">
+                          <button
+                            onClick={() => handleToggleRule(r.id, r.is_active)}
+                            className="text-slate-400 hover:text-white"
+                          >
+                            {r.is_active ? "Pause" : "Activate"}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRule(r.id)}
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: REPLY LOGS */}
+        {activeTab === "logs" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">Real-Time Reply Logs</h2>
+                <p className="text-xs text-slate-400">Audit trail of all processed comments and automated responses</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th className="p-4 font-semibold">Author</th>
+                    <th className="p-4 font-semibold">Comment Text</th>
+                    <th className="p-4 font-semibold">Intent Detected</th>
+                    <th className="p-4 font-semibold">Automated Reply Sent</th>
+                    <th className="p-4 font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {logs.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-slate-500">
+                        No reply logs recorded yet. Comments will appear here as they are processed.
+                      </td>
+                    </tr>
+                  ) : (
+                    logs.map((log) => (
+                      <tr key={log.id} className="hover:bg-slate-800/30">
+                        <td className="p-4 font-medium text-white">{log.author_name}</td>
+                        <td className="p-4 max-w-xs text-slate-300">{log.comment_text}</td>
+                        <td className="p-4 font-mono text-[11px] text-cyan-400">{log.detected_intent || "KEYWORD"}</td>
+                        <td className="p-4 max-w-sm text-slate-300 truncate" title={log.reply_text || ""}>
+                          {log.reply_text || "Skipped (no match or spam)"}
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            log.reply_status === "replied"
+                              ? "bg-emerald-500/10 text-emerald-400"
+                              : "bg-slate-800 text-slate-400"
+                          }`}>
+                            {log.reply_status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: CONVERSIONS & LINKS */}
+        {activeTab === "conversions" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">Tracked Links & Conversions</h2>
+                <p className="text-xs text-slate-400">Measure exact click-through rates and attributed purchases from YouTube comments</p>
+              </div>
+              <button
+                onClick={() => setIsLinkModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Create Tracked Link</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                <span className="text-xs text-slate-400 block mb-1">Total Clicks</span>
+                <span className="text-2xl font-black text-white">{stats.clicks}</span>
+              </div>
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                <span className="text-xs text-slate-400 block mb-1">Attributed Conversions</span>
+                <span className="text-2xl font-black text-emerald-400">{stats.conversions}</span>
+              </div>
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                <span className="text-xs text-slate-400 block mb-1">Attributed Revenue</span>
+                <span className="text-2xl font-black text-cyan-400">₹{stats.revenue}</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th className="p-4 font-semibold">Campaign</th>
+                    <th className="p-4 font-semibold">Short URL</th>
+                    <th className="p-4 font-semibold">Destination URL</th>
+                    <th className="p-4 font-semibold text-center">Clicks</th>
+                    <th className="p-4 font-semibold text-center">Conversions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {trackedLinks.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-slate-500">
+                        No tracked links created yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    trackedLinks.map((tl) => (
+                      <tr key={tl.id}>
+                        <td className="p-4 font-bold text-white">{tl.campaign_name}</td>
+                        <td className="p-4 font-mono text-red-400">/r/{tl.slug}</td>
+                        <td className="p-4 text-slate-400 max-w-xs truncate">{tl.destination_url}</td>
+                        <td className="p-4 text-center font-bold text-white">{tl.clicks_count}</td>
+                        <td className="p-4 text-center font-bold text-emerald-400">{tl.conversions_count}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: COMPETITOR INTEL */}
+        {activeTab === "competitors" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">Competitor Intelligence</h2>
+                <p className="text-xs text-slate-400">Track competitor upload rates and find what topics convert best</p>
+              </div>
+              <button
+                onClick={() => setIsCompModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Track Competitor</span>
+              </button>
+            </div>
+
+            {competitors.length === 0 ? (
+              <div className="p-12 text-center rounded-2xl bg-slate-900 border border-slate-800">
+                <p className="text-sm text-slate-400 mb-4">No competitors tracked yet.</p>
+                <button
+                  onClick={() => setIsCompModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold"
+                >
+                  Add YouTube Channel Handle
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {competitors.map((c) => (
+                  <div key={c.id} className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+                    <div className="flex items-center gap-4">
+                      {c.thumbnail_url ? (
+                        <img src={c.thumbnail_url} alt={c.channel_title} className="w-12 h-12 rounded-full" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center font-bold text-slate-400">
+                          {c.channel_title[0]}
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="font-bold text-white text-base">{c.channel_title}</h4>
+                        <span className="text-xs text-slate-400 font-mono">{c.custom_url || c.competitor_channel_id}</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-slate-950/60 rounded-xl text-center text-xs">
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Subscribers</span>
+                        <span className="font-bold text-white">{c.subscriber_count.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Videos</span>
+                        <span className="font-bold text-white">{c.video_count}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Views</span>
+                        <span className="font-bold text-white">{c.total_views.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 7: AI YOUTUBE COPILOT */}
+        {activeTab === "copilot" && (
+          <div className="space-y-6 max-w-3xl">
+            <div>
+              <h2 className="text-xl font-bold text-white">AI YouTube Conversion Copilot</h2>
+              <p className="text-xs text-slate-400">Context-aware advice informed by your connected channel, active rules, and conversions</p>
+            </div>
+
+            <form onSubmit={handleAskCopilot} className="space-y-3">
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Ask e.g.: 'What is my best converting trigger?' or 'Suggest 3 high-converting Shorts CTAs for my niche.'"
+                className="w-full h-28 bg-slate-900 border border-slate-800 rounded-2xl p-4 text-xs text-white focus:outline-none focus:border-red-500"
+              />
+              <button
+                type="submit"
+                disabled={aiThinking}
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-2"
+              >
+                <Bot className="w-4 h-4" />
+                <span>{aiThinking ? "Analyzing Channel Data..." : "Ask Copilot"}</span>
+              </button>
+            </form>
+
+            {aiResponse && (
+              <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-red-400">
+                  <Bot className="w-4 h-4" />
+                  <span>TubeFlow Copilot Advice:</span>
+                </div>
+                <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 8: TEMPLATE LIBRARY */}
+        {activeTab === "templates" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-white">Conversion Reply Template Library</h2>
+              <p className="text-xs text-slate-400">Battle-tested templates using Spintax variations to prevent spam filters</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                {
+                  title: "D2C Direct Checkout Link",
+                  intent: "BUYING_INTENT",
+                  template: "{Hey|Hello} {{first_name}}! {Here is the product you asked for|Grab it directly here} 👇 {{cta_url}}",
+                },
+                {
+                  title: "Free PDF / Resource Lead Magnet",
+                  intent: "LINK_REQUEST",
+                  template: "{Awesome question|Glad you asked} {{first_name}}! {Download the complete free PDF guide here|Access the resource now}: {{cta_url}}",
+                },
+                {
+                  title: "Affiliate Setup / Gear Review",
+                  intent: "PRODUCT_QUESTION",
+                  template: "Hey {{first_name}} 👋 The exact gear used in this video is linked here: {{cta_url}} {Hope this helps!|Check it out!}",
+                },
+                {
+                  title: "Course / Webinar Registration",
+                  intent: "BUYING_INTENT",
+                  template: "{Welcome|Hey} {{first_name}}! Full curriculum details and bonus access are waiting here: {{cta_url}}",
+                },
+              ].map((tmpl, idx) => (
+                <div key={idx} className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-white text-sm">{tmpl.title}</h4>
+                    <span className="px-2 py-0.5 rounded bg-slate-800 text-cyan-400 font-mono text-[10px]">
+                      {tmpl.intent}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 font-mono p-3 bg-slate-950 rounded-xl">{tmpl.template}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 9: PLANS & BILLING */}
+        {activeTab === "billing" && (
+          <div className="space-y-6 max-w-4xl">
+            <div>
+              <h2 className="text-xl font-bold text-white">Subscription & Usage Limits</h2>
+              <p className="text-xs text-slate-400">Current tier and server-enforced reply capacity</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current Plan</span>
+                <div className="flex items-baseline gap-2">
+                  <h3 className="text-2xl font-black text-white">Free Starter</h3>
+                  <span className="text-xs text-slate-500">₹0 / month</span>
+                </div>
+                <ul className="text-xs text-slate-300 space-y-2">
+                  <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 100 auto-replies / month</li>
+                  <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 1 connected YouTube channel</li>
+                  <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Standard keyword triggers</li>
+                </ul>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-red-500/30 space-y-4 relative">
+                <span className="px-2.5 py-0.5 rounded-full bg-red-600/20 text-red-400 border border-red-500/30 text-[10px] font-bold">
+                  Recommended For Growth
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <h3 className="text-2xl font-black text-white">Pro Creator</h3>
+                  <span className="text-xs text-slate-500">₹1,499 / month</span>
+                </div>
+                <ul className="text-xs text-slate-300 space-y-2">
+                  <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-red-400" /> Unlimited automated replies</li>
+                  <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-red-400" /> Multi-channel support (up to 5 channels)</li>
+                  <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-red-400" /> AI Intent detection & Spintax rotator</li>
+                  <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-red-400" /> Sub-second polling priority</li>
+                </ul>
+                <button
+                  onClick={() => alert("Payment gateway integration (Razorpay/Stripe) is ready for live billing credentials.")}
+                  className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs"
+                >
+                  Upgrade To Pro
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 10: SETTINGS */}
+        {activeTab === "settings" && (
+          <div className="space-y-6 max-w-2xl">
+            <div>
+              <h2 className="text-xl font-bold text-white">Account & Channel Settings</h2>
+              <p className="text-xs text-slate-400">Manage connected account permissions and preferences</p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+              <h4 className="font-bold text-white text-sm">Account Information</h4>
+              <div className="text-xs space-y-1">
+                <span className="text-slate-400 block">Email Address:</span>
+                <span className="font-mono text-white block">{profile?.email || "varuoog755@gmail.com"}</span>
+              </div>
+              <div className="text-xs space-y-1">
+                <span className="text-slate-400 block">Account Name:</span>
+                <span className="text-white block">{profile?.full_name || "Creator"}</span>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-red-950/20 border border-red-900/30 space-y-4">
+              <h4 className="font-bold text-red-400 text-sm">Danger Zone</h4>
+              <p className="text-xs text-slate-400">Disconnecting your channel will halt all background comment monitoring and auto-replies.</p>
+              {activeChannel && (
+                <button
+                  onClick={async () => {
+                    if (!confirm("Are you sure you want to disconnect this channel?")) return;
+                    await fetch("/api/channels", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "disconnect", channelDbId: activeChannel.id }),
+                    });
+                    fetchAllData();
+                  }}
+                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold"
+                >
+                  Disconnect YouTube Channel
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* Modal Create Rule */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
-            <h2 className="text-lg font-bold text-white mb-2">Create New Trigger Rule</h2>
-            <p className="text-xs text-slate-400 mb-6">
-              When viewers comment matching keywords on your YouTube videos, TubeFlow will automatically reply.
-            </p>
+      {/* CREATE RULE MODAL */}
+      {isRuleModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="font-bold text-white text-base">Create Trigger Rule</h3>
+              <button onClick={() => setIsRuleModalOpen(false)} className="text-slate-400 hover:text-white text-xs">
+                ✕ Close
+              </button>
+            </div>
 
-            <form onSubmit={handleCreateRule} className="space-y-4">
+            <form onSubmit={handleCreateRule} className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Campaign Name</label>
+                <label className="text-slate-300 block mb-1 font-medium">Rule Name</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Free CheatSheet Drop"
+                  placeholder="e.g. Viral Shorts Link Responder"
                   value={ruleName}
                   onChange={(e) => setRuleName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-red-500"
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Trigger Keywords (comma separated)</label>
+                <label className="text-slate-300 block mb-1 font-medium">Trigger Keywords (comma separated)</label>
                 <input
                   type="text"
                   required
-                  placeholder="LINK, GUIDE, PDF"
+                  placeholder="LINK, PRICE, GUIDE"
                   value={ruleKeywords}
                   onChange={(e) => setRuleKeywords(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-red-500"
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Target Content</label>
-                <select
-                  value={ruleTarget}
-                  onChange={(e) => setRuleTarget(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
-                >
-                  <option value="shorts_only">Shorts Only (Recommended for viral leads)</option>
-                  <option value="all">All Videos & Shorts</option>
-                </select>
+                <label className="text-slate-300 block mb-1 font-medium">Negative Keywords (will skip if present)</label>
+                <input
+                  type="text"
+                  placeholder="fake, scam, scammer"
+                  value={ruleNegative}
+                  onChange={(e) => setRuleNegative(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 block mb-1 font-medium">Intent Filter</label>
+                  <select
+                    value={ruleIntent}
+                    onChange={(e) => setRuleIntent(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
+                  >
+                    <option value="ALL">ALL Intents</option>
+                    <option value="LINK_REQUEST">LINK_REQUEST</option>
+                    <option value="BUYING_INTENT">BUYING_INTENT</option>
+                    <option value="PRICE_REQUEST">PRICE_REQUEST</option>
+                    <option value="PRODUCT_QUESTION">PRODUCT_QUESTION</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-slate-300 block mb-1 font-medium">Match Type</label>
+                  <select
+                    value={ruleMatchType}
+                    onChange={(e) => setRuleMatchType(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
+                  >
+                    <option value="contains">Contains</option>
+                    <option value="exact">Exact Match</option>
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Auto-Reply Text / Link</label>
+                <label className="text-slate-300 block mb-1 font-medium">CTA Destination URL</label>
+                <input
+                  type="url"
+                  placeholder="https://yourstore.com/item"
+                  value={ruleCta}
+                  onChange={(e) => setRuleCta(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-300 block mb-1 font-medium">
+                  Reply Template (Supports Spintax & {"{{first_name}}"}, {"{{cta_url}}"})
+                </label>
                 <textarea
                   rows={3}
-                  required
-                  placeholder="Hey! Grab the link here: https://..."
                   value={ruleReply}
                   onChange={(e) => setRuleReply(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-red-500"
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500 font-mono text-xs"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">Supports spintax syntax like {"{Hey|Hello}"} to avoid spam flags.</p>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="pt-2 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
+                  onClick={() => setIsRuleModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-medium text-sm rounded-lg transition-colors shadow-lg shadow-red-600/20 disabled:opacity-50"
+                  disabled={isSubmittingRule}
+                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold"
                 >
-                  {isSubmitting ? "Creating..." : "Save & Activate"}
+                  {isSubmittingRule ? "Saving..." : "Save Rule"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE TRACKED LINK MODAL */}
+      {isLinkModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-white text-base">Create Tracked Link</h3>
+              <button onClick={() => setIsLinkModalOpen(false)} className="text-slate-400 hover:text-white text-xs">
+                ✕ Close
+              </button>
+            </div>
+            <form onSubmit={handleCreateTrackedLink} className="space-y-3 text-xs">
+              <div>
+                <label className="text-slate-300 block mb-1">Campaign Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Shorts Bio Link"
+                  value={newCampaignName}
+                  onChange={(e) => setNewCampaignName(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                />
+              </div>
+              <div>
+                <label className="text-slate-300 block mb-1">Destination URL</label>
+                <input
+                  type="url"
+                  required
+                  placeholder="https://myshopify.com/product"
+                  value={newDestinationUrl}
+                  onChange={(e) => setNewDestinationUrl(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                />
+              </div>
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsLinkModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-red-600 text-white font-bold">
+                  Create Link
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* TRACK COMPETITOR MODAL */}
+      {isCompModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-white text-base">Track Competitor Channel</h3>
+              <button onClick={() => setIsCompModalOpen(false)} className="text-slate-400 hover:text-white text-xs">
+                ✕ Close
+              </button>
+            </div>
+            <form onSubmit={handleAddCompetitor} className="space-y-3 text-xs">
+              <div>
+                <label className="text-slate-300 block mb-1">YouTube Handle or Channel ID</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. @MrBeast or UCX6OQ3DkcsbYNE6H8uQQuVA"
+                  value={compHandle}
+                  onChange={(e) => setCompHandle(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white"
+                />
+              </div>
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCompModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-red-600 text-white font-bold">
+                  Track Channel
                 </button>
               </div>
             </form>

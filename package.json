@@ -16,6 +16,7 @@
     "clsx": "^2.1.1",
     "cookie": "^2.0.1",
     "googleapis": "^184.0.0",
+    "jose": "^6.2.12",
     "lucide-react": "^1.52.0",
     "next": "16.4.0",
     "postcss": "^8.5.29",
@@ -25,7 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@types/node": "^20.19.43",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
