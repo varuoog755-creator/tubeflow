@@ -38,7 +38,6 @@ interface Log {
 }
 
 export default function DashboardPage() {
-  const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
   const [channelTitle, setChannelTitle] = useState("Tech Talks & Tutorials");
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -60,7 +59,6 @@ export default function DashboardPage() {
   const [pollingStatus, setPollingStatus] = useState<string | null>(null);
 
   const fetchDashboardData = async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/campaigns");
       const data = await res.json();
@@ -119,13 +117,38 @@ export default function DashboardPage() {
       }
     } catch {
       // Fallback
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboardData();
+    let ignore = false;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/campaigns");
+        const data = await res.json();
+        if (!ignore) {
+          if (data.authenticated && data.channel) {
+            setConnected(true);
+            setChannelTitle(data.channel.channel_title);
+          }
+          if (data.campaigns && data.campaigns.length > 0) {
+            setCampaigns(data.campaigns);
+          }
+          if (data.logs && data.logs.length > 0) {
+            setLogs(data.logs);
+          }
+          if (data.stats) {
+            setStats(data.stats);
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    };
+    load();
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const handleCreateRule = async (e: React.FormEvent) => {
