@@ -582,8 +582,8 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-6">
             <Link href="/dashboard" className="hover:text-slate-300">Dashboard</Link>
-            <Link href="/" className="hover:text-slate-300">Terms of Service</Link>
-            <Link href="/" className="hover:text-slate-300">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-slate-300">Terms of Service</Link>
+            <Link href="/privacy" className="hover:text-slate-300">Privacy Policy</Link>
           </div>
         </div>
       </footer>
