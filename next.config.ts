@@ -1,17 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
+  typescript: {
+    // Already validated locally via npm run build
+    ignoreBuildErrors: false,
   },
+  // Ensure serverless edge and Node APIs bundle properly without turbopack-only experimental flags
 };
 
 export default nextConfig;
