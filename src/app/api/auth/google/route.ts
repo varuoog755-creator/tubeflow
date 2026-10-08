@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     
     // Check if this is an app login or YouTube channel connection
     const { searchParams } = new URL(request.url);
-    const mode = searchParams.get("mode") || "connect_youtube"; // 'login' or 'connect_youtube'
+    const mode = searchParams.get("mode") || "login"; // 'login' or 'connect_youtube'
 
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,

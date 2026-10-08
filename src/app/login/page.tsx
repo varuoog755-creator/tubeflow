@@ -38,8 +38,8 @@ function LoginForm() {
 
   const handleGoogleLogin = () => {
     setLoggingIn(true);
-    // Redirect directly to Google OAuth initiation
-    window.location.href = "/api/auth/google";
+    // Redirect directly to Google OAuth initiation for user login
+    window.location.href = "/api/auth/google?mode=login";
   };
 
   return (
