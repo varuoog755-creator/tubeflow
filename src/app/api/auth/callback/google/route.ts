@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { oauth2Client, getYoutubeClient } from "@/lib/youtube";
+import { getOAuth2Client, getYoutubeClient } from "@/lib/youtube";
 import { supabaseAdmin } from "@/lib/supabase";
 import { google } from "googleapis";
 
@@ -9,20 +9,21 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const error = searchParams.get("error");
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tubeflow-195u4q2pb-varuoog755-creators-projects.vercel.app";
+  const origin = request.nextUrl.origin;
+  const redirectUri = `${origin}/api/auth/callback/google`;
 
   if (error || !code) {
-    return NextResponse.redirect(`${appUrl}/dashboard?auth_error=${encodeURIComponent(error || "no_code")}`);
+    return NextResponse.redirect(`${origin}/dashboard?auth_error=${encodeURIComponent(error || "no_code")}`);
   }
 
   try {
-    // 1. Exchange code for access & refresh tokens
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Client.setCredentials(tokens);
+    // 1. Exchange code for access & refresh tokens using matching redirectUri
+    const authClient = getOAuth2Client(redirectUri);
+    const { tokens } = await authClient.getToken(code);
+    authClient.setCredentials(tokens);
 
     // 2. Fetch Google User Profile
-    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
+    const oauth2 = google.oauth2({ version: "v2", auth: authClient });
     const userInfo = await oauth2.userinfo.get();
     const email = userInfo.data.email;
     const name = userInfo.data.name || "Creator";
@@ -47,7 +48,6 @@ export async function GET(request: NextRequest) {
         .update({ full_name: name, avatar_url: avatar, updated_at: new Date().toISOString() })
         .eq("id", userId);
     } else {
-      // Create record in auth.users or profiles
       const { data: newProfile, error: profileErr } = await supabaseAdmin
         .from("profiles")
         .insert({
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
       );
 
     // 6. Set auth session cookie and redirect to dashboard
-    const response = NextResponse.redirect(`${appUrl}/dashboard?connected=true`);
+    const response = NextResponse.redirect(`${origin}/dashboard?connected=true`);
     response.cookies.set("tf_user_email", email, {
       path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 days
@@ -112,6 +112,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (err: unknown) {
     console.error("OAuth Callback failed:", err);
-    return NextResponse.redirect(`${appUrl}/dashboard?auth_error=callback_failed`);
+    return NextResponse.redirect(`${origin}/dashboard?auth_error=callback_failed`);
   }
 }

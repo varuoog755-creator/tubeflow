@@ -1,10 +1,22 @@
 import { google } from "googleapis";
 
-export const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  `${process.env.NEXT_PUBLIC_APP_URL || "https://tubeflow-195u4q2pb-varuoog755-creators-projects.vercel.app"}/api/auth/callback/google`
-);
+export function getAppUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  }
+  return "https://tubeflow-nine.vercel.app";
+}
+
+export function getOAuth2Client(redirectUri?: string) {
+  const uri = redirectUri || `${getAppUrl()}/api/auth/callback/google`;
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    uri
+  );
+}
+
+export const oauth2Client = getOAuth2Client();
 
 export const YOUTUBE_SCOPES = [
   "openid",
@@ -14,11 +26,13 @@ export const YOUTUBE_SCOPES = [
   "https://www.googleapis.com/auth/youtube.readonly",
 ];
 
-export function getAuthUrl() {
-  return oauth2Client.generateAuthUrl({
+export function getAuthUrl(redirectUri?: string) {
+  const client = getOAuth2Client(redirectUri);
+  return client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
     scope: YOUTUBE_SCOPES,
+    include_granted_scopes: true,
   });
 }
 

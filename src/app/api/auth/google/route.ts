@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAuthUrl } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const url = getAuthUrl();
+    const origin = request.nextUrl.origin;
+    const redirectUri = `${origin}/api/auth/callback/google`;
+    const url = getAuthUrl(redirectUri);
     return NextResponse.redirect(url);
   } catch (error: unknown) {
     console.error("Auth initiation failed:", error);
