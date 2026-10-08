@@ -27,8 +27,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!isAuthenticated) {
-      const loginUrl = new URL("/", request.url);
-      loginUrl.searchParams.set("auth_required", "true");
+      const loginUrl = new URL("/login", request.url);
       return NextResponse.redirect(loginUrl);
     }
   }

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin;
-  const response = NextResponse.redirect(`${origin}/`);
+  const response = NextResponse.redirect(`${origin}/login?logged_out=true`);
   clearSessionCookie(response);
   return response;
 }

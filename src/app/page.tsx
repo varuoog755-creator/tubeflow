@@ -88,13 +88,13 @@ export default function Home() {
 
           <div className="flex items-center gap-4">
             <Link
-              href="/dashboard"
+              href="/login"
               className="text-sm font-semibold text-slate-300 hover:text-white transition-colors hidden sm:block"
             >
               Log In
             </Link>
             <Link
-              href="/dashboard"
+              href="/login"
               className="text-sm font-bold bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-xl shadow-red-600/25 hover:shadow-red-600/40"
             >
               Start Free <ArrowRight className="w-4 h-4" />
@@ -127,7 +127,7 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto mb-10">
               <Link
-                href="/dashboard"
+                href="/login"
                 className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-base transition-all shadow-2xl shadow-red-600/30 flex items-center justify-center gap-2 group"
               >
                 Connect YouTube Channel Free
@@ -378,7 +378,7 @@ export default function Home() {
                 <span className="text-sm text-slate-200">TubeFlow Pro costs only <strong>₹1,499/mo</strong> and recovers this revenue automatically.</span>
               </div>
               <Link
-                href="/dashboard"
+                href="/login"
                 className="px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm whitespace-nowrap shadow-lg shadow-red-600/30"
               >
                 Start Recovering Lost Sales
@@ -494,7 +494,7 @@ export default function Home() {
               </div>
 
               <Link
-                href="/dashboard"
+                href="/login"
                 className="w-full py-3.5 rounded-xl border border-slate-700 hover:border-slate-500 text-white font-bold text-center text-sm transition-colors block"
               >
                 Try Free Now
@@ -543,7 +543,7 @@ export default function Home() {
               </div>
 
               <Link
-                href="/dashboard"
+                href="/login"
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-center text-sm transition-all shadow-xl shadow-red-600/30 block"
               >
                 Upgrade To Pro
@@ -563,7 +563,7 @@ export default function Home() {
               Connect your YouTube channel in 30 seconds. Put link distribution on autopilot before you post your next video.
             </p>
             <Link
-              href="/dashboard"
+              href="/login"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-base transition-all shadow-xl shadow-red-600/30"
             >
               Get Started Free <ArrowRight className="w-5 h-5" />
