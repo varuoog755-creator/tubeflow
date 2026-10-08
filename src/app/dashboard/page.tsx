@@ -40,6 +40,8 @@ interface Log {
 export default function DashboardPage() {
   const [connected, setConnected] = useState(false);
   const [channelTitle, setChannelTitle] = useState("Tech Talks & Tutorials");
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [channelId, setChannelId] = useState<string | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
   const [stats, setStats] = useState({
@@ -65,6 +67,8 @@ export default function DashboardPage() {
       if (data.authenticated && data.channel) {
         setConnected(true);
         setChannelTitle(data.channel.channel_title);
+        setThumbnailUrl(data.channel.thumbnail_url || null);
+        setChannelId(data.channel.channel_id || null);
       }
       if (data.campaigns && data.campaigns.length > 0) {
         setCampaigns(data.campaigns);
@@ -130,6 +134,8 @@ export default function DashboardPage() {
           if (data.authenticated && data.channel) {
             setConnected(true);
             setChannelTitle(data.channel.channel_title);
+            setThumbnailUrl(data.channel.thumbnail_url || null);
+            setChannelId(data.channel.channel_id || null);
           }
           if (data.campaigns && data.campaigns.length > 0) {
             setCampaigns(data.campaigns);
@@ -276,28 +282,58 @@ export default function DashboardPage() {
         )}
 
         {/* Channel Banner Card */}
-        <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-sm mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-6 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-950 backdrop-blur-md mb-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-red-600/20 border border-red-500/30 flex items-center justify-center font-bold text-red-400">
-              <Video className="w-6 h-6" />
-            </div>
+            {thumbnailUrl ? (
+              <img
+                src={thumbnailUrl}
+                alt={channelTitle}
+                className="w-14 h-14 rounded-full border-2 border-red-500/40 object-cover shadow-lg shrink-0"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-red-600/20 border border-red-500/30 flex items-center justify-center font-bold text-red-400 shrink-0">
+                <Video className="w-7 h-7" />
+              </div>
+            )}
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-white">{channelTitle}</h3>
-                <span className="px-2 py-0.5 text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3" /> {connected ? "Connected Live" : "Active Mock Sync"}
+              <div className="flex items-center gap-2.5">
+                <h3 className="font-bold text-lg text-white">{channelTitle}</h3>
+                <span className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full flex items-center gap-1.5 ${
+                  connected
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                    : "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`}></span>
+                  {connected ? "Channel Active & Polling" : "Not Connected"}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">YouTube Data API v3 • Background Poller Active</p>
+              <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
+                <span>YouTube Data API v3 Verified</span>
+                {channelId && (
+                  <>
+                    <span>•</span>
+                    <a
+                      href={`https://youtube.com/channel/${channelId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-red-400 hover:text-red-300 flex items-center gap-1 font-medium transition-colors"
+                    >
+                      View on YouTube <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </>
+                )}
+              </p>
             </div>
           </div>
 
-          <a
-            href="/api/auth/google"
-            className="text-xs text-white bg-red-600 hover:bg-red-500 px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1.5 shadow-md shadow-red-600/20 font-medium"
-          >
-            Connect YouTube Channel <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href="/api/auth/google"
+              className="text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-2.5 rounded-xl transition-all font-semibold flex items-center gap-2"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Reconnect / Switch Channel
+            </a>
+          </div>
         </div>
 
         {/* Stats Grid */}
