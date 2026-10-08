@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       throw new Error("Unable to retrieve Google email address");
     }
 
-    // 3. Upsert Creator Profile in Supabase
+    // 3. Upsert Creator Profile in Supabase (synced with auth.users)
     let userId: string;
     const { data: existingProfile } = await supabaseAdmin
       .from("profiles")
@@ -48,21 +48,28 @@ export async function GET(request: NextRequest) {
         .update({ full_name: name, avatar_url: avatar, updated_at: new Date().toISOString() })
         .eq("id", userId);
     } else {
-      const { data: newProfile, error: profileErr } = await supabaseAdmin
+      const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
+      const existingAuthUser = userList?.users?.find((u) => u.email === email);
+      if (existingAuthUser) {
+        userId = existingAuthUser.id;
+      } else {
+        const { data: createdUser } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          email_confirm: true,
+          user_metadata: { full_name: name, avatar_url: avatar },
+        });
+        userId = createdUser?.user?.id || crypto.randomUUID();
+      }
+
+      await supabaseAdmin
         .from("profiles")
-        .insert({
-          id: crypto.randomUUID(),
+        .upsert({
+          id: userId,
           email,
           full_name: name,
           avatar_url: avatar,
-        })
-        .select("id")
-        .single();
-
-      if (profileErr || !newProfile) {
-        throw new Error(profileErr?.message || "Failed to create profile");
-      }
-      userId = newProfile.id;
+          updated_at: new Date().toISOString(),
+        });
     }
 
     // 4. Fetch YouTube Channel details
