@@ -3,6 +3,8 @@ import { oauth2Client, getYoutubeClient } from "@/lib/youtube";
 import { supabaseAdmin } from "@/lib/supabase";
 import { google } from "googleapis";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");

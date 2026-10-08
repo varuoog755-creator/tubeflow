@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getYoutubeClient } from "@/lib/youtube";
 
+export const dynamic = "force-dynamic";
+
 // Spintax helper: transforms "{Hey|Hello|Hi} grab the link {here|below}"
 function parseSpintax(text: string): string {
   const matches = text.match(/{([^{}]+)}/g);
