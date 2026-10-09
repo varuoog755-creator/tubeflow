@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value;
+    const email = session?.email;
 
     if (!email) {
       return NextResponse.json({ channels: [] }, { status: 401 });
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value;
+    const email = session?.email;
 
     if (!email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
