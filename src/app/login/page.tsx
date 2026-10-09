@@ -5,13 +5,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Video,
-  ShieldCheck,
-  CheckCircle2,
   ArrowRight,
-  Zap,
+  ShieldCheck,
+  Check,
   Lock,
-  Sparkles,
-  TrendingUp,
 } from "lucide-react";
 
 function LoginForm() {
@@ -22,7 +19,6 @@ function LoginForm() {
   const errorParam = searchParams.get("auth_error") || searchParams.get("error");
 
   useEffect(() => {
-    // If user is already authenticated, redirect straight to dashboard
     fetch("/api/auth/me")
       .then((res) => {
         if (res.ok) {
@@ -38,36 +34,24 @@ function LoginForm() {
 
   const handleGoogleLogin = () => {
     setLoggingIn(true);
-    // Redirect directly to Google OAuth initiation for user login
     window.location.href = "/api/auth/google?mode=login";
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-red-500 selection:text-white">
-      {/* Background glow effects */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-red-600/10 blur-[160px] rounded-full" />
-        <div className="absolute -bottom-20 right-10 w-[500px] h-[300px] bg-rose-600/10 blur-[140px] rounded-full" />
-      </div>
-
-      {/* Header / Brand */}
-      <header className="relative z-10 px-6 py-6 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center shadow-lg shadow-red-600/30 group-hover:scale-105 transition-all">
-              <Video className="w-6 h-6 text-white" />
+    <div className="min-h-screen bg-black text-zinc-100 flex flex-col justify-between selection:bg-zinc-800 selection:text-white font-sans">
+      {/* Minimal Header */}
+      <header className="px-6 py-5 border-b border-zinc-900 bg-black/80 backdrop-blur-md">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white">
+              <Video className="w-4 h-4 text-red-500" />
             </div>
-            <div className="flex flex-col">
-              <span className="font-black text-xl tracking-tight text-white flex items-center gap-1.5">
-                TubeFlow <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Pro</span>
-              </span>
-              <span className="text-[11px] text-slate-400 -mt-1 font-medium">YouTube Intent & Sales Automation</span>
-            </div>
+            <span className="font-semibold text-base tracking-tight text-white">TubeFlow</span>
           </Link>
 
           <Link
             href="/"
-            className="text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+            className="text-xs font-medium text-zinc-500 hover:text-zinc-200 transition-colors"
           >
             ← Back to Home
           </Link>
@@ -75,37 +59,32 @@ function LoginForm() {
       </header>
 
       {/* Main Login Card */}
-      <main className="relative z-10 flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md">
-          <div className="p-8 sm:p-10 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl shadow-black/80 backdrop-blur-xl">
+      <main className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm">
+          <div className="p-8 rounded-2xl bg-zinc-950 border border-zinc-800">
             {/* Header info */}
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-bold mb-4">
-                <Sparkles className="w-3.5 h-3.5" /> High-Intent Comment Automation
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Welcome to TubeFlow
+            <div className="mb-8">
+              <h1 className="text-xl font-semibold text-white tracking-tight">
+                Sign in to TubeFlow
               </h1>
-              <p className="text-sm text-slate-400 mt-2">
+              <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
                 Connect your YouTube channel to monitor buyer intent and automate instant replies.
               </p>
             </div>
 
             {/* Logged out notice */}
             {searchParams.get("logged_out") && (
-              <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <div className="mb-5 p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>You have been signed out successfully.</span>
               </div>
             )}
 
             {/* Error banner if redirected with error */}
             {errorParam && (
-              <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs">
-                <p className="font-bold flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-red-400" /> Authentication Notice
-                </p>
-                <p className="mt-1 text-slate-300">
+              <div className="mb-5 p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs">
+                <span className="font-semibold text-white block mb-0.5">Authentication Note</span>
+                <p className="text-zinc-400 text-[11px]">
                   {errorParam === "access_denied"
                     ? "YouTube permissions were not granted. Please approve YouTube access to connect your channel."
                     : `Could not complete Google Sign-In (${errorParam}). Please try again.`}
@@ -119,10 +98,10 @@ function LoginForm() {
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={loggingIn || checkingAuth}
-                className="w-full py-4 px-6 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-sm sm:text-base flex items-center justify-center gap-3 transition-all shadow-xl hover:shadow-2xl shadow-white/10 active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed group cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-2.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {/* Official Google G Logo SVG */}
-                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -147,58 +126,43 @@ function LoginForm() {
                     ? "Checking session..."
                     : "Continue with Google"}
                 </span>
-                <ArrowRight className="w-4 h-4 text-slate-500 group-hover:translate-x-0.5 transition-transform ml-auto" />
+                <ArrowRight className="w-3.5 h-3.5 text-zinc-500 ml-auto" />
               </button>
 
-              <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium pt-2">
-                <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Bank-grade 256-bit encrypted authentication</span>
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-500 pt-1">
+                <Lock className="w-3 h-3 text-zinc-400" />
+                <span>Encrypted OAuth2 session</span>
               </div>
             </div>
 
-            {/* Benefit Bullets */}
-            <div className="mt-8 pt-6 border-t border-slate-800/80 space-y-3">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                Included with your account:
+            {/* Feature bullets */}
+            <div className="mt-8 pt-6 border-t border-zinc-900 space-y-2.5">
+              <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider block mb-2">
+                Included with account
               </span>
-              <ul className="space-y-2.5 text-xs text-slate-400">
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>24/7 high-intent comment detection (EN, Hindi, Hinglish)</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>Instant automated replies with tracked click-through links</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>Competitor intel tracking & conversion analytics</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>100% compliant with YouTube API Services Policies</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* YouTube compliance statement */}
-            <div className="mt-6 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 leading-relaxed">
-              <div className="flex items-center gap-1.5 font-semibold text-slate-300 mb-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
-                <span>Official YouTube API Verification</span>
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>Sub-2s automated replies</span>
               </div>
-              TubeFlow accesses your channel strictly to monitor comments and send automated responses according to rules you configure. We never publish videos or store channel passwords.
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>Intent & commercial keyword filters</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>Official YouTube API compliance</span>
+              </div>
             </div>
           </div>
 
           {/* Legal / Policy Footer */}
-          <div className="mt-6 text-center text-xs text-slate-400 space-x-4">
-            <span>By signing in, you accept our</span>
-            <Link href="/terms" className="text-slate-300 hover:text-white underline">
+          <div className="mt-6 text-center text-[11px] text-zinc-500 space-x-2">
+            <span>By continuing, you accept our</span>
+            <Link href="/terms" className="text-zinc-400 hover:text-white underline">
               Terms
             </Link>
             <span>&</span>
-            <Link href="/privacy" className="text-slate-300 hover:text-white underline">
+            <Link href="/privacy" className="text-zinc-400 hover:text-white underline">
               Privacy Policy
             </Link>
           </div>
@@ -206,8 +170,8 @@ function LoginForm() {
       </main>
 
       {/* Footer copyright */}
-      <footer className="relative z-10 px-6 py-4 border-t border-slate-800/60 text-center text-xs text-slate-400">
-        © {new Date().getFullYear()} TubeFlow. All rights reserved. YouTube is a registered trademark of Google LLC.
+      <footer className="px-6 py-4 border-t border-zinc-900 text-center text-xs text-zinc-600">
+        © {new Date().getFullYear()} TubeFlow. YouTube is a trademark of Google LLC.
       </footer>
     </div>
   );
@@ -215,7 +179,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-zinc-500 text-xs">Loading...</div>}>
       <LoginForm />
     </Suspense>
   );
