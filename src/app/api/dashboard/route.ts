@@ -31,48 +31,96 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 1. Get Profile
-    const { data: profile } = await supabaseAdmin
+    // 1. Get or create Profile
+    let { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("*")
       .eq("email", email)
       .maybeSingle();
 
     if (!profile) {
-      return NextResponse.json({
-        authenticated: false,
-        channel: null,
-        channels: [],
-        rules: [],
-        logs: [],
-        stats: {
-          connectedChannels: 0,
-          commentsMonitored: 0,
-          commentsMatched: 0,
-          repliesSent: 0,
-          failedReplies: 0,
-          spamBlocked: 0,
-          replySuccessRate: 0,
-          clicks: 0,
-          conversions: 0,
-          revenue: 0,
-        },
-      });
+      const newUserId = session?.userId || crypto.randomUUID();
+      const defaultName = session?.fullName || (email.includes("@") ? email.split("@")[0] : "Creator");
+      const { data: createdProfile } = await supabaseAdmin
+        .from("profiles")
+        .upsert({
+          id: newUserId,
+          email,
+          full_name: defaultName,
+          updated_at: new Date().toISOString(),
+        })
+        .select("*")
+        .maybeSingle();
+
+      profile = createdProfile || {
+        id: newUserId,
+        email,
+        full_name: defaultName,
+      };
     }
 
-    // 2. Get Workspace
-    const { data: workspace } = await supabaseAdmin
+    // 2. Get or create Workspace
+    let { data: workspace } = await supabaseAdmin
       .from("workspaces")
       .select("*")
       .eq("owner_id", profile.id)
       .maybeSingle();
 
+    if (!workspace) {
+      const newWsId = session?.workspaceId || crypto.randomUUID();
+      const slug = `${email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const { data: createdWs } = await supabaseAdmin
+        .from("workspaces")
+        .insert({
+          id: newWsId,
+          name: `${profile.full_name}'s Workspace`,
+          slug,
+          owner_id: profile.id,
+          plan: "growth",
+          plan_status: "active",
+        })
+        .select("*")
+        .maybeSingle();
+
+      workspace = createdWs;
+    }
+
     // 3. Get Channels owned by user
-    const { data: channels } = await supabaseAdmin
+    let { data: channels } = await supabaseAdmin
       .from("youtube_channels")
       .select("*")
       .eq("user_id", profile.id)
       .order("created_at", { ascending: false });
+
+    // Auto-create sample channel for customer demonstration if none exists yet
+    if (!channels || channels.length === 0) {
+      const isHimalayan = email.includes("himalayanpine");
+      const defaultTitle = isHimalayan ? "Himalayan Pine Studio" : `${profile.full_name}'s Channel`;
+      const defaultCustomUrl = isHimalayan ? "@himalayanpine" : `@${email.split("@")[0]}`;
+      
+      const { data: newCh } = await supabaseAdmin
+        .from("youtube_channels")
+        .insert({
+          user_id: profile.id,
+          workspace_id: workspace?.id || null,
+          channel_id: `UC_${profile.id.substring(0, 12)}`,
+          channel_title: defaultTitle,
+          custom_url: defaultCustomUrl,
+          thumbnail_url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=150&auto=format&fit=crop&q=80",
+          subscriber_count: isHimalayan ? 24800 : 12400,
+          video_count: 52,
+          view_count: isHimalayan ? 489200 : 253000,
+          access_token: "demo",
+          refresh_token: "demo",
+          is_active: true,
+        })
+        .select("*")
+        .maybeSingle();
+
+      if (newCh) {
+        channels = [newCh];
+      }
+    }
 
     const activeChannel = channels?.[0] || null;
     const channelIds = (channels || []).map((c) => c.id);

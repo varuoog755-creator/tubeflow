@@ -120,6 +120,16 @@ export async function GET(request: NextRequest) {
           let matchEvaluation = null;
 
           for (const rule of activeRules) {
+            // Video scope filtering (All, Single video, or Shorts only)
+            if (
+              (rule.target_mode === "single" || rule.target_mode === "specific_videos") &&
+              rule.target_video_ids?.length > 0
+            ) {
+              if (!rule.target_video_ids.includes(videoId)) {
+                continue; // Comment is not on this rule's target video
+              }
+            }
+
             const evalResult = evaluateRuleMatch(
               {
                 keywords: rule.keywords || [],

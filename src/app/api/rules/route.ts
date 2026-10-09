@@ -214,6 +214,9 @@ export async function POST(request: NextRequest) {
       matchType,
       keywordMatchOperator,
       targetMode,
+      targetVideoIds,
+      targetVideoId,
+      campaignType,
       replyTemplates,
       ctaUrl,
       intentCategory,
@@ -254,6 +257,12 @@ export async function POST(request: NextRequest) {
           .map((k: string) => k.trim().toUpperCase())
           .filter(Boolean);
 
+    const resolvedVideoIds = Array.isArray(targetVideoIds)
+      ? targetVideoIds
+      : targetVideoId
+      ? [targetVideoId]
+      : [];
+
     // Selected channel or fallback to user's first channel
     const targetChannelId = channelId || auth.channels[0]?.id || null;
 
@@ -266,6 +275,7 @@ export async function POST(request: NextRequest) {
       match_type: matchType || "contains",
       keyword_match_operator: (keywordMatchOperator || "ANY").toUpperCase(),
       target_mode: targetMode || "all",
+      target_video_ids: resolvedVideoIds,
       reply_templates: templateArray,
       cta_url: ctaUrl?.trim() || null,
       intent_category: intentCategory || "ALL",
@@ -279,7 +289,18 @@ export async function POST(request: NextRequest) {
       .select("*")
       .single();
 
-    // Fallback if column keyword_match_operator has not been added to DB yet
+    // Fallbacks if columns have not been migrated to DB yet
+    if (insertErr && insertErr.message.includes("target_video_ids")) {
+      delete insertPayload.target_video_ids;
+      const retry = await supabaseAdmin
+        .from("trigger_rules")
+        .insert(insertPayload)
+        .select("*")
+        .single();
+      newRule = retry.data;
+      insertErr = retry.error;
+    }
+
     if (insertErr && insertErr.message.includes("keyword_match_operator")) {
       delete insertPayload.keyword_match_operator;
       const retry = await supabaseAdmin
@@ -318,6 +339,9 @@ export async function PUT(request: NextRequest) {
       matchType,
       keywordMatchOperator,
       targetMode,
+      targetVideoIds,
+      targetVideoId,
+      campaignType,
       replyTemplates,
       ctaUrl,
       intentCategory,
@@ -368,6 +392,11 @@ export async function PUT(request: NextRequest) {
     if (keywordMatchOperator !== undefined)
       updatePayload.keyword_match_operator = keywordMatchOperator.toUpperCase();
     if (targetMode !== undefined) updatePayload.target_mode = targetMode;
+    if (targetVideoIds !== undefined) {
+      updatePayload.target_video_ids = Array.isArray(targetVideoIds) ? targetVideoIds : [targetVideoIds];
+    } else if (targetVideoId !== undefined) {
+      updatePayload.target_video_ids = [targetVideoId];
+    }
     if (replyTemplates !== undefined) {
       updatePayload.reply_templates = Array.isArray(replyTemplates)
         ? replyTemplates
@@ -385,6 +414,18 @@ export async function PUT(request: NextRequest) {
       .eq("id", id)
       .select("*")
       .single();
+
+    if (error && error.message.includes("target_video_ids")) {
+      delete updatePayload.target_video_ids;
+      const retry = await supabaseAdmin
+        .from("trigger_rules")
+        .update(updatePayload)
+        .eq("id", id)
+        .select("*")
+        .single();
+      updated = retry.data;
+      error = retry.error;
+    }
 
     if (error && error.message.includes("keyword_match_operator")) {
       delete updatePayload.keyword_match_operator;
