@@ -60,20 +60,10 @@ export async function GET(request: NextRequest) {
 
     if (!channel || !channel.access_token || channel.access_token === "demo") {
       return NextResponse.json({
-        channel: channel || {
-          channel_title: `${profile.full_name || "Creator"}'s Channel`,
-          subscriber_count: 12400,
-          view_count: 253900,
-          video_count: SAMPLE_VIDEOS.length,
-          is_active: true,
-        },
-        videos: SAMPLE_VIDEOS,
-        totals: {
-          totalVideos: SAMPLE_VIDEOS.length,
-          totalViews: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.viewCount, 0),
-          totalLikes: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.likeCount, 0),
-          totalComments: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.commentCount, 0),
-        },
+        channel: channel || null,
+        videos: [],
+        totals: { totalVideos: 0, totalViews: 0, totalLikes: 0, totalComments: 0 },
+        notice: "Connect a real YouTube channel to load live video metrics.",
       });
     }
 
@@ -158,18 +148,13 @@ export async function GET(request: NextRequest) {
         },
       });
     } catch (apiError) {
-      console.warn("Live YouTube videos fetch fallback to sample:", apiError);
+      console.error("Live YouTube videos fetch failed:", apiError);
       return NextResponse.json({
         channel,
-        videos: SAMPLE_VIDEOS,
-        totals: {
-          totalVideos: SAMPLE_VIDEOS.length,
-          totalViews: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.viewCount, 0),
-          totalLikes: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.likeCount, 0),
-          totalComments: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.commentCount, 0),
-        },
-        notice: "Using cached / sample video metrics while YouTube API updates.",
-      });
+        videos: [],
+        totals: { totalVideos: 0, totalViews: 0, totalLikes: 0, totalComments: 0 },
+        error: "Live YouTube video metrics are temporarily unavailable. Reconnect the channel or retry shortly.",
+      }, { status: 502 });
     }
   } catch (error: unknown) {
     console.error("Fetch channel videos error:", error);
