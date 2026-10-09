@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value || "varuoog755@gmail.com";
+    const email = session?.email;
+    if (!email || !session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await request.json();
     const { message } = body;
 
@@ -30,12 +31,14 @@ export async function POST(request: NextRequest) {
     // 2. Gather Active Rules
     const { data: rules } = await supabaseAdmin
       .from("trigger_rules")
-      .select("name, keywords, cta_url, match_type, is_active");
+      .select("name, keywords, cta_url, match_type, is_active")
+      .eq("workspace_id", session.workspaceId);
 
     // 3. Gather Conversions and Links
     const { data: links } = await supabaseAdmin
       .from("tracked_links")
-      .select("destination_url, clicks_count, conversions_count, revenue_generated");
+      .select("destination_url, clicks_count, conversions_count, revenue_generated")
+      .eq("workspace_id", session.workspaceId);
 
     const channelSummary = channels?.map(c => `${c.channel_title} (${c.subscriber_count} subs, ${c.video_count} videos)`).join(", ") || "No channel connected";
     const activeRulesCount = rules?.filter(r => r.is_active).length || 0;
