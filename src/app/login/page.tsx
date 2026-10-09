@@ -139,7 +139,6 @@ function LoginForm() {
                 <span>Encrypted Google OAuth2 session</span>
               </div>
 
-          </a>
             </div>
 
             {/* Feature bullets */}
