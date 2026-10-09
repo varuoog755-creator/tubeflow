@@ -257,25 +257,39 @@ export async function POST(request: NextRequest) {
     // Selected channel or fallback to user's first channel
     const targetChannelId = channelId || auth.channels[0]?.id || null;
 
-    const { data: newRule, error: insertErr } = await supabaseAdmin
+    const insertPayload: Record<string, unknown> = {
+      workspace_id: auth.workspace?.id || null,
+      channel_id: targetChannelId,
+      name: name.trim(),
+      keywords: keywordList,
+      negative_keywords: negativeList,
+      match_type: matchType || "contains",
+      keyword_match_operator: (keywordMatchOperator || "ANY").toUpperCase(),
+      target_mode: targetMode || "all",
+      reply_templates: templateArray,
+      cta_url: ctaUrl?.trim() || null,
+      intent_category: intentCategory || "ALL",
+      delay_seconds: parseInt(delaySeconds || "0", 10),
+      is_active: true,
+    };
+
+    let { data: newRule, error: insertErr } = await supabaseAdmin
       .from("trigger_rules")
-      .insert({
-        workspace_id: auth.workspace?.id || null,
-        channel_id: targetChannelId,
-        name: name.trim(),
-        keywords: keywordList,
-        negative_keywords: negativeList,
-        match_type: matchType || "contains",
-        keyword_match_operator: (keywordMatchOperator || "ANY").toUpperCase(),
-        target_mode: targetMode || "all",
-        reply_templates: templateArray,
-        cta_url: ctaUrl?.trim() || null,
-        intent_category: intentCategory || "ALL",
-        delay_seconds: parseInt(delaySeconds || "0", 10),
-        is_active: true,
-      })
+      .insert(insertPayload)
       .select("*")
       .single();
+
+    // Fallback if column keyword_match_operator has not been added to DB yet
+    if (insertErr && insertErr.message.includes("keyword_match_operator")) {
+      delete insertPayload.keyword_match_operator;
+      const retry = await supabaseAdmin
+        .from("trigger_rules")
+        .insert(insertPayload)
+        .select("*")
+        .single();
+      newRule = retry.data;
+      insertErr = retry.error;
+    }
 
     if (insertErr) {
       return NextResponse.json({ error: insertErr.message }, { status: 500 });
@@ -365,12 +379,24 @@ export async function PUT(request: NextRequest) {
     if (channelId !== undefined) updatePayload.channel_id = channelId;
     if (is_active !== undefined) updatePayload.is_active = is_active;
 
-    const { data: updated, error } = await supabaseAdmin
+    let { data: updated, error } = await supabaseAdmin
       .from("trigger_rules")
       .update(updatePayload)
       .eq("id", id)
       .select("*")
       .single();
+
+    if (error && error.message.includes("keyword_match_operator")) {
+      delete updatePayload.keyword_match_operator;
+      const retry = await supabaseAdmin
+        .from("trigger_rules")
+        .update(updatePayload)
+        .eq("id", id)
+        .select("*")
+        .single();
+      updated = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

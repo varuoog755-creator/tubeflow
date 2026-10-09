@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getValidYoutubeClient, isYoutubeQuotaError, isYoutubeTokenRevoked } from "@/lib/youtube";
 import { detectIntent } from "@/lib/intent";
 import { renderReply, evaluateRuleMatch } from "@/lib/reply-engine";
+import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,14 @@ export async function GET(request: NextRequest) {
   const manual = searchParams.get("manual") === "true";
 
   if (!manual && authHeader !== `Bearer ${cronSecret}`) {
-    // Permit authorized cron requests and manual dashboard triggers
+    return NextResponse.json({ error: "Unauthorized cron execution" }, { status: 401 });
+  }
+
+  if (manual) {
+    const session = await getSession();
+    if (!session?.userId) {
+      return NextResponse.json({ error: "Unauthorized user session" }, { status: 401 });
+    }
   }
 
   try {
