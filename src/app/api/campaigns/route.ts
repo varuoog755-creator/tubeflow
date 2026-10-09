@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const email = request.cookies.get("tf_user_email")?.value || "varuoog755@gmail.com";
+    const session = await getSession();
+    const email = session?.email;
+    if (!email || !session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     // 1. Get Profile
     const { data: profile } = await supabaseAdmin
@@ -42,6 +45,7 @@ export async function GET(request: NextRequest) {
     const { data: logs } = await supabaseAdmin
       .from("comment_logs")
       .select("*")
+      .eq("user_id", profile.id)
       .order("processed_at", { ascending: false })
       .limit(10);
 
