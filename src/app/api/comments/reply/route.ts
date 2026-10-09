@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update log in database
-    const updatePayload: Record<string, any> = {
+    const updatePayload: Record<string, string | null> = {
       reply_text: replyText.trim(),
       reply_status: replyStatus,
       processed_at: new Date().toISOString(),
