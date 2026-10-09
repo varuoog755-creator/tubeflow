@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value;
+    const email = session?.email;
     if (!email) {
       return NextResponse.json({ logs: [], pagination: { page: 1, limit: 25, total: 0, totalPages: 0 } }, { status: 401 });
     }
