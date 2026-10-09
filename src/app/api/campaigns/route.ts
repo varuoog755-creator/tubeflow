@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     const { data: logs } = await supabaseAdmin
       .from("comment_logs")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("channel_id", channel?.id || "00000000-0000-0000-0000-000000000000")
       .order("processed_at", { ascending: false })
       .limit(10);
 
