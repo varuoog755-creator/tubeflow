@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
     const channelIds = (channels || []).map((c) => c.id);
 
     // 4. Get Rules (scoped to workspace or user's channels)
-    let rules: any[] = [];
+    let rules: Record<string, unknown>[] = [];
     if (workspace?.id || channelIds.length > 0) {
       let rulesQuery = supabaseAdmin
         .from("trigger_rules")
@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 5. Get Processed Comments Logs (scoped to user's channels)
-    let logs: any[] = [];
+    let logs: Record<string, unknown>[] = [];
     let commentsMonitored = 0;
     let commentsMatched = 0;
     let repliesSent = 0;
