@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getAppUrl } from "@/lib/youtube";
 import { google } from "googleapis";
@@ -6,20 +7,19 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const origin = request.nextUrl.origin;
-    const redirectUri = `${origin}/api/auth/callback/google`;
-    
-    // Check if this is an app login or YouTube channel connection
+    const redirectUri = `${getAppUrl()}/api/auth/callback/google`;
     const { searchParams } = new URL(request.url);
-    const mode = searchParams.get("mode") || "login"; // 'login' or 'connect_youtube'
+    const requestedMode = searchParams.get("mode") || "login";
+    const mode = requestedMode === "connect_youtube" ? "connect_youtube" : "login";
 
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      redirectUri
-    );
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    if (!clientId || !clientSecret) {
+      return NextResponse.json({ error: "Google OAuth is not configured" }, { status: 503 });
+    }
 
-    // Request full YouTube scopes so the channel and permissions are automatically linked on login or connect
+    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+    const state = randomBytes(32).toString("hex");
     const scopes = [
       "openid",
       "https://www.googleapis.com/auth/userinfo.email",
@@ -28,22 +28,27 @@ export async function GET(request: NextRequest) {
       "https://www.googleapis.com/auth/youtube.readonly",
     ];
 
-    const state = JSON.stringify({ mode, origin });
-
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "offline",
       prompt: "consent",
       scope: scopes,
       include_granted_scopes: true,
-      state: Buffer.from(state).toString("base64"),
+      state,
     });
 
-    return NextResponse.redirect(authUrl);
+    const response = NextResponse.redirect(authUrl);
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
+      path: "/",
+      maxAge: 10 * 60,
+    };
+    response.cookies.set("tf_oauth_state", state, cookieOptions);
+    response.cookies.set("tf_oauth_mode", mode, cookieOptions);
+    return response;
   } catch (error: unknown) {
     console.error("Auth initiation failed:", error);
-    return NextResponse.json(
-      { error: "Failed to initialize Google authentication" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to initialize Google authentication" }, { status: 500 });
   }
 }

@@ -121,6 +121,7 @@ interface TrackedLink {
   slug: string;
   destination_url: string;
   campaign_name: string;
+  rule_id?: string | null;
   clicks_count: number;
   conversions_count: number;
   revenue_generated: string;
@@ -144,85 +145,7 @@ type InboxFilterView =
   | "failed"
   | "spam";
 
-// Realistic sample demo comments when channels have 0 initial comments
-const DEMO_SAMPLE_COMMENTS: ProcessedComment[] = [
-  {
-    id: "demo-1",
-    channel_id: "demo-chan-1",
-    comment_id: "UgxK991_demo_1",
-    video_id: "v_Shorts_101",
-    video_title: "My Top 3 Desk Setup Essentials for Creators (Shorts)",
-    author_name: "Vikram Malhotra",
-    comment_text: "Bro where can I buy this microphone and arm? Drop the link please!",
-    detected_intent: "BUYING_INTENT",
-    ai_confidence: 0.98,
-    reply_status: "pending",
-    reply_text: "Hey Vikram! Grab the exact mic setup here: https://tubeflow.in/gear-setup",
-    created_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
-    is_demo: true,
-  },
-  {
-    id: "demo-2",
-    channel_id: "demo-chan-1",
-    comment_id: "UgxK991_demo_2",
-    video_id: "v_Long_202",
-    video_title: "Complete Video Editing Masterclass 2026",
-    author_name: "Ananya Sharma",
-    comment_text: "What is the price for cohort enrollment? Is the discount still valid?",
-    detected_intent: "PRICE_REQUEST",
-    ai_confidence: 0.96,
-    reply_status: "pending",
-    reply_text: "Hey Ananya! Complete enrollment details: https://tubeflow.in/masterclass",
-    created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    is_demo: true,
-  },
-  {
-    id: "demo-3",
-    channel_id: "demo-chan-1",
-    comment_id: "UgxK991_demo_3",
-    video_id: "v_Shorts_101",
-    video_title: "My Top 3 Desk Setup Essentials for Creators (Shorts)",
-    author_name: "Rohan Patel",
-    comment_text: "Can you send the link to the light bar? Looks super clean.",
-    detected_intent: "LINK_REQUEST",
-    ai_confidence: 0.99,
-    reply_status: "replied",
-    reply_text: "Hey Rohan! Here is the exact light bar: https://tubeflow.in/lightbar",
-    youtube_reply_id: "UgxK991_reply_3",
-    created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    processed_at: new Date(Date.now() - 1000 * 60 * 118).toISOString(),
-    is_demo: true,
-  },
-  {
-    id: "demo-4",
-    channel_id: "demo-chan-1",
-    comment_id: "UgxK991_demo_4",
-    video_id: "v_Shorts_303",
-    video_title: "How I Gained 50K Subscribers in 30 Days",
-    author_name: "Crypt0Gainz99",
-    comment_text: "INVEST IN BITCOIN NOW! WHATSAPP ME +1 928 291 992 FOR 500% RETURNS",
-    detected_intent: "SPAM",
-    ai_confidence: 0.99,
-    reply_status: "spam",
-    created_at: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
-    is_demo: true,
-  },
-  {
-    id: "demo-5",
-    channel_id: "demo-chan-1",
-    comment_id: "UgxK991_demo_5",
-    video_id: "v_Long_202",
-    video_title: "Complete Video Editing Masterclass 2026",
-    author_name: "Pooja Mehta",
-    comment_text: "Where is the PDF curriculum download link mentioned at 04:20?",
-    detected_intent: "LINK_REQUEST",
-    ai_confidence: 0.94,
-    reply_status: "error",
-    error_message: "YouTube API quota exceeded or token requires reauthorization",
-    created_at: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
-    is_demo: true,
-  },
-];
+
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -282,10 +205,10 @@ export default function DashboardPage() {
   // Video Metrics & Channel Overview State
   const [channelVideos, setChannelVideos] = useState<ChannelVideoItem[]>([]);
   const [videoStatsSummary, setVideoStatsSummary] = useState({
-    totalVideos: 52,
-    totalViews: 489200,
-    totalLikes: 28400,
-    totalComments: 3140,
+    totalVideos: 0,
+    totalViews: 0,
+    totalLikes: 0,
+    totalComments: 0,
   });
   const [videoFormatFilter, setVideoFormatFilter] = useState<"all" | "long" | "shorts">("all");
   const [videoSearch, setVideoSearch] = useState("");
@@ -301,7 +224,7 @@ export default function DashboardPage() {
   // Dry Run Modal
   const [isDryRunOpen, setIsDryRunOpen] = useState(false);
   const [dryRunComment, setDryRunComment] = useState("");
-  const [dryRunResult, setDryRunResult] = useState<any>(null);
+  const [dryRunResult, setDryRunResult] = useState<{ matched: boolean; rendered_reply?: string | null } | null>(null);
   const [dryRunLoading, setDryRunLoading] = useState(false);
 
   // Tracked Link Modal
@@ -347,29 +270,25 @@ export default function DashboardPage() {
       setChannels(data.channels || []);
       setRules(data.rules || []);
 
-      // If user has database comments, use them. Otherwise load realistic demo comments so inbox is immediately operational
+      // Only show comments persisted from this workspace; never substitute demo rows.
       const loadedLogs: ProcessedComment[] = data.logs || [];
-      if (loadedLogs.length > 0) {
-        setComments(loadedLogs);
-      } else {
-        setComments(DEMO_SAMPLE_COMMENTS);
-      }
+      setComments(loadedLogs);
 
       // Calculate intent detected from comments
-      const intentCount = (loadedLogs.length > 0 ? loadedLogs : DEMO_SAMPLE_COMMENTS).filter(
+      const intentCount = loadedLogs.filter(
         (c) => c.detected_intent && c.detected_intent !== "OTHER" && c.detected_intent !== "SPAM"
       ).length;
 
       setStats({
-        commentsMonitored: data.stats?.commentsMonitored || loadedLogs.length || DEMO_SAMPLE_COMMENTS.length,
+        commentsMonitored: data.stats?.commentsMonitored ?? loadedLogs.length,
         intentDetected: data.stats?.commentsMatched || intentCount,
-        repliesDelivered: data.stats?.repliesSent || 1,
-        failedReplies: data.stats?.failedReplies || 1,
-        spamBlocked: data.stats?.spamBlocked || 1,
-        replySuccessRate: data.stats?.replySuccessRate ?? 98,
-        clicks: data.stats?.clicks || 142,
-        conversions: data.stats?.conversions || 18,
-        revenue: data.stats?.revenue || 8450,
+        repliesDelivered: data.stats?.repliesSent ?? 0,
+        failedReplies: data.stats?.failedReplies ?? 0,
+        spamBlocked: data.stats?.spamBlocked ?? 0,
+        replySuccessRate: data.stats?.replySuccessRate ?? 0,
+        clicks: data.stats?.clicks ?? 0,
+        conversions: data.stats?.conversions ?? 0,
+        revenue: data.stats?.revenue ?? 0,
       });
 
       // Load Tracked Links
@@ -411,12 +330,14 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load remote dashboard state on mount
     fetchDashboardData();
   }, []);
 
   // Set default selected comment when comments load
   useEffect(() => {
     if (!selectedCommentId && comments.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- select the first loaded inbox item
       setSelectedCommentId(comments[0].id);
     }
   }, [comments, selectedCommentId]);
@@ -429,6 +350,7 @@ export default function DashboardPage() {
   // Sync draft reply when selected comment changes
   useEffect(() => {
     if (selectedComment) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset draft when selection changes
       setDraftReplyText(selectedComment.reply_text || `Hey ${selectedComment.author_name}! Thanks for checking out the video.`);
     }
   }, [selectedComment]);
@@ -788,7 +710,7 @@ export default function DashboardPage() {
           keyword_match_operator: ruleOperator,
           intent_category: ruleIntentCategory,
           reply_template: ruleTemplates.split("\n")[0] || "Hey {{first_name}}! Check: {{cta_url}}",
-          cta_url: ruleCtaUrl || "https://tubeflow.in/demo",
+          cta_url: ruleCtaUrl || undefined,
         }),
       });
       const data = await res.json();
@@ -1209,7 +1131,7 @@ export default function DashboardPage() {
                       <span>Sort:</span>
                       <select
                         value={sortBy}
-                        onChange={(e: any) => setSortBy(e.target.value)}
+                        onChange={(e) => setSortBy(e.target.value)}
                         className="bg-transparent font-medium text-zinc-800 focus:outline-none cursor-pointer"
                       >
                         <option value="newest">Newest</option>
@@ -1697,7 +1619,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Subscribers</span>
                     <span className="text-xl font-heading font-bold text-zinc-950 mt-1 block">
-                      {(channels[0]?.subscriber_count || 24800).toLocaleString()}
+                      {(channels[0]?.subscriber_count ?? 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-emerald-600 font-medium">Verified Audience</span>
                   </div>
@@ -1705,7 +1627,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Total Videos</span>
                     <span className="text-xl font-heading font-bold text-zinc-950 mt-1 block">
-                      {videoStatsSummary.totalVideos || channelVideos.length || 52}
+                      {videoStatsSummary.totalVideos || channelVideos.length || 0}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-medium">Long-form & Shorts</span>
                   </div>
@@ -1713,7 +1635,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Total Views</span>
                     <span className="text-xl font-heading font-bold text-zinc-950 mt-1 block">
-                      {(videoStatsSummary.totalViews || 489200).toLocaleString()}
+                      {(videoStatsSummary.totalViews ?? 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-medium">All-time Impressions</span>
                   </div>
@@ -1721,7 +1643,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-red-50/60 border border-red-200/80">
                     <span className="text-[11px] font-semibold text-red-900 block">Total Comments</span>
                     <span className="text-xl font-heading font-bold text-red-700 mt-1 block">
-                      {(videoStatsSummary.totalComments || 3140).toLocaleString()}
+                      {(videoStatsSummary.totalComments ?? 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-red-600 font-medium">Buyer Intent Pool</span>
                   </div>
@@ -1955,9 +1877,10 @@ export default function DashboardPage() {
                     const matchedComments = comments.filter(
                       (c) => c.matched_rule_id === rule.id || c.reply_text?.includes(rule.name)
                     );
-                    const repliesCount = matchedComments.length || Math.floor(Math.random() * 15 + 8);
-                    const clicksCount = Math.floor(repliesCount * 1.8);
-                    const ctrRate = repliesCount > 0 ? Math.round((clicksCount / repliesCount) * 45) : 62;
+                    const repliesCount = matchedComments.length;
+                    const ruleLinks = trackedLinks.filter((link) => link.rule_id === rule.id);
+                    const clicksCount = ruleLinks.reduce((total, link) => total + (link.clicks_count || 0), 0);
+                    const ctrRate = repliesCount > 0 ? Math.round((clicksCount / repliesCount) * 100) : 0;
 
                     return (
                       <div
@@ -2031,11 +1954,11 @@ export default function DashboardPage() {
                                 setRuleMatchType(rule.match_type || "contains");
                                 setRuleOperator(rule.keyword_match_operator || "ANY");
                                 setCampaignScope(
-                                  (rule.target_mode as any) === "shorts_only"
+                                  rule.target_mode === "shorts_only"
                                     ? "shorts"
-                                    : (rule.target_mode as any) === "specific_videos"
+                                    : rule.target_mode === "specific_videos"
                                     ? "single"
-                                    : (rule.target_mode as any) || "all"
+                                    : rule.target_mode || "all"
                                 );
                                 setSelectedVideoForRule(rule.target_video_ids?.[0] || "");
                                 setRuleTemplates((rule.reply_templates || []).join("\n"));

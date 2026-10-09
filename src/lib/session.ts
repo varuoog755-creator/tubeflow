@@ -1,10 +1,16 @@
 import { SignJWT, jwtVerify } from "jose";
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.SESSION_SECRET || "tubeflow_super_secret_session_jwt_key_2026_xyz!"
-);
+import type { NextResponse } from "next/server";
 
 const SESSION_COOKIE_NAME = "tf_session_token";
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error("SESSION_SECRET must be configured with at least 32 characters");
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export interface UserSession {
   userId: string;
@@ -15,22 +21,37 @@ export interface UserSession {
 }
 
 export async function createSessionToken(payload: UserSession): Promise<string> {
+  if (!payload.userId || !payload.email || !payload.workspaceId) {
+    throw new Error("Cannot create a session without a verified user and workspace");
+  }
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("30d")
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifySessionToken(token: string): Promise<UserSession | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret(), {
+      algorithms: ["HS256"],
+    });
+    if (
+      typeof payload.userId !== "string" ||
+      typeof payload.email !== "string" ||
+      typeof payload.workspaceId !== "string" ||
+      !payload.userId ||
+      !payload.email ||
+      !payload.workspaceId
+    ) {
+      return null;
+    }
     return {
-      userId: payload.userId as string,
-      email: payload.email as string,
-      fullName: payload.fullName as string,
-      avatarUrl: (payload.avatarUrl as string) || null,
-      workspaceId: payload.workspaceId as string,
+      userId: payload.userId,
+      email: payload.email,
+      fullName: typeof payload.fullName === "string" ? payload.fullName : "Creator",
+      avatarUrl: typeof payload.avatarUrl === "string" ? payload.avatarUrl : null,
+      workspaceId: payload.workspaceId,
     };
   } catch {
     return null;
@@ -40,39 +61,26 @@ export async function verifySessionToken(token: string): Promise<UserSession | n
 export async function getSession(): Promise<UserSession | null> {
   try {
     const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-    if (!token) {
-      // Graceful backward-compatibility check for legacy email cookie during upgrade
-      const legacyEmail = cookieStore.get("tf_user_email")?.value;
-      if (legacyEmail) {
-        return {
-          userId: "legacy",
-          email: legacyEmail,
-          fullName: "Creator",
-          avatarUrl: null,
-          workspaceId: "default",
-        };
-      }
-      return null;
-    }
+    const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+    if (!token) return null;
     return verifySessionToken(token);
   } catch {
     return null;
   }
 }
 
-export function setSessionCookie(response: any, token: string): void {
+export function setSessionCookie(response: NextResponse, token: string): void {
   response.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
+    maxAge: SESSION_MAX_AGE_SECONDS,
   });
 }
 
-export function clearSessionCookie(response: any): void {
+export function clearSessionCookie(response: NextResponse): void {
   response.cookies.delete(SESSION_COOKIE_NAME);
+  // Clear old compatibility identity cookie so it cannot be reused by older code.
   response.cookies.delete("tf_user_email");
 }

@@ -139,22 +139,6 @@ function LoginForm() {
                 <span>Encrypted Google OAuth2 session</span>
               </div>
 
-              <div className="relative flex py-1 items-center">
-                <div className="flex-grow border-t border-zinc-200"></div>
-                <span className="flex-shrink mx-2 text-[10px] uppercase font-semibold text-zinc-400">or customer account</span>
-                <div className="flex-grow border-t border-zinc-200"></div>
-              </div>
-
-              <a
-                href="/api/auth/customer-login?email=himalayanpine8@gmail.com&name=Himalayan%20Pine"
-                className="w-full py-2.5 px-3.5 rounded-xl border border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100 text-zinc-800 font-medium text-xs flex items-center justify-between transition-all"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <span>Demo: himalayanpine8@gmail.com</span>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
-              </a>
             </div>
 
             {/* Feature bullets */}
@@ -164,7 +148,7 @@ function LoginForm() {
               </span>
               <div className="flex items-center gap-2 text-xs text-zinc-700">
                 <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                <span>Sub-2s automated replies</span>
+                <span>Rule-based comment reply automation</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-zinc-700">
                 <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />

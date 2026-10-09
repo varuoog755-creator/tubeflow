@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value;
+    const email = session?.email;
 
     if (!email) {
       return NextResponse.json({
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
           name: `${profile.full_name}'s Workspace`,
           slug,
           owner_id: profile.id,
-          plan: "growth",
+          plan: "free",
           plan_status: "active",
         })
         .select("*")
@@ -86,47 +86,17 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Get Channels owned by user
-    let { data: channels } = await supabaseAdmin
+    const { data: channels } = await supabaseAdmin
       .from("youtube_channels")
       .select("*")
       .eq("user_id", profile.id)
       .order("created_at", { ascending: false });
 
-    // Auto-create sample channel for customer demonstration if none exists yet
-    if (!channels || channels.length === 0) {
-      const isHimalayan = email.includes("himalayanpine");
-      const defaultTitle = isHimalayan ? "Himalayan Pine Studio" : `${profile.full_name}'s Channel`;
-      const defaultCustomUrl = isHimalayan ? "@himalayanpine" : `@${email.split("@")[0]}`;
-      
-      const { data: newCh } = await supabaseAdmin
-        .from("youtube_channels")
-        .insert({
-          user_id: profile.id,
-          workspace_id: workspace?.id || null,
-          channel_id: `UC_${profile.id.substring(0, 12)}`,
-          channel_title: defaultTitle,
-          custom_url: defaultCustomUrl,
-          thumbnail_url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=150&auto=format&fit=crop&q=80",
-          subscriber_count: isHimalayan ? 24800 : 12400,
-          video_count: 52,
-          view_count: isHimalayan ? 489200 : 253000,
-          access_token: "demo",
-          refresh_token: "demo",
-          is_active: true,
-        })
-        .select("*")
-        .maybeSingle();
-
-      if (newCh) {
-        channels = [newCh];
-      }
-    }
-
     const activeChannel = channels?.[0] || null;
     const channelIds = (channels || []).map((c) => c.id);
 
     // 4. Get Rules (scoped to workspace or user's channels)
-    let rules: any[] = [];
+    let rules: Record<string, unknown>[] = [];
     if (workspace?.id || channelIds.length > 0) {
       let rulesQuery = supabaseAdmin
         .from("trigger_rules")
@@ -146,7 +116,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 5. Get Processed Comments Logs (scoped to user's channels)
-    let logs: any[] = [];
+    let logs: Record<string, unknown>[] = [];
     let commentsMonitored = 0;
     let commentsMatched = 0;
     let repliesSent = 0;
