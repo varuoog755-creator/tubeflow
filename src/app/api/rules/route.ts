@@ -188,6 +188,14 @@ export async function POST(request: NextRequest) {
         .eq("id", ruleId)
         .maybeSingle();
 
+      if (
+        original &&
+        original.workspace_id !== auth.workspace?.id &&
+        !auth.channelIds.includes(original.channel_id)
+      ) {
+        return NextResponse.json({ error: "Original rule not found" }, { status: 404 });
+      }
+
       if (!original) {
         return NextResponse.json({ error: "Original rule not found" }, { status: 404 });
       }
@@ -270,6 +278,9 @@ export async function POST(request: NextRequest) {
       : [];
 
     // Selected channel or fallback to user's first channel
+    if (channelId && !auth.channelIds.includes(channelId)) {
+      return NextResponse.json({ error: "Channel not found for this workspace" }, { status: 404 });
+    }
     const targetChannelId = channelId || auth.channels[0]?.id || null;
 
     const insertPayload: Record<string, unknown> = {
@@ -418,6 +429,7 @@ export async function PUT(request: NextRequest) {
       .from("trigger_rules")
       .update(updatePayload)
       .eq("id", id)
+      .or(auth.workspace?.id ? `workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})` : `channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`)
       .select("*")
       .single();
 
@@ -427,6 +439,7 @@ export async function PUT(request: NextRequest) {
         .from("trigger_rules")
         .update(updatePayload)
         .eq("id", id)
+        .or(auth.workspace?.id ? `workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})` : `channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`)
         .select("*")
         .single();
       updated = retry.data;
@@ -439,6 +452,7 @@ export async function PUT(request: NextRequest) {
         .from("trigger_rules")
         .update(updatePayload)
         .eq("id", id)
+        .or(auth.workspace?.id ? `workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})` : `channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`)
         .select("*")
         .single();
       updated = retry.data;
@@ -474,6 +488,7 @@ export async function PATCH(request: NextRequest) {
       .from("trigger_rules")
       .update({ is_active, updated_at: new Date().toISOString() })
       .eq("id", id)
+      .or(auth.workspace?.id ? `workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})` : `channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`)
       .select("*")
       .single();
 
@@ -502,7 +517,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Rule ID required" }, { status: 400 });
     }
 
-    await supabaseAdmin.from("trigger_rules").delete().eq("id", id);
+    await supabaseAdmin.from("trigger_rules").delete().eq("id", id)
+      .or(auth.workspace?.id ? `workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})` : `channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`);
     return NextResponse.json({ success: true, message: "Rule deleted successfully" });
   } catch (error: unknown) {
     console.error("Delete rule error:", error);
