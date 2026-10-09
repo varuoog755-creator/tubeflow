@@ -121,6 +121,7 @@ interface TrackedLink {
   slug: string;
   destination_url: string;
   campaign_name: string;
+  rule_id?: string | null;
   clicks_count: number;
   conversions_count: number;
   revenue_generated: string;
@@ -144,7 +145,6 @@ type InboxFilterView =
   | "failed"
   | "spam";
 
-// Realistic sample demo comments when channels have 0 initial comments
 const DEMO_SAMPLE_COMMENTS: ProcessedComment[] = [
   {
     id: "demo-1",
@@ -349,27 +349,23 @@ export default function DashboardPage() {
 
       // If user has database comments, use them. Otherwise load realistic demo comments so inbox is immediately operational
       const loadedLogs: ProcessedComment[] = data.logs || [];
-      if (loadedLogs.length > 0) {
-        setComments(loadedLogs);
-      } else {
-        setComments(DEMO_SAMPLE_COMMENTS);
-      }
+      setComments(loadedLogs);
 
       // Calculate intent detected from comments
-      const intentCount = (loadedLogs.length > 0 ? loadedLogs : DEMO_SAMPLE_COMMENTS).filter(
+      const intentCount = loadedLogs.filter(
         (c) => c.detected_intent && c.detected_intent !== "OTHER" && c.detected_intent !== "SPAM"
       ).length;
 
       setStats({
-        commentsMonitored: data.stats?.commentsMonitored || loadedLogs.length || DEMO_SAMPLE_COMMENTS.length,
+        commentsMonitored: data.stats?.commentsMonitored ?? loadedLogs.length,
         intentDetected: data.stats?.commentsMatched || intentCount,
-        repliesDelivered: data.stats?.repliesSent || 1,
-        failedReplies: data.stats?.failedReplies || 1,
-        spamBlocked: data.stats?.spamBlocked || 1,
-        replySuccessRate: data.stats?.replySuccessRate ?? 98,
-        clicks: data.stats?.clicks || 142,
-        conversions: data.stats?.conversions || 18,
-        revenue: data.stats?.revenue || 8450,
+        repliesDelivered: data.stats?.repliesSent ?? 0,
+        failedReplies: data.stats?.failedReplies ?? 0,
+        spamBlocked: data.stats?.spamBlocked ?? 0,
+        replySuccessRate: data.stats?.replySuccessRate ?? 0,
+        clicks: data.stats?.clicks ?? 0,
+        conversions: data.stats?.conversions ?? 0,
+        revenue: data.stats?.revenue ?? 0,
       });
 
       // Load Tracked Links
@@ -1959,8 +1955,9 @@ export default function DashboardPage() {
                       (c) => c.matched_rule_id === rule.id || c.reply_text?.includes(rule.name)
                     );
                     const repliesCount = matchedComments.length;
-                    const clicksCount = Math.floor(repliesCount * 1.8);
-                    const ctrRate = repliesCount > 0 ? Math.round((clicksCount / repliesCount) * 45) : 62;
+                    const ruleLinks = trackedLinks.filter((link) => link.rule_id === rule.id);
+                    const clicksCount = ruleLinks.reduce((total, link) => total + (link.clicks_count || 0), 0);
+                    const ctrRate = repliesCount > 0 ? Math.round((clicksCount / repliesCount) * 100) : 0;
 
                     return (
                       <div
