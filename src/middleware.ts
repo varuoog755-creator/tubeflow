@@ -1,35 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.SESSION_SECRET || "tubeflow_super_secret_session_jwt_key_2026_xyz!"
-);
+function getJwtSecret(): Uint8Array | null {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) return null;
+  return new TextEncoder().encode(secret);
+}
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const secret = getJwtSecret();
+  const token = request.cookies.get("tf_session_token")?.value;
+  let authenticated = false;
 
-  // Protect /dashboard and all /dashboard/* subpaths
-  if (pathname.startsWith("/dashboard")) {
-    const sessionToken = request.cookies.get("tf_session_token")?.value;
-    const legacyEmail = request.cookies.get("tf_user_email")?.value;
-
-    let isAuthenticated = false;
-
-    if (sessionToken) {
-      try {
-        await jwtVerify(sessionToken, JWT_SECRET);
-        isAuthenticated = true;
-      } catch {
-        isAuthenticated = false;
-      }
-    } else if (legacyEmail) {
-      isAuthenticated = true;
+  if (secret && token) {
+    try {
+      const { payload } = await jwtVerify(token, secret, { algorithms: ["HS256"] });
+      authenticated =
+        typeof payload.userId === "string" &&
+        payload.userId.length > 0 &&
+        typeof payload.email === "string" &&
+        payload.email.length > 0 &&
+        typeof payload.workspaceId === "string" &&
+        payload.workspaceId.length > 0;
+    } catch {
+      authenticated = false;
     }
+  }
 
-    if (!isAuthenticated) {
-      const loginUrl = new URL("/login", request.url);
-      return NextResponse.redirect(loginUrl);
-    }
+  if (!authenticated) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", request.nextUrl.pathname);
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.delete("tf_session_token");
+    response.cookies.delete("tf_user_email");
+    return response;
   }
 
   return NextResponse.next();
