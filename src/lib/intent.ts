@@ -18,7 +18,7 @@ export interface IntentResult {
 
 const INTENT_PATTERNS: Record<IntentCategory, RegExp[]> = {
   LINK_REQUEST: [
-    /\b(link|kaha se|kaha milega|where to buy|send link|drop link|link please|share link|pdf link|resource link|download link|source code)\b/i,
+    /\b(link|kaha se|kaha milega|where to buy|send link|drop link|link please|share link|pdf link|resource link|download link|source code|pdf|cheat sheet|freebie|template|download)\b/i,
   ],
   PRICE_REQUEST: [
     /\b(price|cost|kitne ka hai|rate|how much|pricing|fees|discount|coupon)\b/i,

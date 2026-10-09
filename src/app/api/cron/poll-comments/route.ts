@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { getYoutubeClient } from "@/lib/youtube";
+import { getValidYoutubeClient, isYoutubeQuotaError, isYoutubeTokenRevoked } from "@/lib/youtube";
 import { detectIntent } from "@/lib/intent";
-import { renderReply } from "@/lib/reply-engine";
+import { renderReply, evaluateRuleMatch } from "@/lib/reply-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -27,11 +27,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "No active channels to process", processedCount: 0 });
     }
 
-    let processedCount = 0;
+    let confirmedRepliesCount = 0;
+    let commentsInspectedCount = 0;
     const executionResults = [];
 
     for (const channel of channels) {
-      const activeRules = channel.trigger_rules?.filter((r: { is_active: boolean }) => r.is_active) || [];
+      const activeRules = (channel.trigger_rules || []).filter(
+        (r: { is_active: boolean }) => r.is_active
+      );
+
       if (activeRules.length === 0) continue;
 
       if (!channel.access_token || channel.access_token === "demo") {
@@ -40,13 +44,19 @@ export async function GET(request: NextRequest) {
       }
 
       try {
-        const youtube = getYoutubeClient(channel.access_token, channel.refresh_token);
+        // Authenticate with automatic token refresh if expired
+        const youtube = await getValidYoutubeClient({
+          id: channel.id,
+          access_token: channel.access_token,
+          refresh_token: channel.refresh_token,
+          token_expiry: channel.token_expiry,
+        });
 
-        // Fetch recent comments from the channel
+        // Fetch latest comment threads from the channel
         const commentsRes = await youtube.commentThreads.list({
           part: ["snippet"],
           allThreadsRelatedToChannelId: channel.channel_id,
-          maxResults: 20,
+          maxResults: 25,
           order: "time",
         });
 
@@ -56,6 +66,7 @@ export async function GET(request: NextRequest) {
           const topComment = thread.snippet?.topLevelComment;
           if (!topComment) continue;
 
+          commentsInspectedCount++;
           const commentId = topComment.id!;
           const commentText = (topComment.snippet?.textDisplay || "").trim();
           const authorName = topComment.snippet?.authorDisplayName || "Viewer";
@@ -67,7 +78,7 @@ export async function GET(request: NextRequest) {
             continue;
           }
 
-          // Idempotency: check if comment already processed
+          // Idempotency: skip comments already processed
           const { data: existing } = await supabaseAdmin
             .from("processed_comments")
             .select("id")
@@ -77,10 +88,10 @@ export async function GET(request: NextRequest) {
 
           if (existing) continue;
 
-          // AI Intent Detection
+          // AI Intent & Spam Detection
           const intentResult = detectIntent(commentText);
 
-          // Spam filtering
+          // Dedicated spam filtering
           if (intentResult.category === "SPAM") {
             await supabaseAdmin.from("processed_comments").insert({
               channel_id: channel.id,
@@ -89,37 +100,33 @@ export async function GET(request: NextRequest) {
               author_name: authorName,
               comment_text: commentText,
               detected_intent: "SPAM",
+              ai_confidence: intentResult.confidence,
               reply_status: "spam",
               processed_at: new Date().toISOString(),
             });
             continue;
           }
 
+          // Deterministic rule evaluation
           let matchedRule = null;
+          let matchEvaluation = null;
 
           for (const rule of activeRules) {
-            const normalizedComment = commentText.toUpperCase();
-
-            // Check negative keywords
-            if (rule.negative_keywords && rule.negative_keywords.length > 0) {
-              const hasNegative = rule.negative_keywords.some((neg: string) =>
-                normalizedComment.includes(neg.toUpperCase())
-              );
-              if (hasNegative) continue;
-            }
-
-            // Keyword match
-            const hasKeyword = rule.keywords.some((kw: string) =>
-              normalizedComment.includes(kw.toUpperCase())
+            const evalResult = evaluateRuleMatch(
+              {
+                keywords: rule.keywords || [],
+                negativeKeywords: rule.negative_keywords || [],
+                matchType: rule.match_type || "contains",
+                keywordMatchOperator: rule.keyword_match_operator || "ANY",
+                intentCategory: rule.intent_category || "ALL",
+              },
+              commentText,
+              intentResult.category
             );
 
-            // Intent match
-            const matchesIntent =
-              rule.intent_category === "ALL" ||
-              rule.intent_category === intentResult.category;
-
-            if (hasKeyword && matchesIntent) {
+            if (evalResult.matched) {
               matchedRule = rule;
+              matchEvaluation = evalResult;
               break;
             }
           }
@@ -137,7 +144,10 @@ export async function GET(request: NextRequest) {
             });
 
             // Post reply via YouTube Data API
-            let youtubeReplyId = null;
+            let youtubeReplyId: string | null = null;
+            let replyStatus: "replied" | "error" = "replied";
+            let replyErrorMessage: string | null = null;
+
             try {
               const insertRes = await youtube.comments.insert({
                 part: ["snippet"],
@@ -149,8 +159,33 @@ export async function GET(request: NextRequest) {
                 },
               });
               youtubeReplyId = insertRes.data.id || null;
-            } catch (replyError) {
-              console.warn("YouTube API reply execution notice:", replyError);
+              if (youtubeReplyId) {
+                confirmedRepliesCount++;
+              } else {
+                replyStatus = "error";
+                replyErrorMessage = "YouTube API returned empty comment ID";
+              }
+            } catch (replyError: unknown) {
+              replyStatus = "error";
+              replyErrorMessage =
+                replyError instanceof Error ? replyError.message : String(replyError);
+              console.warn(
+                `YouTube API comment insert failure on channel ${channel.channel_title}:`,
+                replyErrorMessage
+              );
+
+              if (isYoutubeQuotaError(replyError)) {
+                // Log notification about quota exhaustion
+                await supabaseAdmin.from("notifications").insert({
+                  user_id: channel.user_id,
+                  workspace_id: channel.workspace_id,
+                  type: "quota_warning",
+                  title: "YouTube API Quota Reached",
+                  message:
+                    "Daily YouTube API quota limit reached. Automated replies will resume on quota reset.",
+                });
+                break; // Stop further requests for this channel in this run
+              }
             }
 
             // Record execution in processed_comments
@@ -163,26 +198,36 @@ export async function GET(request: NextRequest) {
               detected_intent: intentResult.category,
               ai_confidence: intentResult.confidence,
               matched_rule_id: matchedRule.id,
-              reply_status: "replied",
+              reply_status: replyStatus,
               reply_text: replyText,
               youtube_reply_id: youtubeReplyId,
+              error_message: replyErrorMessage,
               processed_at: new Date().toISOString(),
             });
-
-            processedCount++;
           }
         }
 
         executionResults.push({ channel: channel.channel_title, status: "success" });
       } catch (channelErr: unknown) {
         console.error(`Error processing channel ${channel.channel_title}:`, channelErr);
-        executionResults.push({ channel: channel.channel_title, status: "error" });
+        if (isYoutubeTokenRevoked(channelErr)) {
+          await supabaseAdmin
+            .from("youtube_channels")
+            .update({ is_active: false })
+            .eq("id", channel.id);
+        }
+        executionResults.push({
+          channel: channel.channel_title,
+          status: "error",
+          error: channelErr instanceof Error ? channelErr.message : "Unknown error",
+        });
       }
     }
 
     return NextResponse.json({
       success: true,
-      processedCount,
+      confirmedRepliesCount,
+      commentsInspectedCount,
       results: executionResults,
       timestamp: new Date().toISOString(),
     });

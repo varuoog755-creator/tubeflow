@@ -28,6 +28,8 @@ import {
   Filter,
   Check,
   AlertCircle,
+  Play,
+  AlertTriangle,
 } from "lucide-react";
 
 interface Channel {
@@ -45,15 +47,18 @@ interface Channel {
 interface TriggerRule {
   id: string;
   name: string;
+  channel_id?: string | null;
   keywords: string[];
   negative_keywords: string[];
   match_type: string;
+  keyword_match_operator?: string;
   target_mode: string;
   reply_templates: string[];
   cta_url: string | null;
   intent_category: string;
   delay_seconds: number;
   is_active: boolean;
+  youtube_channels?: { channel_title?: string };
 }
 
 interface ProcessedLog {
@@ -64,8 +69,11 @@ interface ProcessedLog {
   video_id: string;
   reply_status: string;
   detected_intent: string | null;
+  error_message?: string | null;
+  youtube_reply_id?: string | null;
   processed_at: string | null;
   created_at: string;
+  trigger_rules?: { name?: string };
 }
 
 interface TrackedLinkItem {
@@ -117,23 +125,39 @@ export default function DashboardPage() {
     commentsMonitored: 0,
     commentsMatched: 0,
     repliesSent: 0,
+    failedReplies: 0,
+    spamBlocked: 0,
     replySuccessRate: 100,
     clicks: 0,
     conversions: 0,
     revenue: 0,
   });
 
-  // Rule Creation Modal State
+  // Rule Modal State
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
+  const [ruleChannelId, setRuleChannelId] = useState("");
   const [ruleName, setRuleName] = useState("");
   const [ruleKeywords, setRuleKeywords] = useState("LINK, PRICE, GUIDE");
   const [ruleNegative, setRuleNegative] = useState("fake, scam");
   const [ruleMatchType, setRuleMatchType] = useState("contains");
+  const [ruleOperator, setRuleOperator] = useState<"ANY" | "ALL">("ANY");
   const [ruleIntent, setRuleIntent] = useState("ALL");
   const [ruleReply, setRuleReply] = useState("Hey {{first_name}}! {Here is the official link|Grab it right here}: {{cta_url}}");
   const [ruleCta, setRuleCta] = useState("https://tubeflow-nine.vercel.app");
   const [ruleDelay, setRuleDelay] = useState("0");
+  const [ruleError, setRuleError] = useState<string | null>(null);
   const [isSubmittingRule, setIsSubmittingRule] = useState(false);
+
+  // Dry-Run Simulator State
+  const [isDryRunModalOpen, setIsDryRunModalOpen] = useState(false);
+  const [dryRunComment, setDryRunComment] = useState("Bro where can I buy this setup? Drop LINK pls!!");
+  const [dryRunAuthor, setDryRunAuthor] = useState("Vikram");
+  const [dryRunResult, setDryRunResult] = useState<any>(null);
+  const [isEvaluatingDryRun, setIsEvaluatingDryRun] = useState(false);
+
+  // Reply Logs Filter
+  const [logFilterStatus, setLogFilterStatus] = useState<"ALL" | "replied" | "error" | "spam">("ALL");
 
   // Link Modal State
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -186,35 +210,131 @@ export default function DashboardPage() {
     fetchAllData();
   }, []);
 
-  const handleCreateRule = async (e: React.FormEvent) => {
+  const handleCreateOrUpdateRule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ruleName.trim()) return;
     setIsSubmittingRule(true);
+    setRuleError(null);
+    try {
+      const method = editingRuleId ? "PUT" : "POST";
+      const payload: Record<string, unknown> = {
+        name: ruleName.trim(),
+        keywords: ruleKeywords.split(",").map((s) => s.trim()).filter(Boolean),
+        negativeKeywords: ruleNegative.split(",").map((s) => s.trim()).filter(Boolean),
+        matchType: ruleMatchType,
+        keywordMatchOperator: ruleOperator,
+        intentCategory: ruleIntent,
+        replyTemplates: [ruleReply],
+        ctaUrl: ruleCta.trim() || null,
+        delaySeconds: parseInt(ruleDelay || "0", 10),
+        channelId: ruleChannelId || undefined,
+      };
+
+      if (editingRuleId) {
+        payload.id = editingRuleId;
+      }
+
+      const res = await fetch("/api/rules", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRuleError(data.error || "Failed to save rule");
+        return;
+      }
+
+      setIsRuleModalOpen(false);
+      setEditingRuleId(null);
+      setRuleName("");
+      setActionNotice(editingRuleId ? "Rule updated successfully" : "Rule created successfully");
+      fetchAllData();
+    } catch (err: unknown) {
+      setRuleError(err instanceof Error ? err.message : "Failed to save rule");
+    } finally {
+      setIsSubmittingRule(false);
+    }
+  };
+
+  const handleEditRule = (r: TriggerRule) => {
+    setEditingRuleId(r.id);
+    setRuleName(r.name);
+    setRuleKeywords(r.keywords.join(", "));
+    setRuleNegative(r.negative_keywords?.join(", ") || "");
+    setRuleMatchType(r.match_type || "contains");
+    setRuleOperator((r.keyword_match_operator as "ANY" | "ALL") || "ANY");
+    setRuleIntent(r.intent_category || "ALL");
+    setRuleReply(r.reply_templates[0] || "");
+    setRuleCta(r.cta_url || "");
+    setRuleDelay(String(r.delay_seconds || 0));
+    setRuleChannelId(r.channel_id || "");
+    setRuleError(null);
+    setIsRuleModalOpen(true);
+  };
+
+  const handleDuplicateRule = async (ruleId: string) => {
+    try {
+      const res = await fetch("/api/rules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "duplicate", ruleId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setActionNotice(`Rule duplicated as "${data.rule.name}"`);
+        fetchAllData();
+      } else {
+        setActionNotice(`Duplicate failed: ${data.error}`);
+      }
+    } catch {
+      setActionNotice("Duplicate request failed");
+    }
+  };
+
+  const handleOpenDryRun = (r?: TriggerRule) => {
+    if (r) {
+      setRuleName(r.name);
+      setRuleKeywords(r.keywords.join(", "));
+      setRuleNegative(r.negative_keywords?.join(", ") || "");
+      setRuleMatchType(r.match_type || "contains");
+      setRuleOperator((r.keyword_match_operator as "ANY" | "ALL") || "ANY");
+      setRuleIntent(r.intent_category || "ALL");
+      setRuleReply(r.reply_templates[0] || "");
+      setRuleCta(r.cta_url || "");
+    }
+    setDryRunComment("Bro where can I buy this setup? Drop LINK pls!!");
+    setDryRunAuthor("Vikram");
+    setDryRunResult(null);
+    setIsDryRunModalOpen(true);
+  };
+
+  const handleExecuteDryRun = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsEvaluatingDryRun(true);
     try {
       const res = await fetch("/api/rules", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: ruleName,
-          keywords: ruleKeywords.split(",").map((s) => s.trim()),
-          negativeKeywords: ruleNegative.split(",").map((s) => s.trim()),
+          action: "test_dry_run",
+          testCommentText: dryRunComment,
+          testAuthorName: dryRunAuthor,
+          keywords: ruleKeywords.split(",").map((k) => k.trim()),
+          negativeKeywords: ruleNegative.split(",").map((k) => k.trim()),
           matchType: ruleMatchType,
+          keywordMatchOperator: ruleOperator,
           intentCategory: ruleIntent,
-          replyTemplates: [ruleReply],
+          replyTemplate: ruleReply,
           ctaUrl: ruleCta,
-          delaySeconds: parseInt(ruleDelay, 10),
         }),
       });
-      if (res.ok) {
-        setIsRuleModalOpen(false);
-        setRuleName("");
-        setActionNotice("Rule created successfully");
-        fetchAllData();
-      }
+      const data = await res.json();
+      setDryRunResult(data);
     } catch (err) {
-      console.error("Create rule error:", err);
+      console.error("Dry run execution error:", err);
     } finally {
-      setIsSubmittingRule(false);
+      setIsEvaluatingDryRun(false);
     }
   };
 
@@ -307,7 +427,9 @@ export default function DashboardPage() {
     try {
       const res = await fetch("/api/cron/poll-comments?manual=true");
       const data = await res.json();
-      setActionNotice(`Poll finished. Processed ${data.processedCount || 0} new comment(s).`);
+      setActionNotice(
+        `Poll finished. Confirmed ${data.confirmedRepliesCount || 0} reply(s) across ${data.commentsInspectedCount || 0} comment(s).`
+      );
       fetchAllData();
     } catch {
       setActionNotice("Poll execution failed.");
@@ -453,26 +575,40 @@ export default function DashboardPage() {
         {activeTab === "overview" && (
           <div className="space-y-8">
             {/* Real Metrics Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
-                <span className="text-xs font-semibold text-slate-400 block mb-2">Connected Channels</span>
-                <span className="text-3xl font-black text-white">{stats.connectedChannels}</span>
-                <span className="text-[11px] text-slate-500 block mt-1">Real synced channels</span>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+                <span className="text-[11px] font-semibold text-slate-400 block mb-1">Channels</span>
+                <span className="text-2xl font-black text-white">{stats.connectedChannels}</span>
+                <span className="text-[10px] text-slate-500 block mt-1">Real synced</span>
               </div>
-              <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
-                <span className="text-xs font-semibold text-slate-400 block mb-2">Comments Monitored</span>
-                <span className="text-3xl font-black text-white">{stats.commentsMonitored}</span>
-                <span className="text-[11px] text-slate-500 block mt-1">Evaluated across Shorts</span>
+              <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+                <span className="text-[11px] font-semibold text-slate-400 block mb-1">Monitored</span>
+                <span className="text-2xl font-black text-white">{stats.commentsMonitored}</span>
+                <span className="text-[10px] text-slate-500 block mt-1">Total comments</span>
               </div>
-              <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
-                <span className="text-xs font-semibold text-slate-400 block mb-2">Replies Sent</span>
-                <span className="text-3xl font-black text-emerald-400">{stats.repliesSent}</span>
-                <span className="text-[11px] text-slate-500 block mt-1">Automated with CTA</span>
+              <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+                <span className="text-[11px] font-semibold text-emerald-400 block mb-1">Confirmed Replies</span>
+                <span className="text-2xl font-black text-emerald-400">{stats.repliesSent}</span>
+                <span className="text-[10px] text-slate-500 block mt-1">Verified on YouTube</span>
               </div>
-              <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
-                <span className="text-xs font-semibold text-slate-400 block mb-2">Tracked CTA Clicks</span>
-                <span className="text-3xl font-black text-cyan-400">{stats.clicks}</span>
-                <span className="text-[11px] text-slate-500 block mt-1">From auto-reply links</span>
+              <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+                <span className={`text-[11px] font-semibold block mb-1 ${stats.failedReplies > 0 ? "text-red-400" : "text-slate-400"}`}>
+                  Failed Attempts
+                </span>
+                <span className={`text-2xl font-black ${stats.failedReplies > 0 ? "text-red-400" : "text-slate-400"}`}>
+                  {stats.failedReplies}
+                </span>
+                <span className="text-[10px] text-slate-500 block mt-1">API / Quota errors</span>
+              </div>
+              <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+                <span className="text-[11px] font-semibold text-amber-400 block mb-1">Spam Shielded</span>
+                <span className="text-2xl font-black text-amber-400">{stats.spamBlocked}</span>
+                <span className="text-[10px] text-slate-500 block mt-1">Bots filtered out</span>
+              </div>
+              <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+                <span className="text-[11px] font-semibold text-cyan-400 block mb-1">Tracked Clicks</span>
+                <span className="text-2xl font-black text-cyan-400">{stats.clicks}</span>
+                <span className="text-[10px] text-slate-500 block mt-1">From shortlinks</span>
               </div>
             </div>
 
@@ -692,13 +828,36 @@ export default function DashboardPage() {
                 <h2 className="text-xl font-bold text-white">Trigger Rule Automations</h2>
                 <p className="text-xs text-slate-400">Configure keywords, negative filters, intent categories, and reply templates</p>
               </div>
-              <button
-                onClick={() => setIsRuleModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold"
-              >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span>Create Rule</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleOpenDryRun()}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-cyan-400 hover:text-cyan-300 text-xs font-bold transition-all shadow-sm"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  <span>Dry-Run Simulator</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingRuleId(null);
+                    setRuleName("");
+                    setRuleKeywords("LINK, PRICE, GUIDE");
+                    setRuleNegative("fake, scam");
+                    setRuleMatchType("contains");
+                    setRuleOperator("ANY");
+                    setRuleIntent("ALL");
+                    setRuleReply("Hey {{first_name}}! {Here is the official link|Grab it right here}: {{cta_url}}");
+                    setRuleCta("https://tubeflow-nine.vercel.app");
+                    setRuleDelay("0");
+                    setRuleChannelId("");
+                    setRuleError(null);
+                    setIsRuleModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-all shadow-lg shadow-red-600/20"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Create Rule</span>
+                </button>
+              </div>
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
@@ -706,10 +865,10 @@ export default function DashboardPage() {
                 <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800">
                   <tr>
                     <th className="p-4 font-semibold">Rule Name</th>
+                    <th className="p-4 font-semibold">Match Type</th>
                     <th className="p-4 font-semibold">Keywords</th>
-                    <th className="p-4 font-semibold">Negative Keywords</th>
+                    <th className="p-4 font-semibold">Negative Filter</th>
                     <th className="p-4 font-semibold">Intent</th>
-                    <th className="p-4 font-semibold">Reply Template Preview</th>
                     <th className="p-4 font-semibold">Status</th>
                     <th className="p-4 font-semibold text-right">Actions</th>
                   </tr>
@@ -724,7 +883,17 @@ export default function DashboardPage() {
                   ) : (
                     rules.map((r) => (
                       <tr key={r.id} className="hover:bg-slate-800/30">
-                        <td className="p-4 font-bold text-white">{r.name}</td>
+                        <td className="p-4">
+                          <span className="font-bold text-white block">{r.name}</span>
+                          {r.youtube_channels?.channel_title && (
+                            <span className="text-[10px] text-slate-500 block">{r.youtube_channels.channel_title}</span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px] uppercase block w-fit">
+                            {r.match_type} ({r.keyword_match_operator || "ANY"})
+                          </span>
+                        </td>
                         <td className="p-4">
                           <div className="flex flex-wrap gap-1 max-w-xs">
                             {r.keywords.map((kw, i) => (
@@ -740,9 +909,6 @@ export default function DashboardPage() {
                           </span>
                         </td>
                         <td className="p-4 font-mono text-slate-300">{r.intent_category}</td>
-                        <td className="p-4 max-w-xs truncate text-slate-300" title={r.reply_templates[0]}>
-                          {r.reply_templates[0] || "Default template"}
-                        </td>
                         <td className="p-4">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             r.is_active ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-500"
@@ -750,16 +916,37 @@ export default function DashboardPage() {
                             {r.is_active ? "Active" : "Paused"}
                           </span>
                         </td>
-                        <td className="p-4 text-right space-x-2">
+                        <td className="p-4 text-right space-x-1.5">
+                          <button
+                            onClick={() => handleOpenDryRun(r)}
+                            title="Simulate comment against this rule"
+                            className="px-2 py-1 rounded bg-slate-800 hover:bg-cyan-950 text-cyan-400 border border-slate-700 hover:border-cyan-800 text-[10px] font-bold transition-all"
+                          >
+                            Test
+                          </button>
+                          <button
+                            onClick={() => handleEditRule(r)}
+                            title="Edit rule settings"
+                            className="px-2 py-1 rounded bg-slate-800 hover:bg-amber-950 text-amber-400 border border-slate-700 hover:border-amber-800 text-[10px] font-bold transition-all"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDuplicateRule(r.id)}
+                            title="Duplicate this rule"
+                            className="px-2 py-1 rounded bg-slate-800 hover:bg-indigo-950 text-indigo-400 border border-slate-700 hover:border-indigo-800 text-[10px] font-bold transition-all"
+                          >
+                            Copy
+                          </button>
                           <button
                             onClick={() => handleToggleRule(r.id, r.is_active)}
-                            className="text-slate-400 hover:text-white"
+                            className="text-slate-400 hover:text-white text-[10px]"
                           >
                             {r.is_active ? "Pause" : "Activate"}
                           </button>
                           <button
                             onClick={() => handleDeleteRule(r.id)}
-                            className="text-red-400 hover:text-red-300"
+                            className="text-red-400 hover:text-red-300 text-[10px]"
                           >
                             Delete
                           </button>
@@ -776,10 +963,30 @@ export default function DashboardPage() {
         {/* TAB 4: REPLY LOGS */}
         {activeTab === "logs" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-white">Real-Time Reply Logs</h2>
-                <p className="text-xs text-slate-400">Audit trail of all processed comments and automated responses</p>
+                <p className="text-xs text-slate-400">Audit trail of all processed comments, verified YouTube responses, and error traces</p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="text-xs text-slate-400 font-medium">Filter:</label>
+                <select
+                  value={logFilterStatus}
+                  onChange={(e) => setLogFilterStatus(e.target.value as "ALL" | "replied" | "error" | "spam")}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-red-500"
+                >
+                  <option value="ALL">All Statuses ({logs.length})</option>
+                  <option value="replied">Confirmed Replied ({logs.filter(l => l.reply_status === "replied").length})</option>
+                  <option value="error">Failed / Error ({logs.filter(l => l.reply_status === "error").length})</option>
+                  <option value="spam">Spam Shielded ({logs.filter(l => l.reply_status === "spam").length})</option>
+                </select>
+                <button
+                  onClick={fetchAllData}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 font-semibold"
+                >
+                  Refresh
+                </button>
               </div>
             </div>
 
@@ -790,38 +997,55 @@ export default function DashboardPage() {
                     <th className="p-4 font-semibold">Author</th>
                     <th className="p-4 font-semibold">Comment Text</th>
                     <th className="p-4 font-semibold">Intent Detected</th>
-                    <th className="p-4 font-semibold">Automated Reply Sent</th>
+                    <th className="p-4 font-semibold">Automated Reply / Result</th>
                     <th className="p-4 font-semibold">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {logs.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-slate-500">
-                        No reply logs recorded yet. Comments will appear here as they are processed.
-                      </td>
-                    </tr>
-                  ) : (
-                    logs.map((log) => (
+                  {(() => {
+                    const filteredLogs = logFilterStatus === "ALL" ? logs : logs.filter((l) => l.reply_status === logFilterStatus);
+                    if (filteredLogs.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={5} className="p-8 text-center text-slate-500">
+                            {logs.length === 0
+                              ? "No reply logs recorded yet. Comments will appear here as they are processed."
+                              : `No logs matching filter "${logFilterStatus}".`}
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return filteredLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-slate-800/30">
                         <td className="p-4 font-medium text-white">{log.author_name}</td>
                         <td className="p-4 max-w-xs text-slate-300">{log.comment_text}</td>
                         <td className="p-4 font-mono text-[11px] text-cyan-400">{log.detected_intent || "KEYWORD"}</td>
-                        <td className="p-4 max-w-sm text-slate-300 truncate" title={log.reply_text || ""}>
-                          {log.reply_text || "Skipped (no match or spam)"}
+                        <td className="p-4 max-w-sm text-slate-300">
+                          {log.reply_status === "error" ? (
+                            <div className="space-y-1">
+                              <span className="text-red-400 font-mono text-[11px] block">Error: {log.error_message || "Delivery failed"}</span>
+                              {log.reply_text && <span className="text-slate-500 text-[10px] block truncate">Attempted: {log.reply_text}</span>}
+                            </div>
+                          ) : (
+                            <span className="truncate block" title={log.reply_text || ""}>
+                              {log.reply_text || "Skipped (no match or spam)"}
+                            </span>
+                          )}
                         </td>
                         <td className="p-4">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                             log.reply_status === "replied"
-                              ? "bg-emerald-500/10 text-emerald-400"
-                              : "bg-slate-800 text-slate-400"
+                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                              : log.reply_status === "error"
+                              ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                              : "bg-slate-800 text-slate-400 border border-slate-700"
                           }`}>
-                            {log.reply_status}
+                            {log.reply_status === "replied" ? "Confirmed Replied" : log.reply_status}
                           </span>
                         </td>
                       </tr>
-                    ))
-                  )}
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
@@ -1133,18 +1357,34 @@ export default function DashboardPage() {
         )}
       </main>
 
-      {/* CREATE RULE MODAL */}
+      {/* CREATE / EDIT RULE MODAL */}
       {isRuleModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h3 className="font-bold text-white text-base">Create Trigger Rule</h3>
-              <button onClick={() => setIsRuleModalOpen(false)} className="text-slate-400 hover:text-white text-xs">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-white text-base">
+                {editingRuleId ? "Edit Trigger Rule" : "Create Trigger Rule"}
+              </h3>
+              <button
+                onClick={() => {
+                  setIsRuleModalOpen(false);
+                  setEditingRuleId(null);
+                  setRuleError(null);
+                }}
+                className="text-slate-400 hover:text-white text-xs"
+              >
                 ✕ Close
               </button>
             </div>
 
-            <form onSubmit={handleCreateRule} className="space-y-4 text-xs">
+            {ruleError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{ruleError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateOrUpdateRule} className="space-y-4 text-xs">
               <div>
                 <label className="text-slate-300 block mb-1 font-medium">Rule Name</label>
                 <input
@@ -1155,6 +1395,22 @@ export default function DashboardPage() {
                   onChange={(e) => setRuleName(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
                 />
+              </div>
+
+              <div>
+                <label className="text-slate-300 block mb-1 font-medium">Target YouTube Channel</label>
+                <select
+                  value={ruleChannelId}
+                  onChange={(e) => setRuleChannelId(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
+                >
+                  <option value="">All Connected Channels</option>
+                  {channels.map((ch) => (
+                    <option key={ch.id} value={ch.id}>
+                      {ch.channel_title} ({ch.custom_url || ch.channel_id || "Channel"})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -1170,7 +1426,7 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="text-slate-300 block mb-1 font-medium">Negative Keywords (will skip if present)</label>
+                <label className="text-slate-300 block mb-1 font-medium">Negative Keywords (skips comment if present)</label>
                 <input
                   type="text"
                   placeholder="fake, scam, scammer"
@@ -1180,7 +1436,7 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="text-slate-300 block mb-1 font-medium">Intent Filter</label>
                   <select
@@ -1203,20 +1459,44 @@ export default function DashboardPage() {
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
                   >
                     <option value="contains">Contains</option>
-                    <option value="exact">Exact Match</option>
+                    <option value="exact">Exact Phrase</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-slate-300 block mb-1 font-medium">Operator</label>
+                  <select
+                    value={ruleOperator}
+                    onChange={(e) => setRuleOperator(e.target.value as "ANY" | "ALL")}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
+                  >
+                    <option value="ANY">Match ANY (OR)</option>
+                    <option value="ALL">Match ALL (AND)</option>
                   </select>
                 </div>
               </div>
 
-              <div>
-                <label className="text-slate-300 block mb-1 font-medium">CTA Destination URL</label>
-                <input
-                  type="url"
-                  placeholder="https://yourstore.com/item"
-                  value={ruleCta}
-                  onChange={(e) => setRuleCta(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="text-slate-300 block mb-1 font-medium">CTA Destination URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://yourstore.com/item"
+                    value={ruleCta}
+                    onChange={(e) => setRuleCta(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-300 block mb-1 font-medium">Delay (sec)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="3600"
+                    value={ruleDelay}
+                    onChange={(e) => setRuleDelay(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
+                  />
+                </div>
               </div>
 
               <div>
@@ -1234,7 +1514,11 @@ export default function DashboardPage() {
               <div className="pt-2 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsRuleModalOpen(false)}
+                  onClick={() => {
+                    setIsRuleModalOpen(false);
+                    setEditingRuleId(null);
+                    setRuleError(null);
+                  }}
                   className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
                 >
                   Cancel
@@ -1244,10 +1528,131 @@ export default function DashboardPage() {
                   disabled={isSubmittingRule}
                   className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold"
                 >
-                  {isSubmittingRule ? "Saving..." : "Save Rule"}
+                  {isSubmittingRule ? "Saving..." : editingRuleId ? "Update Rule" : "Create Rule"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DRY RUN SIMULATOR MODAL */}
+      {isDryRunModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Play className="w-4 h-4 text-emerald-400" />
+                <h3 className="font-bold text-white text-base">Test Rule Simulator (Dry Run)</h3>
+              </div>
+              <button
+                onClick={() => setIsDryRunModalOpen(false)}
+                className="text-slate-400 hover:text-white text-xs"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-400">
+              Simulate rule matching and reply generation against YouTube comments without posting live comments.
+            </p>
+
+            <form onSubmit={handleExecuteDryRun} className="space-y-3 text-xs">
+              <div>
+                <label className="text-slate-300 block mb-1 font-medium">Test Comment Author</label>
+                <input
+                  type="text"
+                  value={dryRunAuthor}
+                  onChange={(e) => setDryRunAuthor(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
+                  placeholder="e.g. Rahul Sharma"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-300 block mb-1 font-medium">Test Comment Text</label>
+                <textarea
+                  rows={3}
+                  value={dryRunComment}
+                  onChange={(e) => setDryRunComment(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-red-500"
+                  placeholder="Type any test comment..."
+                />
+              </div>
+
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[11px] space-y-1">
+                <div className="text-slate-400 font-semibold">Testing against active rule parameters:</div>
+                <div className="text-slate-300 font-mono">
+                  Keywords: <span className="text-white">{ruleKeywords || "None"}</span> (Operator: <span className="text-red-400">{ruleOperator}</span>)
+                </div>
+                {ruleNegative && (
+                  <div className="text-slate-300 font-mono">
+                    Negative: <span className="text-red-400">{ruleNegative}</span>
+                  </div>
+                )}
+                <div className="text-slate-300 font-mono">
+                  Intent: <span className="text-cyan-400">{ruleIntent}</span> | Match Type: <span className="text-white">{ruleMatchType}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDryRunModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={isEvaluatingDryRun}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  <span>{isEvaluatingDryRun ? "Simulating..." : "Run Dry Run"}</span>
+                </button>
+              </div>
+            </form>
+
+            {dryRunResult && (
+              <div className={`p-4 rounded-xl border text-xs space-y-2 mt-3 ${
+                dryRunResult.matched
+                  ? "bg-emerald-950/40 border-emerald-500/30 text-emerald-200"
+                  : "bg-red-950/40 border-red-500/30 text-red-200"
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold flex items-center gap-1.5">
+                    {dryRunResult.matched ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-400" />
+                        <span>MATCH SUCCESSFUL</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="w-4 h-4 text-red-400" />
+                        <span>MATCH REJECTED</span>
+                      </>
+                    )}
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40">
+                    Detected Intent: {dryRunResult.detectedIntent}
+                  </span>
+                </div>
+
+                <div className="text-slate-300 text-[11px]">
+                  <strong>Reason:</strong> {dryRunResult.reason}
+                </div>
+
+                {dryRunResult.renderedReply && (
+                  <div className="pt-2 border-t border-emerald-500/20">
+                    <span className="text-[10px] text-emerald-400 block font-semibold mb-1">Generated Reply Preview:</span>
+                    <div className="p-2.5 rounded-lg bg-black/60 font-mono text-[11px] text-white break-words">
+                      {dryRunResult.renderedReply}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

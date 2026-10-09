@@ -29,6 +29,7 @@ ALTER TABLE public.youtube_channels ADD COLUMN IF NOT EXISTS subscriber_count BI
 ALTER TABLE public.youtube_channels ADD COLUMN IF NOT EXISTS video_count BIGINT DEFAULT 0;
 ALTER TABLE public.youtube_channels ADD COLUMN IF NOT EXISTS view_count BIGINT DEFAULT 0;
 ALTER TABLE public.youtube_channels ADD COLUMN IF NOT EXISTS custom_url TEXT;
+ALTER TABLE public.trigger_rules ADD COLUMN IF NOT EXISTS keyword_match_operator TEXT DEFAULT 'ANY';
 
 -- 4. Trigger Rules (Upgraded Campaigns)
 CREATE TABLE IF NOT EXISTS public.trigger_rules (
@@ -39,6 +40,7 @@ CREATE TABLE IF NOT EXISTS public.trigger_rules (
   keywords TEXT[] NOT NULL DEFAULT '{}',
   negative_keywords TEXT[] NOT NULL DEFAULT '{}',
   match_type TEXT NOT NULL DEFAULT 'contains', -- contains, exact, phrase, regex, ai_intent
+  keyword_match_operator TEXT NOT NULL DEFAULT 'ANY', -- ANY, ALL
   target_mode TEXT NOT NULL DEFAULT 'all', -- all, shorts_only, specific_videos
   target_video_ids TEXT[] DEFAULT '{}',
   reply_templates TEXT[] NOT NULL DEFAULT '{}',

@@ -56,10 +56,10 @@ export async function GET(request: NextRequest) {
       campaigns: campaigns || [],
       logs: logs || [],
       stats: {
-        totalReplies: totalReplies > 0 ? totalReplies : 42,
+        totalReplies,
         activeRules,
-        heartsLikes: totalReplies > 0 ? totalReplies * 2 : 84,
-        quotaUsed: 1400,
+        heartsLikes: totalReplies,
+        quotaUsed: totalReplies * 50,
       },
     });
   } catch (error: unknown) {

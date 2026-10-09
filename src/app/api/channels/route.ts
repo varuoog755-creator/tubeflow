@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
-import { getYoutubeClient } from "@/lib/youtube";
+import { getValidYoutubeClient } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value || "varuoog755@gmail.com";
+    const email = session?.email || request.cookies.get("tf_user_email")?.value;
+
+    if (!email) {
+      return NextResponse.json({ channels: [] }, { status: 401 });
+    }
 
     const { data: profile } = await supabaseAdmin
       .from("profiles")
@@ -23,7 +27,9 @@ export async function GET(request: NextRequest) {
 
     const { data: channels } = await supabaseAdmin
       .from("youtube_channels")
-      .select("id, channel_id, channel_title, thumbnail_url, custom_url, subscriber_count, video_count, view_count, is_active, created_at, updated_at")
+      .select(
+        "id, channel_id, channel_title, thumbnail_url, custom_url, subscriber_count, video_count, view_count, is_active, token_expiry, created_at, updated_at"
+      )
       .eq("user_id", profile.id)
       .order("created_at", { ascending: false });
 
@@ -38,7 +44,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value || "varuoog755@gmail.com";
+    const email = session?.email || request.cookies.get("tf_user_email")?.value;
+
+    if (!email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { action, channelDbId } = body;
 
@@ -64,7 +75,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Channel not found or token missing" }, { status: 404 });
       }
 
-      const youtube = getYoutubeClient(channel.access_token, channel.refresh_token);
+      const youtube = await getValidYoutubeClient({
+        id: channel.id,
+        access_token: channel.access_token,
+        refresh_token: channel.refresh_token,
+        token_expiry: channel.token_expiry,
+      });
+
       const res = await youtube.channels.list({
         part: ["statistics", "snippet"],
         id: [channel.channel_id],

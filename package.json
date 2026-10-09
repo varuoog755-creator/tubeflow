@@ -2,11 +2,13 @@
   "name": "tubeflow",
   "version": "0.2.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --experimental-strip-types --test tests/reply-engine.test.ts tests/intent.test.ts tests/session-auth.test.ts tests/pipeline.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
