@@ -87,3 +87,36 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch reply logs" }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getSession();
+    const email = session?.email || request.cookies.get("tf_user_email")?.value;
+    if (!email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { logIds, status } = body;
+
+    if (!Array.isArray(logIds) || logIds.length === 0 || !status) {
+      return NextResponse.json({ error: "Invalid logIds or status" }, { status: 400 });
+    }
+
+    const { error } = await supabaseAdmin
+      .from("processed_comments")
+      .update({
+        reply_status: status,
+        processed_at: new Date().toISOString(),
+      })
+      .in("id", logIds);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, updatedCount: logIds.length });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: "Failed to update logs" }, { status: 500 });
+  }
+}
