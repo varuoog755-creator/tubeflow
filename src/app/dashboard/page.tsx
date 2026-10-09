@@ -439,21 +439,21 @@ export default function DashboardPage() {
   const activeChannel = channels[0] || null;
 
   return (
-    <div className="min-h-screen bg-black text-zinc-100 flex flex-col md:flex-row font-sans">
+    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col md:flex-row font-sans">
       {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-zinc-950 border-r border-zinc-900 flex flex-col justify-between shrink-0">
+      <aside className="w-full md:w-64 bg-[#0f1422] border-r border-slate-800 flex flex-col justify-between shrink-0">
         <div>
           {/* Brand Logo */}
-          <div className="p-6 border-b border-zinc-900 flex items-center justify-between">
+          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white">
-                <Video className="w-4 h-4 text-red-500" />
+              <div className="w-8 h-8 rounded-xl bg-red-600/15 border border-red-500/30 flex items-center justify-center text-red-400">
+                <Video className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-semibold text-sm tracking-tight text-white block">
+                <span className="font-semibold text-sm tracking-tight text-slate-100 block">
                   TubeFlow
                 </span>
-                <span className="text-[10px] text-zinc-500 font-mono tracking-wider">
+                <span className="text-[10px] text-slate-400 font-mono tracking-wider">
                   WORKSPACE
                 </span>
               </div>
@@ -480,10 +480,10 @@ export default function DashboardPage() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id as TabType)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
                     isActive
-                      ? "bg-zinc-900 text-white border border-zinc-800"
-                      : "text-zinc-400 hover:text-white hover:bg-zinc-900/50"
+                      ? "bg-[#182338] text-slate-100 border border-slate-700/80 shadow-sm"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-[#131b2e]/60"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -495,17 +495,17 @@ export default function DashboardPage() {
         </div>
 
         {/* User Account / Logout */}
-        <div className="p-4 border-t border-zinc-900">
-          <div className="flex items-center justify-between p-2 rounded-xl bg-zinc-900/60 border border-zinc-900">
+        <div className="p-4 border-t border-slate-800">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-[#131b2e]/60 border border-slate-800">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-7 h-7 rounded-md bg-zinc-800 flex items-center justify-center font-bold text-xs text-zinc-300 shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-300 shrink-0">
                 {profile?.email?.[0]?.toUpperCase() || "U"}
               </div>
               <div className="truncate">
-                <span className="text-xs font-medium text-white block truncate">
+                <span className="text-xs font-medium text-slate-200 block truncate">
                   {profile?.full_name || profile?.email?.split("@")[0] || "Active User"}
                 </span>
-                <span className="text-[10px] text-zinc-500 truncate block">
+                <span className="text-[10px] text-slate-400 truncate block">
                   {profile?.email || "Authenticated"}
                 </span>
               </div>
@@ -513,7 +513,7 @@ export default function DashboardPage() {
             <Link
               href="/api/auth/logout"
               title="Log out"
-              className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md transition-colors"
+              className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
             </Link>
@@ -522,14 +522,14 @@ export default function DashboardPage() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 bg-black">
+      <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 bg-[#0b0f19]">
         {/* Top Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-900">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
           <div>
-            <h1 className="text-xl font-semibold text-white capitalize">
+            <h1 className="text-xl font-semibold text-slate-100 capitalize">
               {activeTab === "rules" ? "Trigger Rules & Automations" : activeTab}
             </h1>
-            <p className="text-zinc-500 text-xs mt-0.5 font-mono">
+            <p className="text-slate-400 text-xs mt-0.5 font-mono">
               {activeChannel
                 ? `Channel: ${activeChannel.channel_title}`
                 : "No active YouTube channel connected."}
@@ -539,15 +539,15 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2.5">
             <button
               onClick={handleTriggerManualPolling}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-xs font-medium text-zinc-200 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#111726] border border-slate-800 hover:border-slate-700 text-xs font-medium text-slate-300 transition-colors"
             >
-              <RefreshCw className="w-3 h-3 text-zinc-400" />
+              <RefreshCw className="w-3 h-3 text-slate-400" />
               <span>Poll Now</span>
             </button>
 
             <Link
               href="/api/auth/google?mode=connect_youtube"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white hover:bg-zinc-200 text-xs font-semibold text-black transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-medium text-white transition-all shadow-sm"
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span>Connect Channel</span>
