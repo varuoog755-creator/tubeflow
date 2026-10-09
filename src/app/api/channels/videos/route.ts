@@ -101,7 +101,8 @@ function formatDuration(seconds: number): string {
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value || "himalayanpine8@gmail.com";
+    const email = session?.email;
+    if (!email || !session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     // 1. Resolve Profile
     const { data: profile } = await supabaseAdmin
@@ -110,18 +111,7 @@ export async function GET(request: NextRequest) {
       .eq("email", email)
       .maybeSingle();
 
-    if (!profile) {
-      return NextResponse.json({
-        channel: null,
-        videos: SAMPLE_VIDEOS,
-        totals: {
-          totalVideos: SAMPLE_VIDEOS.length,
-          totalViews: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.viewCount, 0),
-          totalLikes: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.likeCount, 0),
-          totalComments: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.commentCount, 0),
-        },
-      });
-    }
+    if (!profile) return NextResponse.json({ error: "User profile not found" }, { status: 404 });
 
     // 2. Fetch User's Channel
     const { data: channel } = await supabaseAdmin
