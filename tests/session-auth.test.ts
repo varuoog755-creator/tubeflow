@@ -1,3 +1,5 @@
+process.env.SESSION_SECRET = "unit-test-session-secret-not-for-production-000000000000";
+
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createSessionToken, verifySessionToken, type UserSession } from "../src/lib/session.ts";
