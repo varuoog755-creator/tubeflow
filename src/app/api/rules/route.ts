@@ -371,6 +371,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Rule ID is required" }, { status: 400 });
     }
 
+    if (channelId && !auth.channelIds.includes(channelId)) {
+      return NextResponse.json({ error: "Channel not found for this workspace" }, { status: 404 });
+    }
+
     // Validate CTA URL if provided
     if (ctaUrl) {
       const urlValidation = validateCtaUrl(ctaUrl);
