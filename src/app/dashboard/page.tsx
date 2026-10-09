@@ -301,7 +301,7 @@ export default function DashboardPage() {
   // Dry Run Modal
   const [isDryRunOpen, setIsDryRunOpen] = useState(false);
   const [dryRunComment, setDryRunComment] = useState("");
-  const [dryRunResult, setDryRunResult] = useState<any>(null);
+  const [dryRunResult, setDryRunResult] = useState<{ matched: boolean; rendered_reply?: string | null } | null>(null);
   const [dryRunLoading, setDryRunLoading] = useState(false);
 
   // Tracked Link Modal
@@ -411,12 +411,14 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load remote dashboard state on mount
     fetchDashboardData();
   }, []);
 
   // Set default selected comment when comments load
   useEffect(() => {
     if (!selectedCommentId && comments.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- select the first loaded inbox item
       setSelectedCommentId(comments[0].id);
     }
   }, [comments, selectedCommentId]);
@@ -429,6 +431,7 @@ export default function DashboardPage() {
   // Sync draft reply when selected comment changes
   useEffect(() => {
     if (selectedComment) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset draft when selection changes
       setDraftReplyText(selectedComment.reply_text || `Hey ${selectedComment.author_name}! Thanks for checking out the video.`);
     }
   }, [selectedComment]);
@@ -1209,7 +1212,7 @@ export default function DashboardPage() {
                       <span>Sort:</span>
                       <select
                         value={sortBy}
-                        onChange={(e: any) => setSortBy(e.target.value)}
+                        onChange={(e) => setSortBy(e.target.value)}
                         className="bg-transparent font-medium text-zinc-800 focus:outline-none cursor-pointer"
                       >
                         <option value="newest">Newest</option>
@@ -1955,7 +1958,7 @@ export default function DashboardPage() {
                     const matchedComments = comments.filter(
                       (c) => c.matched_rule_id === rule.id || c.reply_text?.includes(rule.name)
                     );
-                    const repliesCount = matchedComments.length || Math.floor(Math.random() * 15 + 8);
+                    const repliesCount = matchedComments.length;
                     const clicksCount = Math.floor(repliesCount * 1.8);
                     const ctrRate = repliesCount > 0 ? Math.round((clicksCount / repliesCount) * 45) : 62;
 
@@ -2031,11 +2034,11 @@ export default function DashboardPage() {
                                 setRuleMatchType(rule.match_type || "contains");
                                 setRuleOperator(rule.keyword_match_operator || "ANY");
                                 setCampaignScope(
-                                  (rule.target_mode as any) === "shorts_only"
+                                  rule.target_mode === "shorts_only"
                                     ? "shorts"
-                                    : (rule.target_mode as any) === "specific_videos"
+                                    : rule.target_mode === "specific_videos"
                                     ? "single"
-                                    : (rule.target_mode as any) || "all"
+                                    : rule.target_mode || "all"
                                 );
                                 setSelectedVideoForRule(rule.target_video_ids?.[0] || "");
                                 setRuleTemplates((rule.reply_templates || []).join("\n"));
