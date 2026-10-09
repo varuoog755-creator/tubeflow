@@ -79,7 +79,7 @@ export function setSessionCookie(response: NextResponse, token: string): void {
   });
 }
 
-export function clearSessionCookie(response: any): void {
+export function clearSessionCookie(response: NextResponse): void {
   response.cookies.delete(SESSION_COOKIE_NAME);
   // Clear old compatibility identity cookie so it cannot be reused by older code.
   response.cookies.delete("tf_user_email");
