@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import type { NextResponse } from "next/server";
 
 const SESSION_COOKIE_NAME = "tf_session_token";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
@@ -68,7 +69,7 @@ export async function getSession(): Promise<UserSession | null> {
   }
 }
 
-export function setSessionCookie(response: any, token: string): void {
+export function setSessionCookie(response: NextResponse, token: string): void {
   response.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
