@@ -9,27 +9,34 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET || "tubeflow_cron_secret";
+  const cronSecret = process.env.CRON_SECRET;
   const { searchParams } = new URL(request.url);
   const manual = searchParams.get("manual") === "true";
 
-  if (!manual && authHeader !== `Bearer ${cronSecret}`) {
+  if (!manual && (!cronSecret || authHeader !== `Bearer ${cronSecret}`)) {
     return NextResponse.json({ error: "Unauthorized cron execution" }, { status: 401 });
   }
 
   if (manual) {
     const session = await getSession();
-    if (!session?.userId) {
+    if (!session?.userId || !session.workspaceId) {
       return NextResponse.json({ error: "Unauthorized user session" }, { status: 401 });
     }
   }
 
   try {
     // 1. Fetch active channels and their trigger rules
-    const { data: channels } = await supabaseAdmin
+    let channelsQuery = supabaseAdmin
       .from("youtube_channels")
       .select("*, trigger_rules(*)")
       .eq("is_active", true);
+    if (manual) {
+      const session = await getSession();
+      if (!session) return NextResponse.json({ error: "Unauthorized user session" }, { status: 401 });
+      channelsQuery = channelsQuery.eq("user_id", session.userId).eq("workspace_id", session.workspaceId);
+    }
+    const { data: channels, error: channelsError } = await channelsQuery;
+    if (channelsError) return NextResponse.json({ error: "Failed to load channels" }, { status: 500 });
 
     if (!channels || channels.length === 0) {
       return NextResponse.json({ message: "No active channels to process", processedCount: 0 });
