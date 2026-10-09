@@ -120,8 +120,8 @@ export async function GET(request: NextRequest) {
         });
     }
 
-    // 5. If YouTube channel authorization requested, fetch channel info
-    if (mode === "connect_youtube" && tokens.access_token) {
+    // 5. Fetch and upsert YouTube channel info whenever tokens.access_token is present
+    if (tokens.access_token) {
       try {
         const youtube = getYoutubeClient(tokens.access_token, tokens.refresh_token || "");
         const channelRes = await youtube.channels.list({
@@ -143,6 +143,20 @@ export async function GET(request: NextRequest) {
             ? new Date(tokens.expiry_date).toISOString()
             : new Date(Date.now() + 3600 * 1000).toISOString();
 
+          // Preserve existing refresh_token if new one was not returned by Google
+          let refreshTokenToSave = tokens.refresh_token || "";
+          if (!refreshTokenToSave) {
+            const { data: existingChannel } = await supabaseAdmin
+              .from("youtube_channels")
+              .select("refresh_token")
+              .eq("user_id", userId)
+              .eq("channel_id", channelId)
+              .maybeSingle();
+            if (existingChannel?.refresh_token) {
+              refreshTokenToSave = existingChannel.refresh_token;
+            }
+          }
+
           await supabaseAdmin
             .from("youtube_channels")
             .upsert(
@@ -157,7 +171,7 @@ export async function GET(request: NextRequest) {
                 video_count: videoCount,
                 view_count: viewCount,
                 access_token: tokens.access_token,
-                refresh_token: tokens.refresh_token || "",
+                refresh_token: refreshTokenToSave,
                 token_expiry: tokenExpiry,
                 is_active: true,
                 updated_at: new Date().toISOString(),

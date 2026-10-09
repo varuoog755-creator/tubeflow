@@ -19,19 +19,14 @@ export async function GET(request: NextRequest) {
       redirectUri
     );
 
-    const scopes = mode === "login"
-      ? [
-          "openid",
-          "https://www.googleapis.com/auth/userinfo.email",
-          "https://www.googleapis.com/auth/userinfo.profile",
-        ]
-      : [
-          "openid",
-          "https://www.googleapis.com/auth/userinfo.email",
-          "https://www.googleapis.com/auth/userinfo.profile",
-          "https://www.googleapis.com/auth/youtube.force-ssl",
-          "https://www.googleapis.com/auth/youtube.readonly",
-        ];
+    // Request full YouTube scopes so the channel and permissions are automatically linked on login or connect
+    const scopes = [
+      "openid",
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/youtube.force-ssl",
+      "https://www.googleapis.com/auth/youtube.readonly",
+    ];
 
     const state = JSON.stringify({ mode, origin });
 
