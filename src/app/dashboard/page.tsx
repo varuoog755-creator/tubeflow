@@ -59,6 +59,7 @@ interface Channel {
   video_count: number;
   view_count: number;
   is_active: boolean;
+  access_token?: string | null;
   token_expiry?: string | null;
 }
 
@@ -282,14 +283,19 @@ export default function DashboardPage() {
   // Video Metrics & Channel Overview State
   const [channelVideos, setChannelVideos] = useState<ChannelVideoItem[]>([]);
   const [videoStatsSummary, setVideoStatsSummary] = useState({
-    totalVideos: 52,
-    totalViews: 489200,
-    totalLikes: 28400,
-    totalComments: 3140,
+    totalVideos: 0,
+    totalViews: 0,
+    totalLikes: 0,
+    totalComments: 0,
   });
   const [videoFormatFilter, setVideoFormatFilter] = useState<"all" | "long" | "shorts">("all");
   const [videoSearch, setVideoSearch] = useState("");
   const [loadingVideos, setLoadingVideos] = useState(false);
+
+  // Direct Channel Connect by Handle / ID
+  const [isHandleModalOpen, setIsHandleModalOpen] = useState(false);
+  const [handleInput, setHandleInput] = useState("");
+  const [handleConnecting, setHandleConnecting] = useState(false);
 
   // Campaign Scope & Spintax Anti-Spam State
   const [campaignScope, setCampaignScope] = useState<"all" | "single" | "shorts">("all");
@@ -347,29 +353,24 @@ export default function DashboardPage() {
       setChannels(data.channels || []);
       setRules(data.rules || []);
 
-      // If user has database comments, use them. Otherwise load realistic demo comments so inbox is immediately operational
+      // Load real database comments and stats
       const loadedLogs: ProcessedComment[] = data.logs || [];
-      if (loadedLogs.length > 0) {
-        setComments(loadedLogs);
-      } else {
-        setComments(DEMO_SAMPLE_COMMENTS);
-      }
+      setComments(loadedLogs);
 
-      // Calculate intent detected from comments
-      const intentCount = (loadedLogs.length > 0 ? loadedLogs : DEMO_SAMPLE_COMMENTS).filter(
+      const intentCount = loadedLogs.filter(
         (c) => c.detected_intent && c.detected_intent !== "OTHER" && c.detected_intent !== "SPAM"
       ).length;
 
       setStats({
-        commentsMonitored: data.stats?.commentsMonitored || loadedLogs.length || DEMO_SAMPLE_COMMENTS.length,
-        intentDetected: data.stats?.commentsMatched || intentCount,
-        repliesDelivered: data.stats?.repliesSent || 1,
-        failedReplies: data.stats?.failedReplies || 1,
-        spamBlocked: data.stats?.spamBlocked || 1,
-        replySuccessRate: data.stats?.replySuccessRate ?? 98,
-        clicks: data.stats?.clicks || 142,
-        conversions: data.stats?.conversions || 18,
-        revenue: data.stats?.revenue || 8450,
+        commentsMonitored: data.stats?.commentsMonitored ?? loadedLogs.length,
+        intentDetected: data.stats?.commentsMatched ?? intentCount,
+        repliesDelivered: data.stats?.repliesSent ?? 0,
+        failedReplies: data.stats?.failedReplies ?? 0,
+        spamBlocked: data.stats?.spamBlocked ?? 0,
+        replySuccessRate: data.stats?.replySuccessRate ?? 100,
+        clicks: data.stats?.clicks ?? 0,
+        conversions: data.stats?.conversions ?? 0,
+        revenue: data.stats?.revenue ?? 0,
       });
 
       // Load Tracked Links
@@ -389,8 +390,10 @@ export default function DashboardPage() {
         const vidRes = await fetch("/api/channels/videos");
         if (vidRes.ok) {
           const vidData = await vidRes.json();
-          if (vidData.videos && vidData.videos.length > 0) {
+          if (vidData.videos) {
             setChannelVideos(vidData.videos);
+          } else {
+            setChannelVideos([]);
           }
           if (vidData.totals) {
             setVideoStatsSummary(vidData.totals);
@@ -717,6 +720,77 @@ export default function DashboardPage() {
     setSpintaxPreviewSamples(samples);
   };
 
+  // Direct Channel Connect by Handle / ID
+  const handleConnectByHandle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!handleInput.trim()) {
+      showNotification("error", "Enter a YouTube handle or Channel ID.");
+      return;
+    }
+    setHandleConnecting(true);
+    try {
+      const res = await fetch("/api/channels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "connect_by_handle", handle: handleInput.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showNotification("error", data.error || "Failed to connect channel.");
+      } else {
+        showNotification("success", `Channel "${data.channel?.channel_title}" successfully connected!`);
+        setIsHandleModalOpen(false);
+        setHandleInput("");
+        fetchDashboardData();
+      }
+    } catch {
+      showNotification("error", "Network error while connecting channel.");
+    } finally {
+      setHandleConnecting(false);
+    }
+  };
+
+  // Sync Live Channel Metrics
+  const handleSyncMetrics = async (channelDbId: string) => {
+    try {
+      showNotification("info", "Syncing channel statistics from YouTube...");
+      const res = await fetch("/api/channels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync_metrics", channelDbId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification("success", "Channel statistics updated from YouTube!");
+        fetchDashboardData();
+      } else {
+        showNotification("error", data.error || "Failed to sync metrics.");
+      }
+    } catch {
+      showNotification("error", "Network error syncing channel.");
+    }
+  };
+
+  // Disconnect Channel
+  const handleDisconnectChannel = async (channelDbId: string) => {
+    if (!confirm("Are you sure you want to disconnect this channel?")) return;
+    try {
+      const res = await fetch("/api/channels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "disconnect", channelDbId }),
+      });
+      if (res.ok) {
+        showNotification("success", "Channel disconnected.");
+        fetchDashboardData();
+      } else {
+        showNotification("error", "Failed to disconnect channel.");
+      }
+    } catch {
+      showNotification("error", "Network error disconnecting channel.");
+    }
+  };
+
   // Rule Save (Create / Edit)
   const handleSaveRule = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -961,7 +1035,7 @@ export default function DashboardPage() {
                 <span>Comment Inbox</span>
               </div>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-800">
-                {comments.filter((c) => c.reply_status === "pending").length || comments.length}
+                {comments.filter((c) => c.reply_status === "pending").length}
               </span>
             </button>
 
@@ -990,7 +1064,7 @@ export default function DashboardPage() {
                 <span>Channel & Videos</span>
               </div>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-700">
-                {channelVideos.length || 52}
+                {channelVideos.length}
               </span>
             </button>
 
@@ -1671,14 +1745,16 @@ export default function DashboardPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h1 className="font-heading font-bold text-lg text-zinc-950">
-                          {channels[0]?.channel_title || "Himalayan Pine Studio"}
+                          {channels[0]?.channel_title || "No Channel Connected"}
                         </h1>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
-                          Connected & Synced
-                        </span>
+                        {channels[0] && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+                            Connected & Synced
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-zinc-500">
-                        {channels[0]?.custom_url || "@himalayanpine"} • Channel ID: {channels[0]?.channel_id || "UC_HimalayanPine"}
+                        {channels[0]?.custom_url || "Connect your YouTube channel in Settings"} {channels[0]?.channel_id ? `• Channel ID: ${channels[0]?.channel_id}` : ""}
                       </p>
                     </div>
                   </div>
@@ -1697,7 +1773,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Subscribers</span>
                     <span className="text-xl font-heading font-bold text-zinc-950 mt-1 block">
-                      {(channels[0]?.subscriber_count || 24800).toLocaleString()}
+                      {(channels[0]?.subscriber_count ?? 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-emerald-600 font-medium">Verified Audience</span>
                   </div>
@@ -1705,7 +1781,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Total Videos</span>
                     <span className="text-xl font-heading font-bold text-zinc-950 mt-1 block">
-                      {videoStatsSummary.totalVideos || channelVideos.length || 52}
+                      {videoStatsSummary?.totalVideos ?? channelVideos.length}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-medium">Long-form & Shorts</span>
                   </div>
@@ -1713,7 +1789,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Total Views</span>
                     <span className="text-xl font-heading font-bold text-zinc-950 mt-1 block">
-                      {(videoStatsSummary.totalViews || 489200).toLocaleString()}
+                      {(videoStatsSummary?.totalViews ?? (channels[0]?.view_count ?? 0)).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-medium">All-time Impressions</span>
                   </div>
@@ -1721,7 +1797,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-red-50/60 border border-red-200/80">
                     <span className="text-[11px] font-semibold text-red-900 block">Total Comments</span>
                     <span className="text-xl font-heading font-bold text-red-700 mt-1 block">
-                      {(videoStatsSummary.totalComments || 3140).toLocaleString()}
+                      {(videoStatsSummary?.totalComments ?? 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-red-600 font-medium">Buyer Intent Pool</span>
                   </div>
@@ -1739,7 +1815,7 @@ export default function DashboardPage() {
                         : "bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-950"
                     }`}
                   >
-                    All Videos ({channelVideos.length || 5})
+                    All Videos ({channelVideos.length})
                   </button>
                   <button
                     onClick={() => setVideoFormatFilter("long")}
@@ -1749,7 +1825,7 @@ export default function DashboardPage() {
                         : "bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-950"
                     }`}
                   >
-                    🎥 Long-form ({channelVideos.filter((v) => !v.isShort).length || 3})
+                    🎥 Long-form ({channelVideos.filter((v) => !v.isShort).length})
                   </button>
                   <button
                     onClick={() => setVideoFormatFilter("shorts")}
@@ -1759,7 +1835,7 @@ export default function DashboardPage() {
                         : "bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-950"
                     }`}
                   >
-                    ⚡ Shorts Only ({channelVideos.filter((v) => v.isShort).length || 2})
+                    ⚡ Shorts Only ({channelVideos.filter((v) => v.isShort).length})
                   </button>
                 </div>
 
@@ -1777,108 +1853,122 @@ export default function DashboardPage() {
 
               {/* Per-Video Cards */}
               <div className="space-y-3">
-                {channelVideos
-                  .filter((v) => {
-                    if (videoFormatFilter === "long" && v.isShort) return false;
-                    if (videoFormatFilter === "shorts" && !v.isShort) return false;
-                    if (
-                      videoSearch.trim() &&
-                      !v.title.toLowerCase().includes(videoSearch.toLowerCase().trim())
-                    ) {
-                      return false;
-                    }
-                    return true;
-                  })
-                  .map((video) => (
-                    <div
-                      key={video.id}
-                      className="p-4 sm:p-5 rounded-2xl border border-zinc-200 bg-white hover:border-zinc-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-                    >
-                      <div className="flex items-start gap-4 flex-1">
-                        {/* Thumbnail with duration */}
-                        <div className="relative w-28 h-18 sm:w-36 sm:h-20 rounded-xl overflow-hidden bg-zinc-900 shrink-0 border border-zinc-100">
-                          <img
-                            src={video.thumbnail}
-                            alt={video.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-zinc-950/80 text-white text-[10px] font-mono font-medium">
-                            {video.duration}
-                          </span>
-                          {video.isShort && (
-                            <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold tracking-wider uppercase">
-                              Shorts
+                {channelVideos.length === 0 ? (
+                  <div className="p-12 text-center bg-white rounded-2xl border border-zinc-200">
+                    <Video className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
+                    <h3 className="font-heading font-bold text-base text-zinc-900 mb-1">
+                      {channels.length === 0 ? "No YouTube Channel Connected" : "No Videos Uploaded Yet"}
+                    </h3>
+                    <p className="text-xs text-zinc-500 max-w-md mx-auto">
+                      {channels.length === 0
+                        ? "Connect your YouTube channel in Settings to view your video library and automate comment conversions."
+                        : "Your channel does not have any public videos or Shorts yet. Once you publish content on YouTube, it will appear here with live metrics."}
+                    </p>
+                  </div>
+                ) : (
+                  channelVideos
+                    .filter((v) => {
+                      if (videoFormatFilter === "long" && v.isShort) return false;
+                      if (videoFormatFilter === "shorts" && !v.isShort) return false;
+                      if (
+                        videoSearch.trim() &&
+                        !v.title.toLowerCase().includes(videoSearch.toLowerCase().trim())
+                      ) {
+                        return false;
+                      }
+                      return true;
+                    })
+                    .map((video) => (
+                      <div
+                        key={video.id}
+                        className="p-4 sm:p-5 rounded-2xl border border-zinc-200 bg-white hover:border-zinc-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                      >
+                        <div className="flex items-start gap-4 flex-1">
+                          {/* Thumbnail with duration */}
+                          <div className="relative w-28 h-18 sm:w-36 sm:h-20 rounded-xl overflow-hidden bg-zinc-900 shrink-0 border border-zinc-100">
+                            <img
+                              src={video.thumbnail}
+                              alt={video.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-zinc-950/80 text-white text-[10px] font-mono font-medium">
+                              {video.duration}
                             </span>
-                          )}
-                        </div>
-
-                        {/* Title and stats */}
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <h2 className="font-heading font-bold text-sm text-zinc-950 line-clamp-2">
-                              {video.title}
-                            </h2>
-                            <a
-                              href={video.videoUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-zinc-400 hover:text-zinc-700 shrink-0 p-1"
-                              title="Open on YouTube"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
+                            {video.isShort && (
+                              <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold tracking-wider uppercase">
+                                Shorts
+                              </span>
+                            )}
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-600">
-                            <span className="inline-flex items-center gap-1 font-semibold text-zinc-800">
-                              <Eye className="w-3.5 h-3.5 text-zinc-500" />
-                              {video.viewCount.toLocaleString()} views
-                            </span>
-                            <span className="inline-flex items-center gap-1 font-semibold text-zinc-800">
-                              <ThumbsUp className="w-3.5 h-3.5 text-zinc-500" />
-                              {video.likeCount.toLocaleString()} likes
-                            </span>
-                            <span className="inline-flex items-center gap-1 font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
-                              <MessageSquare className="w-3.5 h-3.5 text-red-600" />
-                              {video.commentCount.toLocaleString()} comments
-                            </span>
+                          {/* Title and stats */}
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <h2 className="font-heading font-bold text-sm text-zinc-950 line-clamp-2">
+                                {video.title}
+                              </h2>
+                              <a
+                                href={video.videoUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-zinc-400 hover:text-zinc-700 shrink-0 p-1"
+                                title="Open on YouTube"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-600">
+                              <span className="inline-flex items-center gap-1 font-semibold text-zinc-800">
+                                <Eye className="w-3.5 h-3.5 text-zinc-500" />
+                                {video.viewCount.toLocaleString()} views
+                              </span>
+                              <span className="inline-flex items-center gap-1 font-semibold text-zinc-800">
+                                <ThumbsUp className="w-3.5 h-3.5 text-zinc-500" />
+                                {video.likeCount.toLocaleString()} likes
+                              </span>
+                              <span className="inline-flex items-center gap-1 font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                                <MessageSquare className="w-3.5 h-3.5 text-red-600" />
+                                {video.commentCount.toLocaleString()} comments
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Video Actions */}
-                      <div className="flex items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0 shrink-0">
-                        <button
-                          onClick={() => {
-                            setCampaignScope("single");
-                            setSelectedVideoForRule(video.id);
-                            setRuleName(`${video.title.slice(0, 32)} Campaign`);
-                            setRuleTemplates(
-                              "{Hey|Hi|Hello} {{first_name}}! {Here is the exact link mentioned in the video|Check out the product details here}: {{cta_url}}"
-                            );
-                            setRuleKeywords("link, where to buy, buy, price, cost");
-                            setRuleCtaUrl("https://tubeflow.in/product-deal");
-                            setActiveTab("automations");
-                            setIsRuleModalOpen(true);
-                          }}
-                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs transition-all shadow-xs"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Create Campaign</span>
-                        </button>
+                        {/* Video Actions */}
+                        <div className="flex items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0 shrink-0">
+                          <button
+                            onClick={() => {
+                              setCampaignScope("single");
+                              setSelectedVideoForRule(video.id);
+                              setRuleName(`${video.title.slice(0, 32)} Campaign`);
+                              setRuleTemplates(
+                                "{Hey|Hi|Hello} {{first_name}}! {Here is the exact link mentioned in the video|Check out the product details here}: {{cta_url}}"
+                              );
+                              setRuleKeywords("link, where to buy, buy, price, cost");
+                              setRuleCtaUrl("https://tubeflow.in/product-deal");
+                              setActiveTab("automations");
+                              setIsRuleModalOpen(true);
+                            }}
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs transition-all shadow-xs"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Create Campaign</span>
+                          </button>
 
-                        <button
-                          onClick={() => {
-                            setSearchQuery(video.title.slice(0, 20));
-                            setActiveTab("inbox");
-                          }}
-                          className="px-3 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-semibold text-xs transition-all"
-                        >
-                          View Comments
-                        </button>
+                          <button
+                            onClick={() => {
+                              setSearchQuery(video.title.slice(0, 20));
+                              setActiveTab("inbox");
+                            }}
+                            className="px-3 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-semibold text-xs transition-all"
+                          >
+                            View Comments
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                )}
               </div>
             </div>
           )}
@@ -2188,48 +2278,116 @@ export default function DashboardPage() {
 
               {/* Connected Channels List */}
               <div className="p-6 rounded-2xl border border-zinc-200 bg-white space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-heading font-bold text-base text-zinc-950">
-                    Authorized YouTube Channels
-                  </h2>
-                  <a
-                    href="/api/auth/google?mode=channel"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Connect New YouTube Channel</span>
-                  </a>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="font-heading font-bold text-base text-zinc-950">
+                      Authorized YouTube Channels
+                    </h2>
+                    <p className="text-xs text-zinc-500">
+                      Channels connected to TubeFlow for automated comment monitoring and link delivery.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsHandleModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-800 text-xs font-semibold transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-zinc-600" />
+                      <span>Connect by Handle / ID</span>
+                    </button>
+                    <a
+                      href="/api/auth/google?mode=channel"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-all shadow-xs"
+                    >
+                      <Video className="w-3.5 h-3.5 fill-white" />
+                      <span>Connect via Google OAuth</span>
+                    </a>
+                  </div>
                 </div>
 
                 <div className="space-y-3 pt-2">
                   {channels.length === 0 ? (
-                    <div className="p-6 text-center bg-zinc-50 rounded-xl border border-zinc-200 text-xs text-zinc-600">
-                      No channels connected yet. Click &quot;Connect New YouTube Channel&quot; to authorize via Google.
+                    <div className="p-8 text-center bg-zinc-50 rounded-2xl border border-zinc-200 text-xs text-zinc-600 space-y-2">
+                      <Video className="w-8 h-8 text-zinc-300 mx-auto" />
+                      <p className="font-semibold text-zinc-800">No YouTube channels connected yet</p>
+                      <p className="text-zinc-500 max-w-sm mx-auto">
+                        Connect your YouTube channel using Google OAuth or directly via your channel handle to start detecting buyer intent.
+                      </p>
+                      <div className="pt-2 flex justify-center gap-2">
+                        <button
+                          onClick={() => setIsHandleModalOpen(true)}
+                          className="px-3 py-1.5 rounded-xl border border-zinc-300 text-xs font-semibold text-zinc-700 hover:bg-white"
+                        >
+                          Connect by Handle (@handle)
+                        </button>
+                        <a
+                          href="/api/auth/google?mode=channel"
+                          className="px-3.5 py-1.5 rounded-xl bg-red-600 text-white text-xs font-semibold hover:bg-red-700"
+                        >
+                          Connect via Google
+                        </a>
+                      </div>
                     </div>
                   ) : (
                     channels.map((ch) => (
                       <div
                         key={ch.id}
-                        className="p-4 rounded-xl border border-zinc-200 bg-zinc-50 flex items-center justify-between"
+                        className="p-4 sm:p-5 rounded-2xl border border-zinc-200 bg-white hover:border-zinc-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">
-                            <Video className="w-5 h-5 fill-white" />
-                          </div>
+                        <div className="flex items-center gap-3.5">
+                          {ch.thumbnail_url ? (
+                            <img
+                              src={ch.thumbnail_url}
+                              alt={ch.channel_title}
+                              className="w-12 h-12 rounded-full object-cover border border-zinc-200"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                              <Video className="w-6 h-6 fill-white" />
+                            </div>
+                          )}
                           <div>
-                            <p className="font-bold text-sm text-zinc-950">
-                              {ch.channel_title}
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-heading font-bold text-sm text-zinc-950">
+                                {ch.channel_title}
+                              </h3>
+                              <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                {ch.access_token && ch.access_token !== "demo" ? "OAuth Verified" : "Public Synced"}
+                              </span>
+                            </div>
+                            <p className="text-xs text-zinc-500 mt-0.5">
+                              {ch.custom_url || `@${ch.channel_title.toLowerCase().replace(/\s+/g, "")}`} • ID: {ch.channel_id}
                             </p>
-                            <p className="text-[11px] text-zinc-500">
-                              Channel ID: {ch.channel_id}
-                            </p>
+                            <div className="flex items-center gap-3 mt-1.5 text-[11px] text-zinc-600">
+                              <span>
+                                👥 <strong className="text-zinc-900">{(ch.subscriber_count ?? 0).toLocaleString()}</strong> subs
+                              </span>
+                              <span>
+                                🎥 <strong className="text-zinc-900">{(ch.video_count ?? 0).toLocaleString()}</strong> videos
+                              </span>
+                              <span>
+                                👁️ <strong className="text-zinc-900">{(ch.view_count ?? 0).toLocaleString()}</strong> views
+                              </span>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-semibold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md">
-                            Connected & Authorized
-                          </span>
+                        <div className="flex items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0">
+                          <button
+                            onClick={() => handleSyncMetrics(ch.id)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-xs font-semibold transition-all"
+                            title="Refresh subscriber count and views from YouTube"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5 text-zinc-500" />
+                            <span>Sync Metrics</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleDisconnectChannel(ch.id)}
+                            className="px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition-all"
+                          >
+                            Disconnect
+                          </button>
                         </div>
                       </div>
                     ))
@@ -2879,6 +3037,65 @@ export default function DashboardPage() {
                 {confirmDialog.confirmText}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* DIRECT HANDLE / CHANNEL ID CONNECT MODAL */}
+      {isHandleModalOpen && (
+        <div className="fixed inset-0 z-50 bg-zinc-950/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl border border-zinc-200 shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+              <div className="flex items-center gap-2">
+                <Video className="w-4 h-4 text-red-600" />
+                <h2 className="font-heading font-bold text-sm text-zinc-950">
+                  Connect YouTube Channel
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsHandleModalOpen(false)}
+                className="text-zinc-400 hover:text-zinc-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConnectByHandle} className="space-y-3.5 text-xs">
+              <p className="text-zinc-600 leading-relaxed">
+                Enter your YouTube Channel handle (e.g. <strong className="text-zinc-900 font-mono">@teepulcurtain</strong> or <strong className="text-zinc-900 font-mono">@MrBeast</strong>) or full Channel ID (<strong className="text-zinc-900 font-mono">UC...</strong>). TubeFlow will pull live subscriber counts and channel metadata.
+              </p>
+
+              <div>
+                <label className="font-bold text-zinc-800 block mb-1">
+                  YouTube Channel Handle or ID
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="@yourchannelname or UC..."
+                  value={handleInput}
+                  onChange={(e) => setHandleInput(e.target.value)}
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-red-600 focus:bg-white"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100">
+                <button
+                  type="button"
+                  onClick={() => setIsHandleModalOpen(false)}
+                  className="px-3 py-1.5 rounded-xl border border-zinc-200 text-zinc-700 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={handleConnecting || !handleInput.trim()}
+                  className="px-4 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all shadow-xs disabled:opacity-50"
+                >
+                  {handleConnecting ? "Connecting..." : "Fetch & Connect"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

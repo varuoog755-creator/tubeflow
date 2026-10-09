@@ -85,42 +85,12 @@ export async function GET(request: NextRequest) {
       workspace = createdWs;
     }
 
-    // 3. Get Channels owned by user
-    let { data: channels } = await supabaseAdmin
+    // Channels owned by user
+    const { data: channels } = await supabaseAdmin
       .from("youtube_channels")
       .select("*")
       .eq("user_id", profile.id)
       .order("created_at", { ascending: false });
-
-    // Auto-create sample channel for customer demonstration if none exists yet
-    if (!channels || channels.length === 0) {
-      const isHimalayan = email.includes("himalayanpine");
-      const defaultTitle = isHimalayan ? "Himalayan Pine Studio" : `${profile.full_name}'s Channel`;
-      const defaultCustomUrl = isHimalayan ? "@himalayanpine" : `@${email.split("@")[0]}`;
-      
-      const { data: newCh } = await supabaseAdmin
-        .from("youtube_channels")
-        .insert({
-          user_id: profile.id,
-          workspace_id: workspace?.id || null,
-          channel_id: `UC_${profile.id.substring(0, 12)}`,
-          channel_title: defaultTitle,
-          custom_url: defaultCustomUrl,
-          thumbnail_url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=150&auto=format&fit=crop&q=80",
-          subscriber_count: isHimalayan ? 24800 : 12400,
-          video_count: 52,
-          view_count: isHimalayan ? 489200 : 253000,
-          access_token: "demo",
-          refresh_token: "demo",
-          is_active: true,
-        })
-        .select("*")
-        .maybeSingle();
-
-      if (newCh) {
-        channels = [newCh];
-      }
-    }
 
     const activeChannel = channels?.[0] || null;
     const channelIds = (channels || []).map((c) => c.id);

@@ -19,14 +19,21 @@ export async function GET(request: NextRequest) {
       redirectUri
     );
 
-    // Request full YouTube scopes so the channel and permissions are automatically linked on login or connect
-    const scopes = [
-      "openid",
-      "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/userinfo.profile",
-      "https://www.googleapis.com/auth/youtube.force-ssl",
-      "https://www.googleapis.com/auth/youtube.readonly",
-    ];
+    // Login mode uses non-sensitive scopes to allow any user worldwide to log in without Google 403 unverified app blocks.
+    // Channel connect mode requests full YouTube Data API scopes.
+    const scopes = mode === "login"
+      ? [
+          "openid",
+          "https://www.googleapis.com/auth/userinfo.email",
+          "https://www.googleapis.com/auth/userinfo.profile",
+        ]
+      : [
+          "openid",
+          "https://www.googleapis.com/auth/userinfo.email",
+          "https://www.googleapis.com/auth/userinfo.profile",
+          "https://www.googleapis.com/auth/youtube.force-ssl",
+          "https://www.googleapis.com/auth/youtube.readonly",
+        ];
 
     const state = JSON.stringify({ mode, origin });
 

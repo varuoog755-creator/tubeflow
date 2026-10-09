@@ -120,6 +120,93 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: "Channel disconnected" });
     }
 
+    if (action === "connect_by_handle") {
+      const { handle } = body;
+      if (!handle || typeof handle !== "string" || !handle.trim()) {
+        return NextResponse.json({ error: "Handle or Channel ID is required" }, { status: 400 });
+      }
+
+      let cleanHandle = handle.trim();
+      if (cleanHandle.includes("youtube.com/")) {
+        const handleMatch = cleanHandle.match(/@[\w.-]+/);
+        const channelMatch = cleanHandle.match(/channel\/(UC[\w-]+)/);
+        if (handleMatch) cleanHandle = handleMatch[0];
+        else if (channelMatch) cleanHandle = channelMatch[1];
+      }
+
+      const targetUrl = cleanHandle.startsWith("UC")
+        ? `https://www.youtube.com/channel/${cleanHandle}`
+        : cleanHandle.startsWith("@")
+        ? `https://www.youtube.com/${cleanHandle}`
+        : `https://www.youtube.com/@${cleanHandle}`;
+
+      try {
+        const ytRes = await fetch(targetUrl, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          },
+        });
+        const html = await ytRes.text();
+
+        const titleMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
+        const imageMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
+        const idMatch =
+          html.match(/itemprop="channelId" content="([^"]+)"/) ||
+          html.match(/"channelId":"([^"]+)"/);
+        const subMatch = html.match(
+          /"subscriberCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"/
+        );
+
+        const channelId = idMatch ? idMatch[1] : (cleanHandle.startsWith("UC") ? cleanHandle : `UC_${Date.now()}`);
+        const channelTitle = titleMatch ? titleMatch[1] : cleanHandle;
+        const thumbnailUrl = imageMatch ? imageMatch[1] : "";
+        const customUrl = cleanHandle.startsWith("@") ? cleanHandle : `@${cleanHandle.replace(/^UC/, "")}`;
+
+        let subscriberCount = 0;
+        if (subMatch && subMatch[1]) {
+          const raw = subMatch[1].toLowerCase();
+          const num = parseFloat(raw.replace(/[^0-9.]/g, ""));
+          if (raw.includes("million") || raw.includes("m")) {
+            subscriberCount = Math.round(num * 1000000);
+          } else if (raw.includes("k") || raw.includes("thousand")) {
+            subscriberCount = Math.round(num * 1000);
+          } else {
+            subscriberCount = Math.round(num) || 0;
+          }
+        }
+
+        const { data: savedChannel, error: saveErr } = await supabaseAdmin
+          .from("youtube_channels")
+          .upsert(
+            {
+              user_id: profile.id,
+              channel_id: channelId,
+              channel_title: channelTitle,
+              thumbnail_url: thumbnailUrl,
+              custom_url: customUrl,
+              subscriber_count: subscriberCount,
+              video_count: 0,
+              view_count: 0,
+              access_token: "public_connect",
+              is_active: true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "channel_id" }
+          )
+          .select()
+          .single();
+
+        if (saveErr) {
+          return NextResponse.json({ error: saveErr.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true, channel: savedChannel });
+      } catch (err: unknown) {
+        return NextResponse.json({ error: "Failed to resolve channel from YouTube" }, { status: 500 });
+      }
+    }
+
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error: unknown) {
     console.error("Channel action error:", error);

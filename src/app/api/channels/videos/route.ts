@@ -113,12 +113,12 @@ export async function GET(request: NextRequest) {
     if (!profile) {
       return NextResponse.json({
         channel: null,
-        videos: SAMPLE_VIDEOS,
+        videos: [],
         totals: {
-          totalVideos: SAMPLE_VIDEOS.length,
-          totalViews: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.viewCount, 0),
-          totalLikes: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.likeCount, 0),
-          totalComments: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.commentCount, 0),
+          totalVideos: 0,
+          totalViews: 0,
+          totalLikes: 0,
+          totalComments: 0,
         },
       });
     }
@@ -132,21 +132,15 @@ export async function GET(request: NextRequest) {
       .order("created_at", { ascending: false })
       .maybeSingle();
 
-    if (!channel || !channel.access_token || channel.access_token === "demo") {
+    if (!channel) {
       return NextResponse.json({
-        channel: channel || {
-          channel_title: `${profile.full_name || "Creator"}'s Channel`,
-          subscriber_count: 12400,
-          view_count: 253900,
-          video_count: SAMPLE_VIDEOS.length,
-          is_active: true,
-        },
-        videos: SAMPLE_VIDEOS,
+        channel: null,
+        videos: [],
         totals: {
-          totalVideos: SAMPLE_VIDEOS.length,
-          totalViews: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.viewCount, 0),
-          totalLikes: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.likeCount, 0),
-          totalComments: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.commentCount, 0),
+          totalVideos: 0,
+          totalViews: 0,
+          totalLikes: 0,
+          totalComments: 0,
         },
       });
     }
@@ -166,8 +160,27 @@ export async function GET(request: NextRequest) {
         id: [channel.channel_id],
       });
 
+      const channelItem = channelRes.data.items?.[0];
       const uploadsPlaylistId =
-        channelRes.data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+        channelItem?.contentDetails?.relatedPlaylists?.uploads;
+
+      if (channelItem?.statistics) {
+        const subCount = parseInt(channelItem.statistics.subscriberCount || "0", 10);
+        const vidCount = parseInt(channelItem.statistics.videoCount || "0", 10);
+        const viewCount = parseInt(channelItem.statistics.viewCount || "0", 10);
+        channel.subscriber_count = subCount;
+        channel.video_count = vidCount;
+        channel.view_count = viewCount;
+        await supabaseAdmin
+          .from("youtube_channels")
+          .update({
+            subscriber_count: subCount,
+            video_count: vidCount,
+            view_count: viewCount,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", channel.id);
+      }
 
       if (!uploadsPlaylistId) {
         throw new Error("Uploads playlist not found");
@@ -232,17 +245,16 @@ export async function GET(request: NextRequest) {
         },
       });
     } catch (apiError) {
-      console.warn("Live YouTube videos fetch fallback to sample:", apiError);
+      console.warn("Live YouTube videos fetch notice:", apiError);
       return NextResponse.json({
         channel,
-        videos: SAMPLE_VIDEOS,
+        videos: [],
         totals: {
-          totalVideos: SAMPLE_VIDEOS.length,
-          totalViews: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.viewCount, 0),
-          totalLikes: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.likeCount, 0),
-          totalComments: SAMPLE_VIDEOS.reduce((acc, v) => acc + v.commentCount, 0),
+          totalVideos: 0,
+          totalViews: 0,
+          totalLikes: 0,
+          totalComments: 0,
         },
-        notice: "Using cached / sample video metrics while YouTube API updates.",
       });
     }
   } catch (error: unknown) {
