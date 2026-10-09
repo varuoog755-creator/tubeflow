@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
 import { getOAuth2Client, getYoutubeClient } from "@/lib/youtube";
 import { supabaseAdmin } from "@/lib/supabase";
 import { createSessionToken, setSessionCookie } from "@/lib/session";
@@ -14,18 +15,22 @@ export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin;
   const redirectUri = `${origin}/api/auth/callback/google`;
 
-  let mode = "connect_youtube";
-  if (rawState) {
-    try {
-      const parsed = JSON.parse(Buffer.from(rawState, "base64").toString("utf-8"));
-      mode = parsed.mode || mode;
-    } catch {
-      // ignore
-    }
+  const expectedState = request.cookies.get("tf_oauth_state")?.value;
+  const requestedMode = request.cookies.get("tf_oauth_mode")?.value;
+  const mode = requestedMode === "connect_youtube" ? "connect_youtube" : "login";
+  const clearOAuthCookies = (response: NextResponse) => {
+    response.cookies.delete("tf_oauth_state");
+    response.cookies.delete("tf_oauth_mode");
+    return response;
+  };
+
+  // OAuth state must be unpredictable and match the same browser that initiated login.
+  if (!rawState || !expectedState || rawState.length > 256 || rawState !== expectedState) {
+    return clearOAuthCookies(NextResponse.json({ error: "Invalid or expired OAuth state" }, { status: 400 }));
   }
 
   if (error || !code) {
-    return NextResponse.redirect(`${origin}/dashboard?auth_error=${encodeURIComponent(error || "no_code")}`);
+    return clearOAuthCookies(NextResponse.redirect(`${origin}/login?auth_error=${encodeURIComponent(error || "no_code")}`));
   }
 
   try {
@@ -45,79 +50,92 @@ export async function GET(request: NextRequest) {
       throw new Error("Unable to retrieve Google email address");
     }
 
-    // 3. Upsert Creator Profile in Supabase
     let userId: string;
-    const { data: existingProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (existingProfile) {
-      userId = existingProfile.id;
-      await supabaseAdmin
-        .from("profiles")
-        .update({ full_name: name, avatar_url: avatar, updated_at: new Date().toISOString() })
-        .eq("id", userId);
-    } else {
-      const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
-      const existingAuthUser = userList?.users?.find((u) => u.email === email);
-      if (existingAuthUser) {
-        userId = existingAuthUser.id;
-      } else {
-        const { data: createdUser } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          email_confirm: true,
-          user_metadata: { full_name: name, avatar_url: avatar },
-        });
-        userId = createdUser?.user?.id || crypto.randomUUID();
-      }
-
-      await supabaseAdmin
-        .from("profiles")
-        .upsert({
-          id: userId,
-          email,
-          full_name: name,
-          avatar_url: avatar,
-          updated_at: new Date().toISOString(),
-        });
-    }
-
-    // 4. Ensure Default Workspace exists for this user
     let workspaceId: string;
-    const { data: existingWorkspace } = await supabaseAdmin
-      .from("workspaces")
-      .select("id")
-      .eq("owner_id", userId)
-      .maybeSingle();
-
-    if (existingWorkspace) {
-      workspaceId = existingWorkspace.id;
+    if (mode === "connect_youtube") {
+      const session = await getSession();
+      if (!session) {
+        return clearOAuthCookies(NextResponse.redirect(`${origin}/login?auth_error=session_required`));
+      }
+      userId = session.userId;
+      workspaceId = session.workspaceId;
     } else {
-      const slug = `${email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
-      const { data: newWorkspace } = await supabaseAdmin
-        .from("workspaces")
-        .insert({
-          name: `${name}'s Workspace`,
-          slug,
-          owner_id: userId,
-          plan: "free",
-          plan_status: "active",
-        })
+      // 3. Upsert Creator Profile in Supabase
+  
+      const { data: existingProfile } = await supabaseAdmin
+        .from("profiles")
         .select("id")
-        .single();
-
-      workspaceId = newWorkspace?.id || crypto.randomUUID();
-
-      // Add to workspace_members as owner
-      await supabaseAdmin
-        .from("workspace_members")
-        .insert({
-          workspace_id: workspaceId,
-          user_id: userId,
-          role: "owner",
-        });
+        .eq("email", email)
+        .maybeSingle();
+  
+      if (existingProfile) {
+        userId = existingProfile.id;
+        await supabaseAdmin
+          .from("profiles")
+          .update({ full_name: name, avatar_url: avatar, updated_at: new Date().toISOString() })
+          .eq("id", userId);
+      } else {
+        const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
+        const existingAuthUser = userList?.users?.find((u) => u.email === email);
+        if (existingAuthUser) {
+          userId = existingAuthUser.id;
+        } else {
+          const { data: createdUser } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            email_confirm: true,
+            user_metadata: { full_name: name, avatar_url: avatar },
+          });
+          userId = createdUser?.user?.id || crypto.randomUUID();
+        }
+  
+        await supabaseAdmin
+          .from("profiles")
+          .upsert({
+            id: userId,
+            email,
+            full_name: name,
+            avatar_url: avatar,
+            updated_at: new Date().toISOString(),
+          });
+      }
+  
+      // 4. Ensure Default Workspace exists for this user
+  
+      const { data: existingWorkspace } = await supabaseAdmin
+        .from("workspaces")
+        .select("id")
+        .eq("owner_id", userId)
+        .maybeSingle();
+  
+      if (existingWorkspace) {
+        workspaceId = existingWorkspace.id;
+      } else {
+        const slug = `${email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const { data: newWorkspace } = await supabaseAdmin
+          .from("workspaces")
+          .insert({
+            name: `${name}'s Workspace`,
+            slug,
+            owner_id: userId,
+            plan: "free",
+            plan_status: "active",
+          })
+          .select("id")
+          .single();
+  
+        workspaceId = newWorkspace?.id || crypto.randomUUID();
+  
+        // Add to workspace_members as owner
+        await supabaseAdmin
+          .from("workspace_members")
+          .insert({
+            workspace_id: workspaceId,
+            user_id: userId,
+            role: "owner",
+          });
+      }
+  
+  
     }
 
     // 5. Fetch and upsert YouTube channel info whenever tokens.access_token is present
@@ -208,6 +226,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (err: unknown) {
     console.error("OAuth Callback failed:", err);
-    return NextResponse.redirect(`${origin}/dashboard?auth_error=callback_failed`);
+    return clearOAuthCookies(NextResponse.redirect(`${origin}/login?auth_error=callback_failed`));
   }
 }
