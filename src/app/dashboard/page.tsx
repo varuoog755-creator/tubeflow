@@ -710,7 +710,7 @@ export default function DashboardPage() {
           keyword_match_operator: ruleOperator,
           intent_category: ruleIntentCategory,
           reply_template: ruleTemplates.split("\n")[0] || "Hey {{first_name}}! Check: {{cta_url}}",
-          cta_url: ruleCtaUrl || "https://tubeflow.in/demo",
+          cta_url: ruleCtaUrl || undefined,
         }),
       });
       const data = await res.json();
