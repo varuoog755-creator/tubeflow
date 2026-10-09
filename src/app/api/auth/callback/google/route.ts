@@ -203,27 +203,19 @@ export async function GET(request: NextRequest) {
     }
 
     // 6. Issue secure Signed JWT Session Cookie
-    const sessionToken = await createSessionToken({
-      userId,
-      email,
-      fullName: name,
-      avatarUrl: avatar,
-      workspaceId,
-    });
-
     const response = NextResponse.redirect(`${origin}/dashboard?authenticated=true`);
-    setSessionCookie(response, sessionToken);
-
-    // Backward compatibility cookie
-    response.cookies.set("tf_user_email", email, {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-
-    return response;
+    // Account linking must preserve the existing app session and never switch identities.
+    if (mode !== "connect_youtube") {
+      const sessionToken = await createSessionToken({
+        userId,
+        email,
+        fullName: name,
+        avatarUrl: avatar,
+        workspaceId,
+      });
+      setSessionCookie(response, sessionToken);
+    }
+    return clearOAuthCookies(response);
   } catch (err: unknown) {
     console.error("OAuth Callback failed:", err);
     return clearOAuthCookies(NextResponse.redirect(`${origin}/login?auth_error=callback_failed`));
