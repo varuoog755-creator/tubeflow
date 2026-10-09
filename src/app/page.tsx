@@ -21,6 +21,17 @@ import {
   ShieldCheck,
   MousePointerClick,
   Layers,
+  Menu,
+  X,
+  Monitor,
+  Tag,
+  Bot,
+  ScrollText,
+  Smartphone,
+  ShieldAlert,
+  MessageSquare,
+  Activity,
+  Sliders,
 } from "lucide-react";
 
 interface Scenario {
@@ -84,6 +95,8 @@ export default function Home() {
   const [tilt, setTilt] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [solutionsOpen, setSolutionsOpen] = useState<boolean>(false);
+  const [functionsOpen, setFunctionsOpen] = useState<boolean>(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const scenario =
@@ -126,7 +139,7 @@ export default function Home() {
 
       {/* Navigation */}
       <header className="sticky top-0 z-50 border-b border-zinc-100 bg-white/95 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center shadow-md shadow-red-600/20 group-hover:scale-105 transition-transform">
               <Video className="w-4 h-4 fill-white text-white" />
@@ -136,17 +149,209 @@ export default function Home() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-zinc-600">
-            {/* Solutions Dropdown Menu */}
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-6 lg:gap-7 text-sm font-medium text-zinc-600">
+            {/* 1. FUNCTIONS DROPDOWN */}
             <div
-              className="relative"
-              onMouseEnter={() => setSolutionsOpen(true)}
+              className="relative py-2"
+              onMouseEnter={() => {
+                setFunctionsOpen(true);
+                setSolutionsOpen(false);
+              }}
+              onMouseLeave={() => setFunctionsOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setFunctionsOpen((prev) => !prev);
+                  setSolutionsOpen(false);
+                }}
+                className="flex items-center gap-1 hover:text-zinc-950 transition-colors py-1 focus:outline-none cursor-pointer"
+              >
+                <span>Functions</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    functionsOpen ? "rotate-180 text-zinc-950" : "text-zinc-400"
+                  }`}
+                />
+              </button>
+
+              {/* Mega-menu dropdown for 8 core product functions */}
+              {functionsOpen && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 z-50">
+                  <div className="w-[660px] bg-white rounded-2xl border border-zinc-200 shadow-2xl p-5 grid grid-cols-2 gap-4">
+                    {/* Item 1: Central Dashboard */}
+                    <a
+                      href="#functions-dashboard"
+                      onClick={() => setFunctionsOpen(false)}
+                      className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Monitor className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                          Central Dashboard
+                        </p>
+                        <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                          Manage all YouTube comments in one centralized three-panel inbox.
+                        </p>
+                      </div>
+                    </a>
+
+                    {/* Item 2: DM & Comment Funnels */}
+                    <a
+                      href="#functions-funnels"
+                      onClick={() => setFunctionsOpen(false)}
+                      className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <MessageSquare className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                          Comment Lead Funnels
+                        </p>
+                        <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                          Turn comments and trigger keywords into tracked checkout links.
+                        </p>
+                      </div>
+                    </a>
+
+                    {/* Item 3: Intelligent Intent Tagging */}
+                    <a
+                      href="#functions-tagging"
+                      onClick={() => setFunctionsOpen(false)}
+                      className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Tag className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                          Intelligent Intent Tagging
+                        </p>
+                        <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                          Automated AI classification of buyer intent and price queries.
+                        </p>
+                      </div>
+                    </a>
+
+                    {/* Item 4: AI-Powered Answers */}
+                    <a
+                      href="#functions-answers"
+                      onClick={() => setFunctionsOpen(false)}
+                      className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Bot className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                          AI-Powered Answers
+                        </p>
+                        <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                          Brand-compliant answers with 1-click or autopilot Spintax.
+                        </p>
+                      </div>
+                    </a>
+
+                    {/* Item 5: Activity Logs */}
+                    <a
+                      href="#functions-logs"
+                      onClick={() => setFunctionsOpen(false)}
+                      className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <ScrollText className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                          Activity Logs & Traces
+                        </p>
+                        <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                          Track delivery status, YouTube comment IDs, and click attribution.
+                        </p>
+                      </div>
+                    </a>
+
+                    {/* Item 6: Custom Automations */}
+                    <a
+                      href="#functions-automations"
+                      onClick={() => setFunctionsOpen(false)}
+                      className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Zap className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                          Custom Automations
+                        </p>
+                        <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                          Create rule-based workflows with ANY/ALL keyword matching.
+                        </p>
+                      </div>
+                    </a>
+
+                    {/* Item 7: Mobile Web App */}
+                    <a
+                      href="#functions-mobile"
+                      onClick={() => setFunctionsOpen(false)}
+                      className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Smartphone className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                          Mobile Responsive App
+                        </p>
+                        <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                          Triage comments and review automations seamlessly on the go.
+                        </p>
+                      </div>
+                    </a>
+
+                    {/* Item 8: Automatic Spam Hiding */}
+                    <a
+                      href="#functions-spam-shield"
+                      onClick={() => setFunctionsOpen(false)}
+                      className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <ShieldAlert className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                          Automatic Spam Shields
+                        </p>
+                        <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                          Filter phishing bots, crypto scams, and toxic remarks automatically.
+                        </p>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. SOLUTIONS DROPDOWN */}
+            <div
+              className="relative py-2"
+              onMouseEnter={() => {
+                setSolutionsOpen(true);
+                setFunctionsOpen(false);
+              }}
               onMouseLeave={() => setSolutionsOpen(false)}
             >
               <button
                 type="button"
-                onClick={() => setSolutionsOpen((prev) => !prev)}
-                className="flex items-center gap-1 hover:text-zinc-950 transition-colors py-2 focus:outline-none"
+                onClick={() => {
+                  setSolutionsOpen((prev) => !prev);
+                  setFunctionsOpen(false);
+                }}
+                className="flex items-center gap-1 hover:text-zinc-950 transition-colors py-1 focus:outline-none cursor-pointer"
               >
                 <span>Solutions</span>
                 <ChevronDown
@@ -156,143 +361,145 @@ export default function Home() {
                 />
               </button>
 
-              {/* Mega-menu dropdown */}
+              {/* Mega-menu dropdown for Solutions */}
               {solutionsOpen && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 w-[620px] bg-white rounded-2xl border border-zinc-200 shadow-xl p-5 grid grid-cols-2 gap-5 z-50">
-                  {/* Column 1: Industries */}
-                  <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 pb-2 mb-2 border-b border-zinc-100 flex items-center gap-1.5">
-                      <Layers className="w-3 h-3 text-red-600" />
-                      <span>Industries</span>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 z-50">
+                  <div className="w-[620px] bg-white rounded-2xl border border-zinc-200 shadow-2xl p-5 grid grid-cols-2 gap-5 animate-in fade-in zoom-in-95 duration-150">
+                    {/* Column 1: Industries */}
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 pb-2 mb-2 border-b border-zinc-100 flex items-center gap-1.5">
+                        <Layers className="w-3 h-3 text-red-600" />
+                        <span>Industries</span>
+                      </div>
+                      <div className="space-y-1">
+                        <a
+                          href="#solutions-ecommerce"
+                          onClick={() => setSolutionsOpen(false)}
+                          className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                            <ShoppingCart className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                              For E-Commerce & D2C
+                            </p>
+                            <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                              Protect your brand and increase ROAS on YouTube traffic.
+                            </p>
+                          </div>
+                        </a>
+
+                        <a
+                          href="#solutions-creators"
+                          onClick={() => setSolutionsOpen(false)}
+                          className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                            <Users className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                              For Creators & Influencers
+                            </p>
+                            <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                              Community growth and monetized interaction on autopilot.
+                            </p>
+                          </div>
+                        </a>
+
+                        <a
+                          href="#solutions-agencies"
+                          onClick={() => setSolutionsOpen(false)}
+                          className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                            <Briefcase className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                              For Marketing Agencies
+                            </p>
+                            <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                              Deliver 24/7 comment response coverage for client channels.
+                            </p>
+                          </div>
+                        </a>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <a
-                        href="#solutions-ecommerce"
-                        onClick={() => setSolutionsOpen(false)}
-                        className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                          <ShoppingCart className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
-                            For E-Commerce & D2C
-                          </p>
-                          <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
-                            Protect your brand and increase ROAS on YouTube traffic.
-                          </p>
-                        </div>
-                      </a>
 
-                      <a
-                        href="#solutions-creators"
-                        onClick={() => setSolutionsOpen(false)}
-                        className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                          <Users className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
-                            For Creators & Influencers
-                          </p>
-                          <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
-                            Community growth and monetized interaction on autopilot.
-                          </p>
-                        </div>
-                      </a>
+                    {/* Column 2: Use Cases */}
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 pb-2 mb-2 border-b border-zinc-100 flex items-center gap-1.5">
+                        <Zap className="w-3 h-3 text-red-600" />
+                        <span>Use Cases</span>
+                      </div>
+                      <div className="space-y-1">
+                        <a
+                          href="#usecases-moderation"
+                          onClick={() => setSolutionsOpen(false)}
+                          className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                            <ShieldCheck className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                              Filter Negative & Spam
+                            </p>
+                            <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                              Protect your customers and brand reputation from scams.
+                            </p>
+                          </div>
+                        </a>
 
-                      <a
-                        href="#solutions-agencies"
-                        onClick={() => setSolutionsOpen(false)}
-                        className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                          <Briefcase className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
-                            For Marketing Agencies
-                          </p>
-                          <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
-                            Deliver 24/7 comment response coverage for client channels.
-                          </p>
-                        </div>
-                      </a>
-                    </div>
-                  </div>
+                        <a
+                          href="#usecases-replies"
+                          onClick={() => setSolutionsOpen(false)}
+                          className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                            <MousePointerClick className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                              1-Click Smart Replies
+                            </p>
+                            <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                              Save 80% of time spent answering repetitive questions.
+                            </p>
+                          </div>
+                        </a>
 
-                  {/* Column 2: Use Cases */}
-                  <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 pb-2 mb-2 border-b border-zinc-100 flex items-center gap-1.5">
-                      <Zap className="w-3 h-3 text-red-600" />
-                      <span>Use Cases</span>
-                    </div>
-                    <div className="space-y-1">
-                      <a
-                        href="#usecases-moderation"
-                        onClick={() => setSolutionsOpen(false)}
-                        className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                          <ShieldCheck className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
-                            Filter Negative & Spam Comments
-                          </p>
-                          <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
-                            Protect your customers and brand reputation from scam bots.
-                          </p>
-                        </div>
-                      </a>
-
-                      <a
-                        href="#usecases-replies"
-                        onClick={() => setSolutionsOpen(false)}
-                        className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                          <MousePointerClick className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
-                            1-Click Smart Replies
-                          </p>
-                          <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
-                            Save 80% of time spent answering repetitive questions.
-                          </p>
-                        </div>
-                      </a>
-
-                      <a
-                        href="#usecases-funnels"
-                        onClick={() => setSolutionsOpen(false)}
-                        className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                          <Target className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
-                            Comment Lead Funnels (ManyChat Style)
-                          </p>
-                          <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
-                            Turn viewer comments into automated conversion funnels.
-                          </p>
-                        </div>
-                      </a>
+                        <a
+                          href="#usecases-funnels"
+                          onClick={() => setSolutionsOpen(false)}
+                          className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                            <Target className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-xs text-zinc-950 group-hover:text-red-600 transition-colors">
+                              Comment Lead Funnels
+                            </p>
+                            <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                              Turn viewer comments into automated conversion funnels.
+                            </p>
+                          </div>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
+            <a href="#functions" className="hover:text-zinc-950 transition-colors">
+              Platform
+            </a>
             <a href="#industries" className="hover:text-zinc-950 transition-colors">
               Industries
-            </a>
-            <a href="#use-cases" className="hover:text-zinc-950 transition-colors">
-              Use Cases
             </a>
             <a href="#demo" className="hover:text-zinc-950 transition-colors">
               Demo
@@ -305,22 +512,160 @@ export default function Home() {
             </a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          {/* Action buttons + Mobile Menu Toggle */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/login"
-              className="text-sm font-medium text-zinc-700 hover:text-zinc-950 px-3 py-1.5 transition-colors"
+              className="text-xs sm:text-sm font-medium text-zinc-700 hover:text-zinc-950 px-2 sm:px-3 py-1.5 transition-colors"
             >
               Sign In
             </Link>
             <Link
               href="/login"
-              className="text-sm font-semibold bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl transition-all shadow-md shadow-red-600/20 hover:shadow-red-600/30 flex items-center gap-1.5"
+              className="text-xs sm:text-sm font-semibold bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 rounded-xl transition-all shadow-md shadow-red-600/20 hover:shadow-red-600/30 flex items-center gap-1.5"
             >
               <span>Get Started</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </Link>
+
+            {/* Mobile Hamburger Button */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              className="md:hidden p-2 rounded-xl border border-zinc-200 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-50 transition-colors ml-1 cursor-pointer"
+              aria-label="Toggle navigation"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5 text-zinc-900" />
+              ) : (
+                <Menu className="w-5 h-5 text-zinc-900" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-zinc-200 bg-white px-5 py-4 space-y-4 shadow-xl max-h-[85vh] overflow-y-auto">
+            {/* Functions Group */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block px-1 mb-1">
+                Core Functions
+              </span>
+              <a
+                href="#functions-dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                <Monitor className="w-4 h-4 text-red-600 shrink-0" />
+                <span>Central Dashboard</span>
+              </a>
+              <a
+                href="#functions-funnels"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                <MessageSquare className="w-4 h-4 text-red-600 shrink-0" />
+                <span>Comment Lead Funnels</span>
+              </a>
+              <a
+                href="#functions-tagging"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                <Tag className="w-4 h-4 text-red-600 shrink-0" />
+                <span>Intelligent Intent Tagging</span>
+              </a>
+              <a
+                href="#functions-answers"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                <Bot className="w-4 h-4 text-red-600 shrink-0" />
+                <span>AI-Powered Answers</span>
+              </a>
+              <a
+                href="#functions-logs"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                <ScrollText className="w-4 h-4 text-red-600 shrink-0" />
+                <span>Activity Logs & Attribution</span>
+              </a>
+              <a
+                href="#functions-automations"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                <Zap className="w-4 h-4 text-red-600 shrink-0" />
+                <span>Custom Automations</span>
+              </a>
+              <a
+                href="#functions-mobile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                <Smartphone className="w-4 h-4 text-red-600 shrink-0" />
+                <span>Mobile Web App</span>
+              </a>
+              <a
+                href="#functions-spam-shield"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
+                <span>Automatic Spam Shields</span>
+              </a>
+            </div>
+
+            {/* Industries Group */}
+            <div className="space-y-1 pt-2 border-t border-zinc-100">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block px-1 mb-1">
+                Industries
+              </span>
+              <a
+                href="#solutions-ecommerce"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                <ShoppingCart className="w-4 h-4 text-red-600 shrink-0" />
+                <span>For E-Commerce & D2C</span>
+              </a>
+              <a
+                href="#solutions-creators"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                <Users className="w-4 h-4 text-red-600 shrink-0" />
+                <span>For Creators & Influencers</span>
+              </a>
+              <a
+                href="#solutions-agencies"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                <Briefcase className="w-4 h-4 text-red-600 shrink-0" />
+                <span>For Marketing Agencies</span>
+              </a>
+            </div>
+
+            {/* Direct Login Links */}
+            <div className="pt-2 border-t border-zinc-100 flex flex-col gap-2">
+              <Link
+                href="/login"
+                className="w-full text-center py-2.5 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
+              >
+                Sign In to Dashboard
+              </Link>
+              <Link
+                href="/login"
+                className="w-full text-center py-2.5 rounded-xl bg-red-600 text-white text-xs font-semibold shadow-md shadow-red-600/20"
+              >
+                Connect YouTube Channel
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* HERO SECTION */}
@@ -534,6 +879,226 @@ export default function Home() {
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION: 8 CORE FUNCTIONS */}
+      <section id="functions" className="py-20 bg-white border-t border-zinc-100 px-6 scroll-mt-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-zinc-200 bg-zinc-50 text-zinc-700 text-xs font-semibold mb-3">
+              <Sparkles className="w-3.5 h-3.5 text-red-600" />
+              <span>Core Platform Functions</span>
+            </div>
+            <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-zinc-950 mb-4">
+              Everything Needed to Monetize YouTube Comments
+            </h2>
+            <p className="text-base text-zinc-600">
+              Eight powerful modules designed to manage, filter, automate, and attribute viewer conversations at scale.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Function 1: Central Dashboard */}
+            <div
+              id="functions-dashboard"
+              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                  <Monitor className="w-5 h-5" />
+                </div>
+                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
+                  Central Dashboard
+                </h3>
+                <p className="text-xs text-zinc-600 leading-relaxed mb-4">
+                  Manage all YouTube comments in one place. Three-panel inbox with saved views, instant search, and real-time reply workspace.
+                </p>
+              </div>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+              >
+                <span>Launch Dashboard</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Function 2: DM & Comment Funnels */}
+            <div
+              id="functions-funnels"
+              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
+                  Comment Lead Funnels
+                </h3>
+                <p className="text-xs text-zinc-600 leading-relaxed mb-4">
+                  Turn viewer comments and keywords into attributed leads and orders. Delivers unique shortlinks like ManyChat for YouTube.
+                </p>
+              </div>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+              >
+                <span>Setup Tracked Links</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Function 3: Intelligent Tagging */}
+            <div
+              id="functions-tagging"
+              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                  <Tag className="w-5 h-5" />
+                </div>
+                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
+                  Intelligent Intent Tagging
+                </h3>
+                <p className="text-xs text-zinc-600 leading-relaxed mb-4">
+                  Automatic AI classification of comments. Tags Buying Intent, Price Inquiries, and Link Requests with confidence scores.
+                </p>
+              </div>
+              <a
+                href="#demo"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+              >
+                <span>Test Classification</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            {/* Function 4: AI-Powered Answers */}
+            <div
+              id="functions-answers"
+              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
+                  AI-Powered Answers
+                </h3>
+                <p className="text-xs text-zinc-600 leading-relaxed mb-4">
+                  Brand-compliant answers with just one click. Natural Spintax message rotation prevents duplicate bot detection.
+                </p>
+              </div>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+              >
+                <span>Configure Templates</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Function 5: Activity Logs */}
+            <div
+              id="functions-logs"
+              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                  <ScrollText className="w-5 h-5" />
+                </div>
+                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
+                  Activity Logs & Traces
+                </h3>
+                <p className="text-xs text-zinc-600 leading-relaxed mb-4">
+                  Audit trail of all comment activity. View real YouTube comment reply IDs, delivery timestamps, and API status codes.
+                </p>
+              </div>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+              >
+                <span>View Activity Feed</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Function 6: Custom Automations */}
+            <div
+              id="functions-automations"
+              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
+                  Custom Automations
+                </h3>
+                <p className="text-xs text-zinc-600 leading-relaxed mb-4">
+                  Create rule-based workflows with ANY or ALL keyword matching, negative exclusion lists, and custom response cooldowns.
+                </p>
+              </div>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+              >
+                <span>Create Rules</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Function 7: Mobile Web App */}
+            <div
+              id="functions-mobile"
+              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
+                  Mobile Responsive App
+                </h3>
+                <p className="text-xs text-zinc-600 leading-relaxed mb-4">
+                  Reply to viewer inquiries on the go. Complete lightweight web app accessible from phones, tablets, and desktop workstations.
+                </p>
+              </div>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+              >
+                <span>Open Mobile App</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Function 8: Automatic Spam Shields */}
+            <div
+              id="functions-spam-shield"
+              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
+                  Automatic Spam Shields
+                </h3>
+                <p className="text-xs text-zinc-600 leading-relaxed mb-4">
+                  No bots, no nonsense. Automatically filter phishing, WhatsApp contact scams, and hate comments without sending replies.
+                </p>
+              </div>
+              <a
+                href="#benefits"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+              >
+                <span>View Security Specs</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </a>
             </div>
           </div>
         </div>
@@ -1052,7 +1617,40 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 text-left">
             <div>
               <p className="font-bold text-zinc-900 mb-3 text-xs uppercase tracking-wider">
-                Industries
+                Platform Functions
+              </p>
+              <ul className="space-y-2">
+                <li>
+                  <a href="#functions-dashboard" className="hover:text-zinc-900 transition-colors">
+                    Central Dashboard
+                  </a>
+                </li>
+                <li>
+                  <a href="#functions-funnels" className="hover:text-zinc-900 transition-colors">
+                    Comment Lead Funnels
+                  </a>
+                </li>
+                <li>
+                  <a href="#functions-tagging" className="hover:text-zinc-900 transition-colors">
+                    Intelligent Intent Tagging
+                  </a>
+                </li>
+                <li>
+                  <a href="#functions-answers" className="hover:text-zinc-900 transition-colors">
+                    AI-Powered Answers
+                  </a>
+                </li>
+                <li>
+                  <a href="#functions-automations" className="hover:text-zinc-900 transition-colors">
+                    Custom Automations
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-bold text-zinc-900 mb-3 text-xs uppercase tracking-wider">
+                Solutions
               </p>
               <ul className="space-y-2">
                 <li>
@@ -1070,27 +1668,14 @@ export default function Home() {
                     For Marketing Agencies
                   </a>
                 </li>
-              </ul>
-            </div>
-
-            <div>
-              <p className="font-bold text-zinc-900 mb-3 text-xs uppercase tracking-wider">
-                Use Cases
-              </p>
-              <ul className="space-y-2">
                 <li>
                   <a href="#usecases-moderation" className="hover:text-zinc-900 transition-colors">
-                    Filter Spam & Negative Comments
+                    Spam & Negative Shields
                   </a>
                 </li>
                 <li>
                   <a href="#usecases-replies" className="hover:text-zinc-900 transition-colors">
                     1-Click Smart Replies
-                  </a>
-                </li>
-                <li>
-                  <a href="#usecases-funnels" className="hover:text-zinc-900 transition-colors">
-                    Comment Lead Funnels
                   </a>
                 </li>
               </ul>
@@ -1148,7 +1733,7 @@ export default function Home() {
               <div className="w-6 h-6 rounded-lg bg-red-600 text-white flex items-center justify-center">
                 <Video className="w-3.5 h-3.5 fill-white" />
               </div>
-              <span className="font-heading font-bold text-sm text-zinc-900">
+              <span className="font-heading font-bold text-sm text-zinc-950">
                 Tube<span className="text-red-600">Flow</span>
               </span>
               <span className="text-zinc-400 ml-2">
