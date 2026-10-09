@@ -270,7 +270,7 @@ export default function DashboardPage() {
       setChannels(data.channels || []);
       setRules(data.rules || []);
 
-      // If user has database comments, use them. Otherwise load realistic demo comments so inbox is immediately operational
+      // Only show comments persisted from this workspace; never substitute demo rows.
       const loadedLogs: ProcessedComment[] = data.logs || [];
       setComments(loadedLogs);
 
@@ -1627,7 +1627,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Total Videos</span>
                     <span className="text-xl font-heading font-bold text-zinc-950 mt-1 block">
-                      {videoStatsSummary.totalVideos || channelVideos.length || 52}
+                      {videoStatsSummary.totalVideos || channelVideos.length || 0}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-medium">Long-form & Shorts</span>
                   </div>
@@ -1643,7 +1643,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-red-50/60 border border-red-200/80">
                     <span className="text-[11px] font-semibold text-red-900 block">Total Comments</span>
                     <span className="text-xl font-heading font-bold text-red-700 mt-1 block">
-                      {(videoStatsSummary.totalComments || 3140).toLocaleString()}
+                      {(videoStatsSummary.totalComments ?? 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-red-600 font-medium">Buyer Intent Pool</span>
                   </div>
