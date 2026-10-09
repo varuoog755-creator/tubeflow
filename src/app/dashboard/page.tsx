@@ -205,10 +205,10 @@ export default function DashboardPage() {
   // Video Metrics & Channel Overview State
   const [channelVideos, setChannelVideos] = useState<ChannelVideoItem[]>([]);
   const [videoStatsSummary, setVideoStatsSummary] = useState({
-    totalVideos: 52,
-    totalViews: 489200,
-    totalLikes: 28400,
-    totalComments: 3140,
+    totalVideos: 0,
+    totalViews: 0,
+    totalLikes: 0,
+    totalComments: 0,
   });
   const [videoFormatFilter, setVideoFormatFilter] = useState<"all" | "long" | "shorts">("all");
   const [videoSearch, setVideoSearch] = useState("");
@@ -1619,7 +1619,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Subscribers</span>
                     <span className="text-xl font-heading font-bold text-zinc-950 mt-1 block">
-                      {(channels[0]?.subscriber_count || 24800).toLocaleString()}
+                      {(channels[0]?.subscriber_count ?? 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-emerald-600 font-medium">Verified Audience</span>
                   </div>
@@ -1635,7 +1635,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Total Views</span>
                     <span className="text-xl font-heading font-bold text-zinc-950 mt-1 block">
-                      {(videoStatsSummary.totalViews || 489200).toLocaleString()}
+                      {(videoStatsSummary.totalViews ?? 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-medium">All-time Impressions</span>
                   </div>
