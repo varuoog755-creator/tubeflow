@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 // Helper: resolve user profile and workspace
 async function getAuthenticatedUser(request: NextRequest) {
   const session = await getSession();
-  const email = session?.email || request.cookies.get("tf_user_email")?.value;
+  const email = session?.email;
   if (!email) return null;
 
   const { data: profile } = await supabaseAdmin
@@ -58,11 +58,16 @@ export async function GET(request: NextRequest) {
 
     if (ruleId) {
       // Fetch single rule + execution history
-      const { data: rule } = await supabaseAdmin
+      let ruleQuery = supabaseAdmin
         .from("trigger_rules")
         .select("*, youtube_channels(channel_title)")
-        .eq("id", ruleId)
-        .maybeSingle();
+        .eq("id", ruleId);
+      if (auth.workspace?.id) {
+        ruleQuery = ruleQuery.or(`workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`);
+      } else {
+        ruleQuery = ruleQuery.in("channel_id", auth.channelIds.length ? auth.channelIds : ["00000000-0000-0000-0000-000000000000"]);
+      }
+      const { data: rule } = await ruleQuery.maybeSingle();
 
       if (!rule) {
         return NextResponse.json({ error: "Rule not found" }, { status: 404 });
@@ -72,6 +77,7 @@ export async function GET(request: NextRequest) {
         .from("processed_comments")
         .select("*")
         .eq("matched_rule_id", ruleId)
+        .in("channel_id", auth.channelIds.length ? auth.channelIds : ["00000000-0000-0000-0000-000000000000"])
         .order("created_at", { ascending: false })
         .limit(20);
 
