@@ -46,7 +46,10 @@ import {
   Flame,
   Target,
   Layers,
+  CreditCard,
+  ShieldAlert,
 } from "lucide-react";
+import { PLAN_CONFIGS } from "@/lib/admin";
 
 // Types
 interface Channel {
@@ -135,6 +138,7 @@ type DashboardTab =
   | "automations"
   | "links"
   | "conversions"
+  | "billing"
   | "settings";
 
 type InboxFilterView =
@@ -297,6 +301,11 @@ export default function DashboardPage() {
   const [handleInput, setHandleInput] = useState("");
   const [handleConnecting, setHandleConnecting] = useState(false);
 
+  // Subscription & Admin State
+  const [currentPlan, setCurrentPlan] = useState<string>("free");
+  const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
+  const [isAdminUser, setIsAdminUser] = useState<boolean>(false);
+
   // Campaign Scope & Spintax Anti-Spam State
   const [campaignScope, setCampaignScope] = useState<"all" | "single" | "shorts">("all");
   const [selectedVideoForRule, setSelectedVideoForRule] = useState<string>("");
@@ -352,6 +361,14 @@ export default function DashboardPage() {
       setProfile(data.profile);
       setChannels(data.channels || []);
       setRules(data.rules || []);
+
+      if (data.workspace?.plan) {
+        setCurrentPlan(data.workspace.plan.toLowerCase());
+      }
+      const adminEmailList = ["varuoog755@gmail.com", "govinda755rock755@gmail.com"];
+      if (adminEmailList.includes((data.profile?.email || "").toLowerCase().trim())) {
+        setIsAdminUser(true);
+      }
 
       // Load real database comments and stats
       const loadedLogs: ProcessedComment[] = data.logs || [];
@@ -791,6 +808,30 @@ export default function DashboardPage() {
     }
   };
 
+  // Switch or Upgrade Workspace Subscription Plan
+  const handleUpgradePlan = async (targetPlan: string) => {
+    setUpgradingPlan(targetPlan);
+    try {
+      const res = await fetch("/api/subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: targetPlan }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification("success", data.message || `Switched to ${targetPlan.toUpperCase()} plan!`);
+        setCurrentPlan(targetPlan);
+        fetchDashboardData();
+      } else {
+        showNotification("error", data.error || "Failed to switch plan.");
+      }
+    } catch {
+      showNotification("error", "Network error updating subscription.");
+    } finally {
+      setUpgradingPlan(null);
+    }
+  };
+
   // Rule Save (Create / Edit)
   const handleSaveRule = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -980,6 +1021,18 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Admin Console Shortcut for Platform Administrators */}
+          {isAdminUser && (
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-950 border border-red-800 text-red-200 text-[11px] font-semibold hover:bg-red-900 transition-colors shadow-xs"
+              title="Open SuperAdmin Control Console"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
+              <span>Admin Console</span>
+            </Link>
+          )}
+
           {/* Channel Live Status Pill */}
           <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200/80 text-[11px] font-semibold text-emerald-800">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
@@ -1098,6 +1151,23 @@ export default function DashboardPage() {
             </button>
 
             <button
+              onClick={() => setActiveTab("billing")}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === "billing"
+                  ? "bg-red-50 text-red-700 border border-red-200/60"
+                  : "text-zinc-600 hover:bg-zinc-100/70 hover:text-zinc-950"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <CreditCard className="w-4 h-4 text-zinc-500" />
+                <span>Plans & Billing</span>
+              </div>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-800 uppercase tracking-wider">
+                {currentPlan}
+              </span>
+            </button>
+
+            <button
               onClick={() => setActiveTab("settings")}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === "settings"
@@ -1108,6 +1178,19 @@ export default function DashboardPage() {
               <Settings className="w-4 h-4 text-zinc-500" />
               <span>Channels & Setup</span>
             </button>
+
+            {isAdminUser && (
+              <Link
+                href="/admin"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-red-700 bg-red-50/70 border border-red-200 hover:bg-red-100 transition-all mt-1"
+              >
+                <div className="flex items-center gap-2.5">
+                  <ShieldAlert className="w-4 h-4 text-red-600" />
+                  <span>Admin Console</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-red-500" />
+              </Link>
+            )}
           </div>
 
           {/* Sidebar Footer info */}
@@ -2392,6 +2475,269 @@ export default function DashboardPage() {
                       </div>
                     ))
                   )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: SUBSCRIPTION PLANS & BILLING */}
+          {activeTab === "billing" && (
+            <div className="flex-1 overflow-y-auto p-6 max-w-5xl mx-auto w-full space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h1 className="font-heading font-bold text-2xl text-zinc-950">
+                    Creator Subscription & Plans
+                  </h1>
+                  <p className="text-xs text-zinc-600 mt-0.5">
+                    Upgrade your automation capacity, AI intent classification, and multi-channel reach.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-red-50 text-red-700 border border-red-200">
+                    Active Plan: <strong className="uppercase">{currentPlan}</strong>
+                  </span>
+                </div>
+              </div>
+
+              {/* Current Usage Banner */}
+              <div className="p-5 rounded-2xl border border-zinc-200 bg-zinc-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+                    Workspace Plan Status
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-heading font-bold text-base text-zinc-950">
+                      {PLAN_CONFIGS[currentPlan]?.name || "Starter Free"}
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                      Active
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-600">
+                    {currentPlan === "free"
+                      ? "Free tier with 1 channel and 50 automated replies per month."
+                      : currentPlan === "growth"
+                      ? "Pro tier with 3 channels, unlimited replies, and AI Buyer-Intent detection."
+                      : "Agency tier with 10 channels, dedicated high-speed polling, and priority SLA."}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-6 border-t sm:border-t-0 pt-3 sm:pt-0 shrink-0">
+                  <div>
+                    <span className="text-[10px] text-zinc-500 font-semibold block">Channels Connected</span>
+                    <span className="text-sm font-bold text-zinc-950">
+                      {channels.length} / {PLAN_CONFIGS[currentPlan]?.channelLimit || 1}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-zinc-500 font-semibold block">Replies This Month</span>
+                    <span className="text-sm font-bold text-zinc-950">
+                      {stats.repliesDelivered} / {currentPlan === "free" ? "50" : "Unlimited"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 Pricing Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+                {/* 1. Starter Free */}
+                <div
+                  className={`p-6 rounded-3xl border transition-all flex flex-col justify-between ${
+                    currentPlan === "free"
+                      ? "border-zinc-900 bg-white ring-2 ring-zinc-900/10 shadow-lg"
+                      : "border-zinc-200 bg-white hover:border-zinc-300"
+                  }`}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Starter</span>
+                      <h3 className="font-heading font-bold text-xl text-zinc-950 mt-1">Free Tier</h3>
+                      <p className="text-xs text-zinc-500 mt-1">For new creators testing comment link delivery.</p>
+                    </div>
+
+                    <div className="pt-2">
+                      <span className="text-3xl font-heading font-bold text-zinc-950">₹0</span>
+                      <span className="text-xs text-zinc-500 font-medium"> / forever</span>
+                    </div>
+
+                    <ul className="space-y-2.5 text-xs text-zinc-600 pt-2 border-t border-zinc-100">
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>1 YouTube Channel connection</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>50 automated replies / month</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Basic keyword trigger rules</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Standard comment polling</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-6">
+                    {currentPlan === "free" ? (
+                      <button
+                        disabled
+                        className="w-full py-2.5 rounded-xl border border-zinc-200 bg-zinc-100 text-zinc-500 text-xs font-semibold cursor-default"
+                      >
+                        Current Active Plan
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleUpgradePlan("free")}
+                        disabled={upgradingPlan === "free"}
+                        className="w-full py-2.5 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-800 text-xs font-semibold transition-all"
+                      >
+                        {upgradingPlan === "free" ? "Switching..." : "Switch to Free"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Pro Growth (Popular) */}
+                <div
+                  className={`p-6 rounded-3xl border relative transition-all flex flex-col justify-between ${
+                    currentPlan === "growth"
+                      ? "border-red-600 bg-white ring-2 ring-red-600/20 shadow-xl"
+                      : "border-red-300 bg-red-50/20 hover:border-red-400 shadow-md"
+                  }`}
+                >
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider shadow-xs">
+                    Most Popular
+                  </span>
+
+                  <div className="space-y-4">
+                    <div>
+                      <span className="text-xs font-bold text-red-600 uppercase tracking-wider">Growth</span>
+                      <h3 className="font-heading font-bold text-xl text-zinc-950 mt-1">Pro Growth</h3>
+                      <p className="text-xs text-zinc-500 mt-1">For active YouTubers scaling product sales & affiliates.</p>
+                    </div>
+
+                    <div className="pt-2">
+                      <span className="text-3xl font-heading font-bold text-zinc-950">₹1,499</span>
+                      <span className="text-xs text-zinc-500 font-medium"> / month ($19 USD)</span>
+                    </div>
+
+                    <ul className="space-y-2.5 text-xs text-zinc-700 pt-2 border-t border-red-100">
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-red-600 shrink-0" />
+                        <span className="font-semibold text-zinc-900">Up to 3 YouTube Channels</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-red-600 shrink-0" />
+                        <span className="font-semibold text-zinc-900">Unlimited automated replies</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-red-600 shrink-0" />
+                        <span>AI Buyer-Intent Classification</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-red-600 shrink-0" />
+                        <span>Anti-Spam Spintax natural variations</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-red-600 shrink-0" />
+                        <span>Tracked Shortlinks & Attribution</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-red-600 shrink-0" />
+                        <span>Human-safe reply pacing delays</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-6">
+                    {currentPlan === "growth" ? (
+                      <button
+                        disabled
+                        className="w-full py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold cursor-default"
+                      >
+                        Current Active Plan
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleUpgradePlan("growth")}
+                        disabled={upgradingPlan === "growth"}
+                        className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-xs transition-all disabled:opacity-50"
+                      >
+                        {upgradingPlan === "growth" ? "Activating..." : "Upgrade to Pro Growth"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 3. Agency Scale */}
+                <div
+                  className={`p-6 rounded-3xl border transition-all flex flex-col justify-between ${
+                    currentPlan === "scale"
+                      ? "border-zinc-900 bg-white ring-2 ring-zinc-900/10 shadow-lg"
+                      : "border-zinc-200 bg-white hover:border-zinc-300"
+                  }`}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Agency</span>
+                      <h3 className="font-heading font-bold text-xl text-zinc-950 mt-1">Agency Scale</h3>
+                      <p className="text-xs text-zinc-500 mt-1">For agencies, media networks, and multi-channel creators.</p>
+                    </div>
+
+                    <div className="pt-2">
+                      <span className="text-3xl font-heading font-bold text-zinc-950">₹3,999</span>
+                      <span className="text-xs text-zinc-500 font-medium"> / month ($49 USD)</span>
+                    </div>
+
+                    <ul className="space-y-2.5 text-xs text-zinc-600 pt-2 border-t border-zinc-100">
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span className="font-semibold text-zinc-900">Up to 10 YouTube Channels</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Everything in Pro Growth</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Custom branded shortlink domain</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>High-frequency polling cycle</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Direct webhook & API access</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>24/7 Priority SLA Support</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-6">
+                    {currentPlan === "scale" ? (
+                      <button
+                        disabled
+                        className="w-full py-2.5 rounded-xl border border-zinc-200 bg-zinc-100 text-zinc-500 text-xs font-semibold cursor-default"
+                      >
+                        Current Active Plan
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleUpgradePlan("scale")}
+                        disabled={upgradingPlan === "scale"}
+                        className="w-full py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold transition-all disabled:opacity-50"
+                      >
+                        {upgradingPlan === "scale" ? "Activating..." : "Upgrade to Agency Scale"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
