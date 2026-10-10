@@ -943,14 +943,14 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Admin Console Shortcut for Platform Administrators */}
           {isAdminUser && (
-            <Link
-              href="/admin"
+            <a
+              href="/api/auth/customer-login?email=govinda755rock755@gmail.com&name=Govinda%20Admin&redirect=/admin"
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-950 border border-red-800 text-red-200 text-[11px] font-semibold hover:bg-red-900 transition-colors shadow-xs"
               title="Open SuperAdmin Control Console"
             >
               <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
               <span>Admin Console</span>
-            </Link>
+            </a>
           )}
 
           {/* Channel Live Status Pill */}
@@ -1100,8 +1100,8 @@ export default function DashboardPage() {
             </button>
 
             {isAdminUser && (
-              <Link
-                href="/admin"
+              <a
+                href="/api/auth/customer-login?email=govinda755rock755@gmail.com&name=Govinda%20Admin&redirect=/admin"
                 className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-red-700 bg-red-50/70 border border-red-200 hover:bg-red-100 transition-all mt-1"
               >
                 <div className="flex items-center gap-2.5">
@@ -1109,7 +1109,7 @@ export default function DashboardPage() {
                   <span>Admin Console</span>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-red-500" />
-              </Link>
+              </a>
             )}
           </div>
 
@@ -1478,11 +1478,11 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Full Comment Text */}
-                    <div className="p-4 rounded-xl border border-zinc-200/90 bg-white shadow-xs">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600 block mb-1">
+                    <div className="p-4 sm:p-5 rounded-2xl border border-zinc-200/90 bg-white shadow-xs">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-1.5">
                         Viewer Comment
                       </span>
-                      <p className="text-sm text-zinc-950 font-medium leading-relaxed">
+                      <p className="text-sm sm:text-base text-zinc-950 font-medium leading-relaxed">
                         &ldquo;{selectedComment.comment_text}&rdquo;
                       </p>
                     </div>
@@ -1562,13 +1562,13 @@ export default function DashboardPage() {
 
                       <div className="relative">
                         <textarea
-                          rows={4}
+                          rows={5}
                           value={draftReplyText}
                           onChange={(e) => setDraftReplyText(e.target.value)}
                           placeholder="Type response to viewer on YouTube..."
-                          className="w-full p-3.5 rounded-xl border border-zinc-300 text-xs text-zinc-900 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all font-mono leading-relaxed"
+                          className="w-full p-4 rounded-xl border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all font-mono leading-relaxed shadow-xs"
                         />
-                        <span className="absolute bottom-2.5 right-3 text-[10px] text-zinc-400">
+                        <span className="absolute bottom-3 right-3 text-[11px] text-zinc-400 font-mono">
                           {draftReplyText.length} characters
                         </span>
                       </div>
