@@ -676,9 +676,9 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           {/* Left Column: Headlines & CTA */}
           <div className="lg:col-span-6 flex flex-col items-start text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-200/80 bg-red-50/80 text-red-700 text-xs font-semibold mb-6 shadow-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
-              <span>YouTube Creator Conversion Engine</span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-900 text-xs font-semibold mb-6 shadow-xs animate-in fade-in duration-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+              <span>Official YouTube Data API v3 & Google OAuth2 Compliant</span>
             </div>
 
             <h1 className="font-heading text-4xl sm:text-5xl lg:text-5xl font-bold tracking-tight text-zinc-950 leading-[1.1] mb-6">
@@ -1436,6 +1436,62 @@ export default function Home() {
                   <span>Webhook and conversion tracking support</span>
                 </li>
               </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* OFFICIAL YOUTUBE & GOOGLE TRUST VERIFICATION SECTION */}
+      <section className="py-14 bg-zinc-950 text-white border-y border-zinc-800 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-zinc-900/80 border border-zinc-800 rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-72 h-72 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="space-y-4 max-w-xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-xs font-semibold">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>100% Platform Safety Guarantee</span>
+              </div>
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
+                Official YouTube Data API v3 Architecture. Zero Bots. Zero Account Risk.
+              </h2>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                TubeFlow never asks for your password or runs illegal browser scrapers that trigger YouTube strikes. All authentication happens via encrypted Google OAuth2 tokens with strict rate-limiting and human-paced delivery delays.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 w-full md:w-auto shrink-0">
+              <div className="p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="text-xs font-bold text-white">Google OAuth2</span>
+                </div>
+                <p className="text-[11px] text-zinc-400">Encrypted token sessions. Passwords stay private.</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="text-xs font-bold text-white">Spintax Engine</span>
+                </div>
+                <p className="text-[11px] text-zinc-400">Rotates dynamic phrasing to avoid repeat penalties.</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="text-xs font-bold text-white">Official API v3</span>
+                </div>
+                <p className="text-[11px] text-zinc-400">Zero unofficial headless scrapers or bot networks.</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="text-xs font-bold text-white">Human Delay</span>
+                </div>
+                <p className="text-[11px] text-zinc-400">Safety cooldown pacing complies with Google terms.</p>
+              </div>
             </div>
           </div>
         </div>
