@@ -208,22 +208,20 @@ export async function POST(request: NextRequest) {
     }
 
     // ACTION: CREATE RULE
-    const {
-      name,
-      keywords,
-      negativeKeywords,
-      matchType,
-      keywordMatchOperator,
-      targetMode,
-      targetVideoIds,
-      targetVideoId,
-      campaignType,
-      replyTemplates,
-      ctaUrl,
-      intentCategory,
-      delaySeconds,
-      channelId,
-    } = body;
+    const name = body.name;
+    const keywords = body.keywords;
+    const negativeKeywords = body.negative_keywords ?? body.negativeKeywords;
+    const matchType = body.match_type ?? body.matchType;
+    const keywordMatchOperator = body.keyword_match_operator ?? body.keywordMatchOperator;
+    const targetMode = body.target_mode ?? body.targetMode;
+    const targetVideoIds = body.target_video_ids ?? body.targetVideoIds;
+    const targetVideoId = body.target_video_id ?? body.targetVideoId;
+    const campaignType = body.campaign_type ?? body.campaignType;
+    const replyTemplates = body.reply_templates ?? body.replyTemplates;
+    const ctaUrl = body.cta_url ?? body.ctaUrl;
+    const intentCategory = body.intent_category ?? body.intentCategory;
+    const delaySeconds = body.delay_seconds ?? body.delaySeconds;
+    const channelId = body.channel_id ?? body.channelId;
 
     if (!name || !keywords || !replyTemplates || replyTemplates.length === 0) {
       return NextResponse.json(
@@ -332,24 +330,22 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      id,
-      name,
-      keywords,
-      negativeKeywords,
-      matchType,
-      keywordMatchOperator,
-      targetMode,
-      targetVideoIds,
-      targetVideoId,
-      campaignType,
-      replyTemplates,
-      ctaUrl,
-      intentCategory,
-      delaySeconds,
-      channelId,
-      is_active,
-    } = body;
+    const id = body.id;
+    const name = body.name;
+    const keywords = body.keywords;
+    const negativeKeywords = body.negative_keywords ?? body.negativeKeywords;
+    const matchType = body.match_type ?? body.matchType;
+    const keywordMatchOperator = body.keyword_match_operator ?? body.keywordMatchOperator;
+    const targetMode = body.target_mode ?? body.targetMode;
+    const targetVideoIds = body.target_video_ids ?? body.targetVideoIds;
+    const targetVideoId = body.target_video_id ?? body.targetVideoId;
+    const campaignType = body.campaign_type ?? body.campaignType;
+    const replyTemplates = body.reply_templates ?? body.replyTemplates;
+    const ctaUrl = body.cta_url ?? body.ctaUrl;
+    const intentCategory = body.intent_category ?? body.intentCategory;
+    const delaySeconds = body.delay_seconds ?? body.delaySeconds;
+    const channelId = body.channel_id ?? body.channelId;
+    const is_active = body.is_active ?? body.isActive;
 
     if (!id) {
       return NextResponse.json({ error: "Rule ID is required" }, { status: 400 });
