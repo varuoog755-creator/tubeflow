@@ -1,3 +1,5 @@
+process.env.SESSION_SECRET = process.env.SESSION_SECRET || "test_jwt_session_secret_for_test_runner_at_least_32_bytes!";
+
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createSessionToken, verifySessionToken, type UserSession } from "../src/lib/session.ts";

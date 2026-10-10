@@ -9,11 +9,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value;
 
-    if (!email) {
+    if (!session?.email) {
       return NextResponse.json({ channels: [] }, { status: 401 });
     }
+    const email = session.email;
 
     const { data: profile } = await supabaseAdmin
       .from("profiles")
@@ -44,11 +44,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value;
 
-    if (!email) {
+    if (!session?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const email = session.email;
 
     const body = await request.json();
     const { action, channelDbId } = body;

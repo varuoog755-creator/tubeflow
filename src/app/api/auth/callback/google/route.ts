@@ -196,15 +196,6 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(`${origin}/dashboard?authenticated=true`);
     setSessionCookie(response, sessionToken);
 
-    // Backward compatibility cookie
-    response.cookies.set("tf_user_email", email, {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-
     return response;
   } catch (err: unknown) {
     console.error("OAuth Callback failed:", err);

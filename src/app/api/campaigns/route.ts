@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const email = request.cookies.get("tf_user_email")?.value || "varuoog755@gmail.com";
+    const session = await getSession();
+    if (!session?.email) {
+      return NextResponse.json({
+        authenticated: false,
+        channel: null,
+        campaigns: [],
+        stats: { totalReplies: 0, activeRules: 0, heartsLikes: 0, quotaUsed: 0 },
+        logs: [],
+      }, { status: 401 });
+    }
+    const email = session.email;
 
     // 1. Get Profile
     const { data: profile } = await supabaseAdmin
@@ -70,7 +81,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const email = request.cookies.get("tf_user_email")?.value || "varuoog755@gmail.com";
+    const session = await getSession();
+    if (!session?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const email = session.email;
     const body = await request.json();
     const { name, keywords, replyTemplate, targetMode } = body;
 

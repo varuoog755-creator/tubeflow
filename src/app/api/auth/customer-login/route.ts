@@ -8,9 +8,34 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const origin = request.nextUrl.origin;
+    const isProd = process.env.NODE_ENV === "production";
+    const allowDevLogin = process.env.ALLOW_DEV_CUSTOMER_LOGIN === "true";
+
+    // In production, this debug bypass endpoint is strictly disabled
+    if (isProd && !allowDevLogin) {
+      return NextResponse.json(
+        { error: "Endpoint disabled in production. Use Google OAuth sign-in." },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
-    const rawEmail = searchParams.get("email") || "govinda755rock755@gmail.com";
+    const token = searchParams.get("token");
+    const devSecret = process.env.DEV_LOGIN_SECRET;
+
+    // Even in dev/staging, require a pre-shared secret token
+    if (devSecret && token !== devSecret) {
+      return NextResponse.json(
+        { error: "Unauthorized: Invalid developer authentication token." },
+        { status: 401 }
+      );
+    }
+
+    const origin = request.nextUrl.origin;
+    const rawEmail = searchParams.get("email");
+    if (!rawEmail) {
+      return NextResponse.json({ error: "Missing required email parameter." }, { status: 400 });
+    }
     const email = rawEmail.toLowerCase().trim();
     const isUserAdmin = isAdmin(email);
     
@@ -21,6 +46,16 @@ export async function GET(request: NextRequest) {
       : email.split("@")[0];
     const name = searchParams.get("name") || defaultName;
     const redirectParam = searchParams.get("redirect");
+
+    // Strictly validate redirect destination against an internal allowlist to prevent open redirect attacks
+    let destinationPath = "/dashboard?authenticated=true";
+    if (redirectParam) {
+      const allowedPaths = ["/admin", "/dashboard", "/login", "/terms", "/privacy"];
+      const cleanRedirect = redirectParam.split("?")[0];
+      if (allowedPaths.includes(cleanRedirect) && !redirectParam.includes("://")) {
+        destinationPath = redirectParam.startsWith("/") ? redirectParam : `/${redirectParam}`;
+      }
+    }
 
     // 1. Check or create Profile
     let userId: string;
@@ -109,23 +144,10 @@ export async function GET(request: NextRequest) {
       workspaceId,
     });
 
-    const destination = redirectParam
-      ? redirectParam.startsWith("http")
-        ? redirectParam
-        : `${origin}${redirectParam.startsWith("/") ? redirectParam : `/${redirectParam}`}`
-      : `${origin}/dashboard?authenticated=true`;
+    const destination = `${origin}${destinationPath}`;
 
     const response = NextResponse.redirect(destination);
     setSessionCookie(response, sessionToken);
-
-    // Backward-compatibility cookie
-    response.cookies.set("tf_user_email", email, {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
 
     return response;
   } catch (error: unknown) {

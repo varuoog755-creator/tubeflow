@@ -8,11 +8,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value;
 
-    if (!email || !isAdmin(email)) {
+    if (!session?.email || !isAdmin(session.email)) {
       return NextResponse.json({ error: "Forbidden: Admin privileges required" }, { status: 403 });
     }
+    const email = session.email;
 
     // 1. All Profiles
     const { data: profiles, error: pErr } = await supabaseAdmin

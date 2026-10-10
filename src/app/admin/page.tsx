@@ -191,15 +191,15 @@ export default function AdminPage() {
           This control center is restricted to verified TubeFlow platform administrators. Please sign in with your authorized admin account (<code className="text-red-400 font-mono text-xs">govinda755rock755@gmail.com</code>).
         </p>
 
-        {/* 1-Click Fast Admin Authentication */}
+        {/* Admin Authentication */}
         <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
-          <a
-            href="/api/auth/customer-login?email=govinda755rock755@gmail.com&name=Govinda%20Admin&redirect=/admin"
+          <Link
+            href="/login"
             className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg shadow-red-950/50 flex items-center gap-2 transition-all cursor-pointer"
           >
             <ShieldAlert className="w-4 h-4" />
-            <span>1-Click Access as Govinda Admin</span>
-          </a>
+            <span>Sign in as Admin</span>
+          </Link>
           <Link
             href="/dashboard"
             className="px-4 py-2.5 rounded-xl border border-zinc-800 hover:border-zinc-700 bg-zinc-900 text-xs font-semibold text-zinc-300 transition-all"

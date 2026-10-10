@@ -1,29 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.SESSION_SECRET || "tubeflow_super_secret_session_jwt_key_2026_xyz!"
-);
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error("Missing required SESSION_SECRET environment variable. Fail closed.");
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protect /dashboard and all /dashboard/* subpaths
-  if (pathname.startsWith("/dashboard")) {
+  // Protect /dashboard, /admin, and their subpaths
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
     const sessionToken = request.cookies.get("tf_session_token")?.value;
-    const legacyEmail = request.cookies.get("tf_user_email")?.value;
 
     let isAuthenticated = false;
 
     if (sessionToken) {
       try {
-        await jwtVerify(sessionToken, JWT_SECRET);
+        await jwtVerify(sessionToken, getJwtSecret());
         isAuthenticated = true;
       } catch {
         isAuthenticated = false;
       }
-    } else if (legacyEmail) {
-      isAuthenticated = true;
     }
 
     if (!isAuthenticated) {
@@ -36,5 +37,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*"],
 };

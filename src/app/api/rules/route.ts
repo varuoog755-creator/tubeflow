@@ -12,10 +12,10 @@ import { detectIntent } from "@/lib/intent";
 export const dynamic = "force-dynamic";
 
 // Helper: resolve user profile and workspace
-async function getAuthenticatedUser(request: NextRequest) {
+async function getAuthenticatedUser(_request: NextRequest) {
   const session = await getSession();
-  const email = session?.email || request.cookies.get("tf_user_email")?.value;
-  if (!email) return null;
+  if (!session?.email) return null;
+  const email = session.email;
 
   const { data: profile } = await supabaseAdmin
     .from("profiles")

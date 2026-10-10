@@ -14,13 +14,12 @@ async function handlePoll(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const manual = searchParams.get("manual") === "true";
 
-  // Check auth: Cron header, session, or cookie
+  // Check auth: Cron header or valid session
   const session = await getSession();
-  const cookieEmail = request.cookies.get("tf_user_email")?.value;
-  const userEmail = session?.email || cookieEmail;
+  const userEmail = session?.email || null;
   const isCronAuthorized = authHeader === `Bearer ${cronSecret}`;
-  const isUserAuthorized = Boolean(session?.userId || cookieEmail || manual);
-  const isUserAdmin = isAdmin(userEmail);
+  const isUserAuthorized = Boolean(session?.userId);
+  const isUserAdmin = userEmail ? isAdmin(userEmail) : false;
 
   if (!isCronAuthorized && !isUserAuthorized) {
     return NextResponse.json({ error: "Unauthorized polling execution" }, { status: 401 });

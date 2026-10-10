@@ -98,10 +98,13 @@ function formatDuration(seconds: number): string {
   return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value || "himalayanpine8@gmail.com";
+    if (!session?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const email = session.email;
 
     // 1. Resolve Profile
     const { data: profile } = await supabaseAdmin

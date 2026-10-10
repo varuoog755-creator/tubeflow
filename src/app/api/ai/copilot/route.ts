@@ -7,7 +7,10 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value || "varuoog755@gmail.com";
+    if (!session?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const email = session.email;
     const body = await request.json();
     const { message } = body;
 

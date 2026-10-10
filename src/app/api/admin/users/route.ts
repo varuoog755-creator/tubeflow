@@ -8,9 +8,8 @@ export const dynamic = "force-dynamic";
 export async function PATCH(request: NextRequest) {
   try {
     const session = await getSession();
-    const email = session?.email || request.cookies.get("tf_user_email")?.value;
 
-    if (!email || !isAdmin(email)) {
+    if (!session?.email || !isAdmin(session.email)) {
       return NextResponse.json({ error: "Forbidden: Admin privileges required" }, { status: 403 });
     }
 
