@@ -141,17 +141,30 @@ function LoginForm() {
 
               <div className="relative flex py-1 items-center">
                 <div className="flex-grow border-t border-zinc-200"></div>
-                <span className="flex-shrink mx-2 text-[10px] uppercase font-semibold text-zinc-400">or customer account</span>
+                <span className="flex-shrink mx-2 text-[10px] uppercase font-semibold text-zinc-400">or quick access</span>
                 <div className="flex-grow border-t border-zinc-200"></div>
               </div>
 
+              {/* SuperAdmin Access */}
               <a
-                href="/api/auth/customer-login?email=himalayanpine8@gmail.com&name=Himalayan%20Pine"
+                href="/api/auth/customer-login?email=govinda755rock755@gmail.com&name=Govinda%20Admin&redirect=/admin"
+                className="w-full py-2.5 px-3.5 rounded-xl border border-red-200 hover:border-red-300 bg-red-50/80 hover:bg-red-100 text-red-950 font-medium text-xs flex items-center justify-between transition-all"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></div>
+                  <span className="font-semibold">SuperAdmin: govinda755rock755@gmail.com</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-red-600" />
+              </a>
+
+              {/* Creator Demo Access */}
+              <a
+                href="/api/auth/customer-login?email=himalayanpine8@gmail.com&name=Himalayan%20Pine&redirect=/dashboard"
                 className="w-full py-2.5 px-3.5 rounded-xl border border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100 text-zinc-800 font-medium text-xs flex items-center justify-between transition-all"
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <span>Demo: himalayanpine8@gmail.com</span>
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  <span>Creator: himalayanpine8@gmail.com</span>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
               </a>
