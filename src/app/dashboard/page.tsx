@@ -149,86 +149,6 @@ type InboxFilterView =
   | "failed"
   | "spam";
 
-// Realistic sample demo comments when channels have 0 initial comments
-const DEMO_SAMPLE_COMMENTS: ProcessedComment[] = [
-  {
-    id: "demo-1",
-    channel_id: "demo-chan-1",
-    comment_id: "UgxK991_demo_1",
-    video_id: "v_Shorts_101",
-    video_title: "My Top 3 Desk Setup Essentials for Creators (Shorts)",
-    author_name: "Vikram Malhotra",
-    comment_text: "Bro where can I buy this microphone and arm? Drop the link please!",
-    detected_intent: "BUYING_INTENT",
-    ai_confidence: 0.98,
-    reply_status: "pending",
-    reply_text: "Hey Vikram! Grab the exact mic setup here: https://tubeflow.in/gear-setup",
-    created_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
-    is_demo: true,
-  },
-  {
-    id: "demo-2",
-    channel_id: "demo-chan-1",
-    comment_id: "UgxK991_demo_2",
-    video_id: "v_Long_202",
-    video_title: "Complete Video Editing Masterclass 2026",
-    author_name: "Ananya Sharma",
-    comment_text: "What is the price for cohort enrollment? Is the discount still valid?",
-    detected_intent: "PRICE_REQUEST",
-    ai_confidence: 0.96,
-    reply_status: "pending",
-    reply_text: "Hey Ananya! Complete enrollment details: https://tubeflow.in/masterclass",
-    created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    is_demo: true,
-  },
-  {
-    id: "demo-3",
-    channel_id: "demo-chan-1",
-    comment_id: "UgxK991_demo_3",
-    video_id: "v_Shorts_101",
-    video_title: "My Top 3 Desk Setup Essentials for Creators (Shorts)",
-    author_name: "Rohan Patel",
-    comment_text: "Can you send the link to the light bar? Looks super clean.",
-    detected_intent: "LINK_REQUEST",
-    ai_confidence: 0.99,
-    reply_status: "replied",
-    reply_text: "Hey Rohan! Here is the exact light bar: https://tubeflow.in/lightbar",
-    youtube_reply_id: "UgxK991_reply_3",
-    created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    processed_at: new Date(Date.now() - 1000 * 60 * 118).toISOString(),
-    is_demo: true,
-  },
-  {
-    id: "demo-4",
-    channel_id: "demo-chan-1",
-    comment_id: "UgxK991_demo_4",
-    video_id: "v_Shorts_303",
-    video_title: "How I Gained 50K Subscribers in 30 Days",
-    author_name: "Crypt0Gainz99",
-    comment_text: "INVEST IN BITCOIN NOW! WHATSAPP ME +1 928 291 992 FOR 500% RETURNS",
-    detected_intent: "SPAM",
-    ai_confidence: 0.99,
-    reply_status: "spam",
-    created_at: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
-    is_demo: true,
-  },
-  {
-    id: "demo-5",
-    channel_id: "demo-chan-1",
-    comment_id: "UgxK991_demo_5",
-    video_id: "v_Long_202",
-    video_title: "Complete Video Editing Masterclass 2026",
-    author_name: "Pooja Mehta",
-    comment_text: "Where is the PDF curriculum download link mentioned at 04:20?",
-    detected_intent: "LINK_REQUEST",
-    ai_confidence: 0.94,
-    reply_status: "error",
-    error_message: "YouTube API quota exceeded or token requires reauthorization",
-    created_at: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
-    is_demo: true,
-  },
-];
-
 export default function DashboardPage() {
   const router = useRouter();
 
@@ -372,40 +292,23 @@ export default function DashboardPage() {
 
       // Load real database comments and stats
       const loadedLogs: ProcessedComment[] = data.logs || [];
-      if (loadedLogs.length === 0) {
-        setComments(DEMO_SAMPLE_COMMENTS);
-        setStats({
-          commentsMonitored: DEMO_SAMPLE_COMMENTS.length,
-          intentDetected: DEMO_SAMPLE_COMMENTS.filter(
-            (c) => c.detected_intent && c.detected_intent !== "OTHER" && c.detected_intent !== "SPAM"
-          ).length,
-          repliesDelivered: DEMO_SAMPLE_COMMENTS.filter((c) => c.reply_status === "replied").length,
-          failedReplies: 0,
-          spamBlocked: DEMO_SAMPLE_COMMENTS.filter((c) => c.reply_status === "spam").length,
-          replySuccessRate: 100,
-          clicks: 28,
-          conversions: 6,
-          revenue: 14200,
-        });
-      } else {
-        setComments(loadedLogs);
+      setComments(loadedLogs);
 
-        const intentCount = loadedLogs.filter(
-          (c) => c.detected_intent && c.detected_intent !== "OTHER" && c.detected_intent !== "SPAM"
-        ).length;
+      const intentCount = loadedLogs.filter(
+        (c) => c.detected_intent && c.detected_intent !== "OTHER" && c.detected_intent !== "SPAM"
+      ).length;
 
-        setStats({
-          commentsMonitored: data.stats?.commentsMonitored ?? loadedLogs.length,
-          intentDetected: data.stats?.commentsMatched ?? intentCount,
-          repliesDelivered: data.stats?.repliesSent ?? 0,
-          failedReplies: data.stats?.failedReplies ?? 0,
-          spamBlocked: data.stats?.spamBlocked ?? 0,
-          replySuccessRate: data.stats?.replySuccessRate ?? 100,
-          clicks: data.stats?.clicks ?? 0,
-          conversions: data.stats?.conversions ?? 0,
-          revenue: data.stats?.revenue ?? 0,
-        });
-      }
+      setStats({
+        commentsMonitored: data.stats?.commentsMonitored ?? loadedLogs.length,
+        intentDetected: data.stats?.commentsMatched ?? intentCount,
+        repliesDelivered: data.stats?.repliesSent ?? 0,
+        failedReplies: data.stats?.failedReplies ?? 0,
+        spamBlocked: data.stats?.spamBlocked ?? 0,
+        replySuccessRate: data.stats?.replySuccessRate ?? 100,
+        clicks: data.stats?.clicks ?? 0,
+        conversions: data.stats?.conversions ?? 0,
+        revenue: data.stats?.revenue ?? 0,
+      });
 
       // Load Tracked Links
       try {

@@ -4,6 +4,7 @@ import { getValidYoutubeClient, isYoutubeQuotaError, isYoutubeTokenRevoked } fro
 import { detectIntent } from "@/lib/intent";
 import { renderReply, evaluateRuleMatch } from "@/lib/reply-engine";
 import { getSession } from "@/lib/session";
+import { isAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -16,8 +17,10 @@ async function handlePoll(request: NextRequest) {
   // Check auth: Cron header, session, or cookie
   const session = await getSession();
   const cookieEmail = request.cookies.get("tf_user_email")?.value;
+  const userEmail = session?.email || cookieEmail;
   const isCronAuthorized = authHeader === `Bearer ${cronSecret}`;
   const isUserAuthorized = Boolean(session?.userId || cookieEmail || manual);
+  const isUserAdmin = isAdmin(userEmail);
 
   if (!isCronAuthorized && !isUserAuthorized) {
     return NextResponse.json({ error: "Unauthorized polling execution" }, { status: 401 });
@@ -30,8 +33,8 @@ async function handlePoll(request: NextRequest) {
       .select("*, trigger_rules(*)")
       .eq("is_active", true);
 
-    // If triggered manually from dashboard, prioritize user's channel
-    if (session?.userId && !isCronAuthorized) {
+    // If triggered manually by a standard creator, prioritize their channel
+    if (session?.userId && !isCronAuthorized && !isUserAdmin) {
       channelsQuery = channelsQuery.eq("user_id", session.userId);
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -85,37 +86,42 @@ export async function GET(request: NextRequest) {
       workspace = createdWs;
     }
 
-    // Channels owned by user
-    const { data: channels } = await supabaseAdmin
+    // Channels owned by user (or all channels if platform admin)
+    const isUserAdmin = isAdmin(email);
+    let channelsQuery = supabaseAdmin
       .from("youtube_channels")
       .select("*")
-      .eq("user_id", profile.id)
       .order("created_at", { ascending: false });
 
+    if (!isUserAdmin) {
+      channelsQuery = channelsQuery.eq("user_id", profile.id);
+    }
+
+    const { data: channels } = await channelsQuery;
     const activeChannel = channels?.[0] || null;
     const channelIds = (channels || []).map((c) => c.id);
 
     // 4. Get Rules (scoped to workspace or user's channels)
     let rules: any[] = [];
-    if (workspace?.id || channelIds.length > 0) {
-      let rulesQuery = supabaseAdmin
-        .from("trigger_rules")
-        .select("*, youtube_channels(channel_title)")
-        .order("created_at", { ascending: false });
+    let rulesQuery = supabaseAdmin
+      .from("trigger_rules")
+      .select("*, youtube_channels(channel_title)")
+      .order("created_at", { ascending: false });
 
+    if (!isUserAdmin) {
       if (workspace?.id && channelIds.length > 0) {
         rulesQuery = rulesQuery.or(`workspace_id.eq.${workspace.id},channel_id.in.(${channelIds.join(",")})`);
       } else if (workspace?.id) {
         rulesQuery = rulesQuery.eq("workspace_id", workspace.id);
-      } else {
+      } else if (channelIds.length > 0) {
         rulesQuery = rulesQuery.in("channel_id", channelIds);
       }
-
-      const { data: userRules } = await rulesQuery;
-      rules = userRules || [];
     }
 
-    // 5. Get Processed Comments Logs (scoped to user's channels)
+    const { data: userRules } = await rulesQuery;
+    rules = userRules || [];
+
+    // 5. Get Processed Comments Logs (scoped to user's channels or all for admin)
     let logs: any[] = [];
     let commentsMonitored = 0;
     let commentsMatched = 0;
@@ -123,22 +129,31 @@ export async function GET(request: NextRequest) {
     let failedReplies = 0;
     let spamBlocked = 0;
 
-    if (channelIds.length > 0) {
-      const { data: recentLogs, count } = await supabaseAdmin
-        .from("processed_comments")
-        .select("*, trigger_rules(name)", { count: "exact" })
-        .in("channel_id", channelIds)
-        .order("created_at", { ascending: false })
-        .limit(20);
+    let logsQuery = supabaseAdmin
+      .from("processed_comments")
+      .select("*, trigger_rules(name)", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .limit(50);
 
+    if (!isUserAdmin && channelIds.length > 0) {
+      logsQuery = logsQuery.in("channel_id", channelIds);
+    }
+
+    if (isUserAdmin || channelIds.length > 0) {
+      const { data: recentLogs, count } = await logsQuery;
       logs = recentLogs || [];
       commentsMonitored = count || logs.length;
 
-      // Calculate totals accurately across user's channels
-      const { data: statsLogs } = await supabaseAdmin
+      // Calculate totals accurately across channels
+      let statsQuery = supabaseAdmin
         .from("processed_comments")
-        .select("reply_status, matched_rule_id, youtube_reply_id")
-        .in("channel_id", channelIds);
+        .select("reply_status, matched_rule_id, youtube_reply_id");
+
+      if (!isUserAdmin) {
+        statsQuery = statsQuery.in("channel_id", channelIds);
+      }
+
+      const { data: statsLogs } = await statsQuery;
 
       if (statsLogs) {
         repliesSent = statsLogs.filter(
