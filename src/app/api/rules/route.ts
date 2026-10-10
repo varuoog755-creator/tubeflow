@@ -115,27 +115,25 @@ export async function POST(request: NextRequest) {
     const { action } = body;
 
     // ACTION: DRY-RUN TEST
-    if (action === "test_dry_run") {
-      const {
-        testCommentText,
-        testAuthorName,
-        keywords,
-        negativeKeywords,
-        matchType,
-        keywordMatchOperator,
-        intentCategory,
-        replyTemplate,
-        ctaUrl,
-      } = body;
+    if (action === "test_dry_run" || action === "dry_run") {
+      const commentText = body.comment_text || body.testCommentText;
+      const authorName = body.author_name || body.testAuthorName || "TestViewer";
+      const keywords = body.keywords;
+      const negativeKeywords = body.negative_keywords || body.negativeKeywords;
+      const matchType = body.match_type || body.matchType || "contains";
+      const keywordMatchOperator = body.keyword_match_operator || body.keywordMatchOperator || "ANY";
+      const intentCategory = body.intent_category || body.intentCategory || "ALL";
+      const replyTemplate = body.reply_template || body.replyTemplate;
+      const ctaUrl = body.cta_url || body.ctaUrl;
 
-      if (!testCommentText) {
+      if (!commentText) {
         return NextResponse.json(
-          { error: "Test comment text is required for dry-run simulation" },
+          { error: "Comment text is required for dry-run simulation" },
           { status: 400 }
         );
       }
 
-      const detected = detectIntent(testCommentText);
+      const detected = detectIntent(commentText);
       const evalResult = evaluateRuleMatch(
         {
           keywords: Array.isArray(keywords)
@@ -148,14 +146,14 @@ export async function POST(request: NextRequest) {
           keywordMatchOperator: keywordMatchOperator || "ANY",
           intentCategory: intentCategory || "ALL",
         },
-        testCommentText,
+        commentText,
         detected.category
       );
 
       let renderedPreview = null;
       if (evalResult.matched && replyTemplate) {
         renderedPreview = renderReply(replyTemplate, {
-          authorName: testAuthorName || "TestViewer",
+          authorName: authorName,
           channelTitle: auth.channels[0]?.channel_title || "My YouTube Channel",
           ctaUrl: ctaUrl || "https://tubeflow.in/preview",
         });
@@ -163,9 +161,12 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
+        matched: evalResult.matched,
+        reason: evalResult.reason,
+        rendered_reply: renderedPreview,
+        renderedPreview,
         evaluation: evalResult,
         detectedIntent: detected,
-        renderedPreview,
       });
     }
 

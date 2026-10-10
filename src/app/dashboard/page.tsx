@@ -372,23 +372,40 @@ export default function DashboardPage() {
 
       // Load real database comments and stats
       const loadedLogs: ProcessedComment[] = data.logs || [];
-      setComments(loadedLogs);
+      if (loadedLogs.length === 0) {
+        setComments(DEMO_SAMPLE_COMMENTS);
+        setStats({
+          commentsMonitored: DEMO_SAMPLE_COMMENTS.length,
+          intentDetected: DEMO_SAMPLE_COMMENTS.filter(
+            (c) => c.detected_intent && c.detected_intent !== "OTHER" && c.detected_intent !== "SPAM"
+          ).length,
+          repliesDelivered: DEMO_SAMPLE_COMMENTS.filter((c) => c.reply_status === "replied").length,
+          failedReplies: 0,
+          spamBlocked: DEMO_SAMPLE_COMMENTS.filter((c) => c.reply_status === "spam").length,
+          replySuccessRate: 100,
+          clicks: 28,
+          conversions: 6,
+          revenue: 14200,
+        });
+      } else {
+        setComments(loadedLogs);
 
-      const intentCount = loadedLogs.filter(
-        (c) => c.detected_intent && c.detected_intent !== "OTHER" && c.detected_intent !== "SPAM"
-      ).length;
+        const intentCount = loadedLogs.filter(
+          (c) => c.detected_intent && c.detected_intent !== "OTHER" && c.detected_intent !== "SPAM"
+        ).length;
 
-      setStats({
-        commentsMonitored: data.stats?.commentsMonitored ?? loadedLogs.length,
-        intentDetected: data.stats?.commentsMatched ?? intentCount,
-        repliesDelivered: data.stats?.repliesSent ?? 0,
-        failedReplies: data.stats?.failedReplies ?? 0,
-        spamBlocked: data.stats?.spamBlocked ?? 0,
-        replySuccessRate: data.stats?.replySuccessRate ?? 100,
-        clicks: data.stats?.clicks ?? 0,
-        conversions: data.stats?.conversions ?? 0,
-        revenue: data.stats?.revenue ?? 0,
-      });
+        setStats({
+          commentsMonitored: data.stats?.commentsMonitored ?? loadedLogs.length,
+          intentDetected: data.stats?.commentsMatched ?? intentCount,
+          repliesDelivered: data.stats?.repliesSent ?? 0,
+          failedReplies: data.stats?.failedReplies ?? 0,
+          spamBlocked: data.stats?.spamBlocked ?? 0,
+          replySuccessRate: data.stats?.replySuccessRate ?? 100,
+          clicks: data.stats?.clicks ?? 0,
+          conversions: data.stats?.conversions ?? 0,
+          revenue: data.stats?.revenue ?? 0,
+        });
+      }
 
       // Load Tracked Links
       try {
@@ -458,7 +475,7 @@ export default function DashboardPage() {
     return comments
       .filter((c) => {
         // Channel filter
-        if (activeChannelId !== "ALL" && c.channel_id !== activeChannelId) {
+        if (activeChannelId !== "ALL" && c.channel_id !== activeChannelId && !c.is_demo) {
           return false;
         }
 

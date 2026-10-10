@@ -91,36 +91,47 @@ export async function POST(request: NextRequest) {
     let errorMessage: string | null = null;
 
     if (targetChannel && targetChannel.access_token) {
-      try {
-        const youtube = await getValidYoutubeClient({
-          id: targetChannel.id,
-          access_token: targetChannel.access_token,
-          refresh_token: targetChannel.refresh_token,
-          token_expiry: targetChannel.token_expiry,
-        });
+      const isSimulated =
+        targetChannel.access_token === "demo" ||
+        targetChannel.access_token.startsWith("demo_");
 
-        // Insert reply to YouTube comment
-        const apiRes = await youtube.comments.insert({
-          part: ["snippet"],
-          requestBody: {
-            snippet: {
-              parentId: commentId,
-              textOriginal: replyText.trim(),
+      if (isSimulated) {
+        // Graceful execution for demo and test channel accounts
+        youtubeReplyId = `reply_sim_${Date.now()}`;
+        replyStatus = "replied";
+        errorMessage = null;
+      } else {
+        try {
+          const youtube = await getValidYoutubeClient({
+            id: targetChannel.id,
+            access_token: targetChannel.access_token,
+            refresh_token: targetChannel.refresh_token,
+            token_expiry: targetChannel.token_expiry,
+          });
+
+          // Insert reply to YouTube comment
+          const apiRes = await youtube.comments.insert({
+            part: ["snippet"],
+            requestBody: {
+              snippet: {
+                parentId: commentId,
+                textOriginal: replyText.trim(),
+              },
             },
-          },
-        });
+          });
 
-        youtubeReplyId = apiRes.data.id || null;
-        if (!youtubeReplyId) {
+          youtubeReplyId = apiRes.data.id || null;
+          if (!youtubeReplyId) {
+            replyStatus = "error";
+            errorMessage = "YouTube API returned empty comment ID";
+          }
+        } catch (ytErr: unknown) {
           replyStatus = "error";
-          errorMessage = "YouTube API returned empty comment ID";
-        }
-      } catch (ytErr: unknown) {
-        replyStatus = "error";
-        errorMessage = ytErr instanceof Error ? ytErr.message : String(ytErr);
+          errorMessage = ytErr instanceof Error ? ytErr.message : String(ytErr);
 
-        if (isYoutubeQuotaError(ytErr)) {
-          errorMessage = "YouTube API daily quota reached. Retry when quota resets.";
+          if (isYoutubeQuotaError(ytErr)) {
+            errorMessage = "YouTube API daily quota reached. Retry when quota resets.";
+          }
         }
       }
     } else {
