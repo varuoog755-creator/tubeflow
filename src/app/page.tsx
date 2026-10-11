@@ -53,6 +53,7 @@ import {
   Ban,
   Megaphone,
   Building2,
+  Smile,
 } from "lucide-react";
 
 interface Scenario {
@@ -2281,95 +2282,434 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION: USE CASES */}
-      <section id="use-cases" className="py-20 px-6 max-w-6xl mx-auto scroll-mt-16">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-zinc-200 bg-white text-zinc-700 text-xs font-semibold mb-3">
-            <Zap className="w-3.5 h-3.5 text-red-600" />
-            <span>Use Cases</span>
-          </div>
-          <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-zinc-950 mb-4">
-            Proven Automation Capabilities
-          </h2>
-          <p className="text-base text-zinc-600">
-            Engineered around YouTube algorithms and viewer behavior to maximize customer conversion and audience retention.
-          </p>
-        </div>
+      {/* SECTION: USE CASES / PROVEN AUTOMATION CAPABILITIES (MATCHING USER REFERENCE IMAGE) */}
+      <section id="use-cases" className="py-24 bg-gradient-to-b from-white via-zinc-50/50 to-white border-t border-zinc-100 px-4 sm:px-6 scroll-mt-16 relative overflow-hidden">
+        {/* Soft atmospheric gradient blur */}
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[900px] h-[360px] bg-gradient-to-tr from-purple-100/40 via-red-50/30 to-amber-50/30 blur-3xl pointer-events-none -z-10 rounded-full" />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Use Case 1: Hide Negative & Spam */}
-          <div
-            id="usecases-moderation"
-            className="p-8 rounded-3xl border border-zinc-200 bg-white shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between scroll-mt-24"
-          >
-            <div>
-              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-6">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <h3 className="font-heading text-xl font-bold text-zinc-950 mb-2">
-                Filter Negative & Spam Comments
-              </h3>
-              <p className="text-sm font-semibold text-zinc-800 mb-3">
-                Protect your customers and brand reputation
-              </p>
-              <p className="text-xs text-zinc-600 leading-relaxed mb-4">
-                Crypto bots, WhatsApp scams, and malicious links erode trust. BigRedHub identifies spam patterns and negative comments, withholding replies so toxic remarks never receive links or creator hearts.
-              </p>
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header with Pill and Hand-Drawn Cursive Doodles */}
+          <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20 relative">
+            {/* Top Pill Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-purple-200/80 bg-purple-50/70 text-purple-700 text-xs font-semibold mb-4 shadow-2xs">
+              <Layers className="w-3.5 h-3.5 text-purple-600" />
+              <span>Use Cases</span>
             </div>
-            <div className="pt-4 border-t border-zinc-100 flex items-center gap-2 text-xs font-semibold text-zinc-800">
-              <span className="w-2 h-2 rounded-full bg-red-600" />
-              <span>Zero links dispatched to toxic comments</span>
-            </div>
-          </div>
 
-          {/* Use Case 2: 1-Click Smart Replies */}
-          <div
-            id="usecases-replies"
-            className="p-8 rounded-3xl border border-zinc-200 bg-white shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between scroll-mt-24"
-          >
-            <div>
-              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-6">
-                <MousePointerClick className="w-6 h-6" />
-              </div>
-              <h3 className="font-heading text-xl font-bold text-zinc-950 mb-2">
-                1-Click Smart Replies
-              </h3>
-              <p className="text-sm font-semibold text-zinc-800 mb-3">
-                Save 80% of time spent answering comments
-              </p>
-              <p className="text-xs text-zinc-600 leading-relaxed mb-4">
-                Manage all incoming comments from a central three-panel inbox. Approve suggested answers with one click, or configure autopilot rules to reply within seconds while viewers remain on YouTube.
-              </p>
+            {/* Main Section Headline */}
+            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-zinc-950 mb-4 leading-tight">
+              Proven{" "}
+              <span className="bg-gradient-to-r from-purple-600 via-red-500 to-amber-500 bg-clip-text text-transparent">
+                Automation Capabilities
+              </span>
+            </h2>
+
+            <p className="text-sm sm:text-base text-zinc-600 max-w-2xl mx-auto">
+              Engineered around YouTube algorithms and viewer behavior to maximize customer conversion and audience retention.
+            </p>
+
+            {/* Left Hand-Drawn Annotation: 'Clean comments...' */}
+            <div className="hidden lg:flex flex-col items-center absolute -left-12 -top-2 select-none pointer-events-none transform -rotate-12 animate-float">
+              <span className="font-cursive text-purple-600 font-bold text-lg tracking-wide">Clean comments...</span>
+              <svg className="w-8 h-8 text-purple-500 -mt-1 ml-4" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M 10 5 C 10 25, 25 30, 22 35" />
+                <path d="M 16 33 L 23 36 L 24 29" />
+              </svg>
             </div>
-            <div className="pt-4 border-t border-zinc-100 flex items-center gap-2 text-xs font-semibold text-zinc-800">
-              <span className="w-2 h-2 rounded-full bg-red-600" />
-              <span>Sub-2-second response latency window</span>
+
+            {/* Right Hand-Drawn Annotation: '...more leads and sales!' */}
+            <div className="hidden lg:flex flex-col items-center absolute -right-12 -top-2 select-none pointer-events-none transform rotate-12 animate-float-reverse">
+              <span className="font-cursive text-purple-600 font-bold text-lg tracking-wide">...more leads and sales!</span>
+              <div className="flex items-center gap-1 -mt-1 mr-4">
+                <div className="flex items-end gap-0.5 h-6">
+                  <div className="w-1.5 h-2 bg-pink-200 rounded-xs" />
+                  <div className="w-1.5 h-3.5 bg-pink-300 rounded-xs" />
+                  <div className="w-1.5 h-5 bg-pink-400 rounded-xs" />
+                </div>
+                <svg className="w-7 h-7 text-purple-500" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M 8 30 C 15 10, 25 8, 30 18" />
+                  <path d="M 24 16 L 31 18 L 29 25" />
+                </svg>
+              </div>
             </div>
           </div>
 
-          {/* Use Case 3: DM / Comment Funnels */}
-          <div
-            id="usecases-funnels"
-            className="p-8 rounded-3xl border border-zinc-200 bg-white shadow-xs hover:border-zinc-300 transition-all flex flex-col justify-between scroll-mt-24"
-          >
-            <div>
-              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-6">
-                <Target className="w-6 h-6" />
+          {/* 3 Large Capability Cards Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* CARD 1: Filter Negative & Spam Comments */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-pink-300 transition-all duration-300 p-6 flex flex-col justify-between group">
+              <div>
+                {/* Visual UI Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-4 mb-6 shadow-2xs relative">
+                  {/* Floating Shield Doodle Tag */}
+                  <div className="absolute top-1/2 -right-3 -translate-y-1/2 w-8 h-8 rounded-xl bg-pink-500 text-white flex items-center justify-center shadow-md animate-pulse">
+                    <Shield className="w-4 h-4 fill-white" />
+                  </div>
+
+                  {/* Header: Comments (1,248) + Spam Filter ON */}
+                  <div className="flex items-center justify-between pb-2 mb-3 border-b border-zinc-200/60 text-[10px]">
+                    <div className="flex items-center gap-1.5 font-bold text-zinc-900">
+                      <div className="w-3.5 h-3.5 bg-red-600 rounded flex items-center justify-center text-white">
+                        <Play className="w-2 h-2 fill-white" />
+                      </div>
+                      <span>Comments (1,248)</span>
+                    </div>
+                    <div className="px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-bold text-[8px] flex items-center gap-1 border border-red-200/70">
+                      <ShieldAlert className="w-2.5 h-2.5 text-red-600" />
+                      <span>Spam Filter ON</span>
+                    </div>
+                  </div>
+
+                  {/* Filtered Comments Feed */}
+                  <div className="space-y-2 text-[8.5px]">
+                    {/* Item 1: WhatsApp Scam - BLOCKED */}
+                    <div className="bg-white rounded-xl p-2 border border-zinc-200/80 flex items-start justify-between gap-2 shadow-2xs">
+                      <div className="flex items-start gap-1.5 min-w-0">
+                        <div className="w-5 h-5 rounded-full bg-zinc-300 text-zinc-600 flex items-center justify-center font-bold text-[7px] shrink-0">
+                          C
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-bold text-zinc-900 text-[8px]">@crypto_trader123</span>
+                            <span className="text-[7px] text-zinc-400">1 hour ago</span>
+                          </div>
+                          <p className="text-[7.5px] text-zinc-600 leading-snug">
+                            DM me on WhatsApp +91 9876543210 for free signals 🚀🚀
+                          </p>
+                        </div>
+                      </div>
+                      <div className="px-1.5 py-0.5 rounded bg-red-50 text-red-600 font-bold text-[7.5px] border border-red-200 flex items-center gap-0.5 shrink-0">
+                        <Ban className="w-2 h-2" />
+                        <span>Blocked</span>
+                      </div>
+                    </div>
+
+                    {/* Item 2: Free Bitcoin Link - BLOCKED */}
+                    <div className="bg-white rounded-xl p-2 border border-zinc-200/80 flex items-start justify-between gap-2 shadow-2xs">
+                      <div className="flex items-start gap-1.5 min-w-0">
+                        <div className="w-5 h-5 rounded-full bg-zinc-300 text-zinc-600 flex items-center justify-center font-bold text-[7px] shrink-0">
+                          F
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-bold text-zinc-900 text-[8px]">@freebitcoingiveaway</span>
+                            <span className="text-[7px] text-zinc-400">2 hours ago</span>
+                          </div>
+                          <p className="text-[7.5px] text-zinc-600 leading-snug">
+                            Click here for free BTC <span className="text-blue-500 underline">https://scam-link.com</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="px-1.5 py-0.5 rounded bg-red-50 text-red-600 font-bold text-[7.5px] border border-red-200 flex items-center gap-0.5 shrink-0">
+                        <Ban className="w-2 h-2" />
+                        <span>Blocked</span>
+                      </div>
+                    </div>
+
+                    {/* Item 3: Fake Video Hate Comment - BLOCKED */}
+                    <div className="bg-white rounded-xl p-2 border border-zinc-200/80 flex items-start justify-between gap-2 shadow-2xs">
+                      <div className="flex items-start gap-1.5 min-w-0">
+                        <div className="w-5 h-5 rounded-full bg-zinc-300 text-zinc-600 flex items-center justify-center font-bold text-[7px] shrink-0">
+                          U
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-bold text-zinc-900 text-[8px]">@user834720</span>
+                            <span className="text-[7px] text-zinc-400">3 hours ago</span>
+                          </div>
+                          <p className="text-[7.5px] text-zinc-600 leading-snug">
+                            This video is fake and useless!!!
+                          </p>
+                        </div>
+                      </div>
+                      <div className="px-1.5 py-0.5 rounded bg-red-50 text-red-600 font-bold text-[7.5px] border border-red-200 flex items-center gap-0.5 shrink-0">
+                        <Ban className="w-2 h-2" />
+                        <span>Blocked</span>
+                      </div>
+                    </div>
+
+                    {/* Item 4: Real Buyer Comment - ALLOWED */}
+                    <div className="bg-emerald-50/70 rounded-xl p-2 border border-emerald-200/80 flex items-start justify-between gap-2 shadow-2xs">
+                      <div className="flex items-start gap-1.5 min-w-0">
+                        <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-[7px] shrink-0">
+                          P
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-bold text-zinc-900 text-[8px]">@priya_sharma</span>
+                            <span className="text-[7px] text-zinc-400">4 hours ago</span>
+                          </div>
+                          <p className="text-[7.5px] text-zinc-800 font-medium leading-snug">
+                            Price kya hai? Where to buy? 🤩
+                          </p>
+                        </div>
+                      </div>
+                      <div className="px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-[7.5px] flex items-center gap-0.5 shrink-0 shadow-2xs">
+                        <Check className="w-2 h-2 stroke-[3]" />
+                        <span>Allowed</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-600 text-white flex items-center justify-center shadow-xs">
+                    <ShieldAlert className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-lg font-bold text-zinc-950">Filter Negative & Spam Comments</h3>
+                    <p className="text-xs font-semibold text-pink-600">Protect your customers and brand reputation</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-zinc-600 leading-relaxed mb-6">
+                  Crypto bots, WhatsApp scams, and malicious links erode trust. BigRedHub identifies spam patterns and negative comments, withholding replies so toxic remarks never receive links or creator hearts.
+                </p>
               </div>
-              <h3 className="font-heading text-xl font-bold text-zinc-950 mb-2">
-                Comment Lead Funnels (Like ManyChat)
-              </h3>
-              <p className="text-sm font-semibold text-zinc-800 mb-3">
-                Turn viewer comments into automated lead funnels
-              </p>
-              <p className="text-xs text-zinc-600 leading-relaxed mb-4">
-                Ask viewers to comment &quot;LINK&quot;, &quot;GUIDE&quot;, or &quot;DEAL&quot;. BigRedHub recognizes the keyword trigger, replies with an attributed shortlink, and tracks conversion events through to checkout.
-              </p>
+
+              {/* Bottom Feature Pill */}
+              <div className="p-3 rounded-2xl bg-pink-50/70 border border-pink-200/70 flex items-center gap-2.5 text-xs font-bold text-pink-900">
+                <div className="w-6 h-6 rounded-lg bg-pink-500 text-white flex items-center justify-center shrink-0">
+                  <Ban className="w-3.5 h-3.5" />
+                </div>
+                <span>Zero links dispatched to toxic comments</span>
+              </div>
             </div>
-            <div className="pt-4 border-t border-zinc-100 flex items-center gap-2 text-xs font-semibold text-zinc-800">
-              <span className="w-2 h-2 rounded-full bg-red-600" />
-              <span>Full-funnel attribution from comment to sale</span>
+
+
+            {/* CARD 2: 1-Click Smart Replies */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-purple-300 transition-all duration-300 p-6 flex flex-col justify-between group">
+              <div>
+                {/* Visual UI Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-4 mb-6 shadow-2xs relative">
+                  {/* Floating Send / Paper Plane Icon Doodle */}
+                  <div className="absolute top-12 right-2 w-8 h-8 rounded-xl bg-pink-500 text-white flex items-center justify-center shadow-md animate-bounce">
+                    <Send className="w-4 h-4 text-white" />
+                  </div>
+
+                  {/* Top Viewer Inquiry Bubble */}
+                  <div className="bg-white rounded-2xl border border-zinc-200/80 p-3 shadow-2xs mb-3 max-w-[85%]">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-[8px]">N</div>
+                      <span className="font-bold text-zinc-900 text-[8.5px]">@neha_singh</span>
+                      <span className="text-[7.5px] text-zinc-400">10 minutes ago</span>
+                    </div>
+                    <p className="text-[9px] text-zinc-800 font-medium mb-1.5">
+                      Is this available on Amazon?
+                    </p>
+                    <div className="flex items-center gap-2 text-zinc-400 text-[8px]">
+                      <span className="flex items-center gap-0.5"><ThumbsUp className="w-2.5 h-2.5" /></span>
+                      <span className="flex items-center gap-0.5"><ThumbsDown className="w-2.5 h-2.5" /></span>
+                      <span className="font-semibold text-zinc-600">Reply</span>
+                    </div>
+                  </div>
+
+                  {/* AI Suggested Reply Box with 1-Click Action */}
+                  <div className="bg-white rounded-2xl border border-purple-200 p-3 shadow-sm">
+                    {/* Bar: AI Suggested Reply + 1-Click Reply Pill */}
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-100">
+                      <span className="text-[8.5px] font-bold text-zinc-700 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-purple-600" /> AI Suggested Reply
+                      </span>
+                      <div className="px-2 py-0.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-[8px] flex items-center gap-1 shadow-2xs cursor-pointer hover:opacity-95 transition-opacity">
+                        <Sparkles className="w-2 h-2" />
+                        <span>1-Click Reply</span>
+                      </div>
+                    </div>
+
+                    {/* Reply Text with Copy Icon */}
+                    <div className="text-[8.5px] text-zinc-700 relative pr-5 mb-2 leading-snug">
+                      <p>
+                        Hi Neha! 👋 Yes, this is available on Amazon. You can check it here:{" "}
+                        <span className="text-blue-600 font-semibold underline">https://amzn.to/abc123</span>
+                      </p>
+                      <button className="absolute top-0 right-0 text-zinc-400 hover:text-zinc-600">
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    {/* Reply Modifiers Toolbar */}
+                    <div className="flex items-center gap-2 pt-1 border-t border-zinc-100 text-[7.5px] text-zinc-500 font-medium">
+                      <button className="hover:text-purple-600 flex items-center gap-0.5">
+                        <ChevronRight className="w-2 h-2" /> Shorter
+                      </button>
+                      <span className="text-zinc-200">|</span>
+                      <button className="hover:text-purple-600 flex items-center gap-0.5">
+                        <Sparkles className="w-2 h-2" /> Friendlier
+                      </button>
+                      <span className="text-zinc-200">|</span>
+                      <button className="hover:text-purple-600 flex items-center gap-0.5">
+                        <Smile className="w-2 h-2" /> Add Emoji
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-11 h-11 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-lg font-bold text-zinc-950">1-Click Smart Replies</h3>
+                    <p className="text-xs font-semibold text-purple-600">Save 80% of time spent answering comments</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-zinc-600 leading-relaxed mb-6">
+                  Manage all incoming comments from a central three-panel inbox. Approve suggested answers with one click, or configure autopilot rules to reply within seconds while viewers remain on YouTube.
+                </p>
+              </div>
+
+              {/* Bottom Feature Pill */}
+              <div className="p-3 rounded-2xl bg-purple-50/70 border border-purple-200/70 flex items-center gap-2.5 text-xs font-bold text-purple-900">
+                <div className="w-6 h-6 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0">
+                  <Zap className="w-3.5 h-3.5" />
+                </div>
+                <span>Sub-2-second response latency window</span>
+              </div>
             </div>
+
+
+            {/* CARD 3: Comment Lead Funnels (Like ManyChat) */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-pink-300 transition-all duration-300 p-6 flex flex-col justify-between group">
+              <div>
+                {/* Visual UI Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-4 mb-6 shadow-2xs">
+                  {/* Split Grid: Left Comment-Reply + Right ManyChat Flow Pipeline */}
+                  <div className="grid grid-cols-12 gap-2.5">
+                    {/* Left Sub-Column (7 cols): Comment + Reply Flow */}
+                    <div className="col-span-7 space-y-2">
+                      {/* User Trigger Comment */}
+                      <div className="bg-white rounded-xl p-2 border border-zinc-200/80 shadow-2xs">
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[7px]">R</div>
+                          <span className="font-bold text-zinc-900 text-[7.5px]">@rohit_verma</span>
+                          <span className="text-[6.5px] text-zinc-400">2 hours ago</span>
+                        </div>
+                        <p className="text-[8px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded inline-block mb-1">
+                          LINK
+                        </p>
+                        <div className="flex items-center gap-1.5 text-zinc-400 text-[7px]">
+                          <span><ThumbsUp className="w-2 h-2" /></span>
+                          <span><ThumbsDown className="w-2 h-2" /></span>
+                          <span className="font-semibold text-zinc-600">Reply</span>
+                        </div>
+                      </div>
+
+                      {/* Directional Curved Connector Arrow */}
+                      <div className="flex justify-center -my-1 text-pink-500">
+                        <ChevronDown className="w-3 h-3 animate-bounce" />
+                      </div>
+
+                      {/* Automated BigRedHub Funnel Delivery */}
+                      <div className="bg-white rounded-xl p-2 border border-zinc-200/80 shadow-2xs">
+                        <div className="flex items-center gap-1 mb-1">
+                          <div className="w-3 h-3 bg-red-600 rounded flex items-center justify-center text-white">
+                            <Play className="w-1.5 h-1.5 fill-white" />
+                          </div>
+                          <span className="font-bold text-zinc-900 text-[7.5px]">BigRedHub</span>
+                          <span className="text-[6.5px] text-zinc-400">2 hours ago</span>
+                        </div>
+                        <p className="text-[7.5px] text-zinc-700 font-medium mb-1">
+                          Here is your link! 🔗<br />
+                          Get 50% OFF here:
+                        </p>
+                        <div className="bg-purple-50 text-purple-700 text-[7.5px] font-bold p-1 rounded flex items-center justify-between border border-purple-200/60">
+                          <span className="truncate">https://bigredhub.info/l/abc123</span>
+                          <Copy className="w-2 h-2 shrink-0 ml-1" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Sub-Column (5 cols): 4-Stage Vertical Funnel */}
+                    <div className="col-span-5 flex flex-col justify-between py-0.5 space-y-1.5 text-[7px] font-bold">
+                      {/* Step 1: Keyword Trigger */}
+                      <div className="bg-white p-1 rounded-lg border border-purple-200 shadow-2xs flex items-center gap-1">
+                        <div className="w-4 h-4 rounded bg-purple-600 text-white flex items-center justify-center shrink-0">
+                          <Tag className="w-2.5 h-2.5" />
+                        </div>
+                        <div className="leading-tight truncate">
+                          <span className="text-zinc-900 block truncate text-[6.5px]">Comment Keyword</span>
+                          <span className="text-purple-600 text-[6px]">&quot;LINK&quot;, &quot;GUIDE&quot;</span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-center -my-1 text-zinc-300">
+                        <ChevronDown className="w-2.5 h-2.5" />
+                      </div>
+
+                      {/* Step 2: Auto Reply Tracked Link */}
+                      <div className="bg-white p-1 rounded-lg border border-pink-200 shadow-2xs flex items-center gap-1">
+                        <div className="w-4 h-4 rounded bg-pink-500 text-white flex items-center justify-center shrink-0">
+                          <Send className="w-2.5 h-2.5" />
+                        </div>
+                        <div className="leading-tight truncate">
+                          <span className="text-zinc-900 block truncate text-[6.5px]">Auto Reply</span>
+                          <span className="text-pink-600 text-[6px]">Tracked Link</span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-center -my-1 text-zinc-300">
+                        <ChevronDown className="w-2.5 h-2.5" />
+                      </div>
+
+                      {/* Step 3: User Clicks & Visits */}
+                      <div className="bg-white p-1 rounded-lg border border-rose-200 shadow-2xs flex items-center gap-1">
+                        <div className="w-4 h-4 rounded bg-rose-500 text-white flex items-center justify-center shrink-0">
+                          <ShoppingCart className="w-2.5 h-2.5" />
+                        </div>
+                        <div className="leading-tight truncate">
+                          <span className="text-zinc-900 block truncate text-[6.5px]">User Clicks</span>
+                          <span className="text-rose-600 text-[6px]">& Visits Cart</span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-center -my-1 text-zinc-300">
+                        <ChevronDown className="w-2.5 h-2.5" />
+                      </div>
+
+                      {/* Step 4: Track Leads & Sales */}
+                      <div className="bg-white p-1 rounded-lg border border-emerald-200 shadow-2xs flex items-center gap-1">
+                        <div className="w-4 h-4 rounded bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                          <BarChart3 className="w-2.5 h-2.5" />
+                        </div>
+                        <div className="leading-tight truncate">
+                          <span className="text-zinc-900 block truncate text-[6.5px]">Track Leads</span>
+                          <span className="text-emerald-600 text-[6px]">& Sales in CRM</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-600 text-white flex items-center justify-center shadow-xs">
+                    <Filter className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-lg font-bold text-zinc-950">Comment Lead Funnels (Like ManyChat)</h3>
+                    <p className="text-xs font-semibold text-pink-600">Turn viewer comments into automated lead funnels</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-zinc-600 leading-relaxed mb-6">
+                  Ask viewers to comment &quot;LINK&quot;, &quot;GUIDE&quot;, or &quot;DEAL&quot;. BigRedHub recognizes the keyword trigger, replies with an attributed shortlink, and tracks conversion events through to checkout.
+                </p>
+              </div>
+
+              {/* Bottom Feature Pill */}
+              <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/70 flex items-center gap-2.5 text-xs font-bold text-emerald-900">
+                <div className="w-6 h-6 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                  <BarChart3 className="w-3.5 h-3.5" />
+                </div>
+                <span>Full-funnel attribution from comment to sale</span>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
