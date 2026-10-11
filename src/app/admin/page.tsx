@@ -173,7 +173,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6">
         <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-zinc-400 text-sm font-medium">Verifying TubeFlow Admin Credentials...</p>
+        <p className="text-zinc-400 text-sm font-medium">Verifying BigRedHub Admin Credentials...</p>
       </div>
     );
   }
@@ -188,7 +188,7 @@ export default function AdminPage() {
           SuperAdmin Access Required
         </h1>
         <p className="text-zinc-400 text-sm max-w-md mb-6 leading-relaxed">
-          This control center is restricted to verified TubeFlow platform administrators. Please sign in with your authorized admin account (<code className="text-red-400 font-mono text-xs">govinda755rock755@gmail.com</code>).
+          This control center is restricted to verified BigRedHub platform administrators. Please sign in with your authorized admin account (<code className="text-red-400 font-mono text-xs">govinda755rock755@gmail.com</code>).
         </p>
 
         {/* Admin Authentication */}

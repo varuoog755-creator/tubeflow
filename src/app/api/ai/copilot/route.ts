@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     if (normalized.includes("best converting") || normalized.includes("trigger")) {
       advice = `Based on your channel data (${channelSummary}), high-intent keywords like "LINK", "BUY", and "PRICE" yield the strongest click-through rates. Ensure your reply contains an instant direct link rather than asking them to DM you.`;
     } else if (normalized.includes("cta") || normalized.includes("shorts")) {
-      advice = `For YouTube Shorts, high-performing creators place the CTA in the first 2 seconds of the description and use this pinned pattern: "Pin a top comment: 'Drop LINK below and I will send you the secret formula instantly.' TubeFlow then delivers within 2 seconds while viewer intent is 100%."`;
+      advice = `For YouTube Shorts, high-performing creators place the CTA in the first 2 seconds of the description and use this pinned pattern: "Pin a top comment: 'Drop LINK below and I will send you the secret formula instantly.' BigRedHub then delivers within 2 seconds while viewer intent is 100%."`;
     } else if (normalized.includes("competitor")) {
       advice = `When analyzing competitor channels, identify video titles with a view-to-subscriber ratio exceeding 3x. Post a contrasting breakdown Short addressing the exact viewer questions from their comments.`;
     } else {

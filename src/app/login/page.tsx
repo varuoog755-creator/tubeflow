@@ -47,7 +47,7 @@ function LoginForm() {
               <Video className="w-4 h-4 fill-white" />
             </div>
             <span className="font-heading font-bold text-lg tracking-tight text-zinc-950">
-              Tube<span className="text-red-600">Flow</span>
+              BigRed<span className="text-red-600">Hub</span>
             </span>
           </Link>
 
@@ -70,7 +70,7 @@ function LoginForm() {
                 <Video className="w-5 h-5 fill-red-600" />
               </div>
               <h1 className="text-xl font-heading font-bold text-zinc-950 tracking-tight">
-                Sign in to TubeFlow
+                Sign in to BigRedHub
               </h1>
               <p className="text-xs text-zinc-600 mt-1.5 leading-relaxed">
                 Connect your YouTube channel to monitor buyer intent and deliver trackable links.
@@ -177,7 +177,7 @@ function LoginForm() {
 
       {/* Footer copyright */}
       <footer className="px-6 py-4 border-t border-zinc-100 text-center text-xs text-zinc-600 bg-zinc-50/50">
-        © {new Date().getFullYear()} TubeFlow. YouTube is a trademark of Google LLC.
+        © {new Date().getFullYear()} BigRedHub. YouTube is a trademark of Google LLC.
       </footer>
     </div>
   );

@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Video, ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Privacy Policy — TubeFlow",
-  description: "TubeFlow privacy policy, data practices, and YouTube API compliance.",
+  title: "Privacy Policy — BigRedHub",
+  description: "BigRedHub privacy policy, data practices, and YouTube API compliance.",
 };
 
 export default function PrivacyPage() {
@@ -15,7 +15,7 @@ export default function PrivacyPage() {
             <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white font-black">
               TF
             </div>
-            <span className="font-extrabold text-lg text-white">TubeFlow</span>
+            <span className="font-extrabold text-lg text-white">BigRedHub</span>
           </Link>
           <Link href="/" className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
@@ -32,14 +32,14 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-white">1. Information We Collect</h2>
           <p>
-            When you connect your YouTube account through Google OAuth, TubeFlow collects your channel identifier, channel title, subscriber and view statistics, and your authenticated email address.
+            When you connect your YouTube account through Google OAuth, BigRedHub collects your channel identifier, channel title, subscriber and view statistics, and your authenticated email address.
           </p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-white">2. Use of YouTube API Data</h2>
           <p>
-            TubeFlow uses official YouTube Data API v3 services to poll comments on your published videos and post authorized automated replies based on rules configured in your dashboard.
+            BigRedHub uses official YouTube Data API v3 services to poll comments on your published videos and post authorized automated replies based on rules configured in your dashboard.
           </p>
           <p>
             Our use and transfer of information received from Google APIs adhere to the{" "}
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-white">3. Data Retention and Deletion</h2>
           <p>
-            You can disconnect your channel at any time from your TubeFlow Settings tab or revoke access via your Google Security settings. Upon disconnection, stored access and refresh tokens are permanently purged.
+            You can disconnect your channel at any time from your BigRedHub Settings tab or revoke access via your Google Security settings. Upon disconnection, stored access and refresh tokens are permanently purged.
           </p>
         </section>
 
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
       </main>
 
       <footer className="border-t border-slate-900 py-6 text-center text-xs text-slate-600">
-        © 2026 TubeFlow. All rights reserved.
+        © 2026 BigRedHub. All rights reserved.
       </footer>
     </div>
   );

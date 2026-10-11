@@ -13,27 +13,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tubeflow-nine.vercel.app"),
+  metadataBase: new URL("https://bigredhub.info"),
   title: {
-    default: "TubeFlow — Automated YouTube Comments to Sales & Conversions",
-    template: "%s | TubeFlow",
+    default: "BigRedHub — Automated YouTube Comments to Sales & Conversions",
+    template: "%s | BigRedHub",
   },
   description:
-    "TubeFlow monitors YouTube Shorts comments, detects high buyer intent in sub-2 seconds, and auto-delivers tracked product, affiliate, and course links with anti-spam Spintax variations.",
+    "BigRedHub monitors YouTube Shorts comments, detects high buyer intent in sub-2 seconds, and auto-delivers tracked product, affiliate, and course links with anti-spam Spintax variations.",
   keywords: [
     "YouTube comment automation",
     "YouTube Shorts sales tool",
     "YouTube auto reply software",
     "comment to link YouTube",
     "creator monetization software",
-    "GramFlow YouTube alternative",
+    "BigRedHub YouTube automation",
     "YouTube affiliate link automation",
     "YouTube buyer intent AI",
     "YouTube Spintax replies",
   ],
-  authors: [{ name: "TubeFlow Team" }],
-  creator: "TubeFlow",
-  publisher: "TubeFlow",
+  authors: [{ name: "BigRedHub Team" }],
+  creator: "BigRedHub",
+  publisher: "BigRedHub",
   formatDetection: {
     email: false,
     address: false,
@@ -42,15 +42,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://tubeflow-nine.vercel.app",
-    siteName: "TubeFlow",
-    title: "TubeFlow — Turn YouTube Shorts Comments Into Instant Sales & Leads",
+    url: "https://bigredhub.info",
+    siteName: "BigRedHub",
+    title: "BigRedHub — Turn YouTube Shorts Comments Into Instant Sales & Leads",
     description:
       "Automated comment-to-link engine for creators and brands. Auto-reply in 1.4 seconds with trackable product links and AI buyer intent detection.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "TubeFlow — Turn YouTube Shorts Comments Into Instant Sales & Leads",
+    title: "BigRedHub — Turn YouTube Shorts Comments Into Instant Sales & Leads",
     description:
       "Automated comment-to-link engine for creators and brands. Detect buyer intent and reply with tracked links.",
   },
@@ -66,14 +66,14 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://tubeflow-nine.vercel.app",
+    canonical: "https://bigredhub.info",
   },
 };
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "TubeFlow",
+  name: "BigRedHub",
   operatingSystem: "Web",
   applicationCategory: "BusinessApplication",
   offers: {
@@ -82,7 +82,7 @@ const jsonLd = {
     priceCurrency: "INR",
   },
   description:
-    "TubeFlow monitors YouTube Shorts comments, detects buyer intent in sub-2 seconds, and delivers trackable product links with automated Spintax variations.",
+    "BigRedHub monitors YouTube Shorts comments, detects buyer intent in sub-2 seconds, and delivers trackable product links with automated Spintax variations.",
   featureList: [
     "Sub-2s automated comment response",
     "Commercial buyer intent classification",

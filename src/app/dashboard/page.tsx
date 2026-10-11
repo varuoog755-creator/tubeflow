@@ -599,7 +599,7 @@ export default function DashboardPage() {
         "{Hey|Hi|Hello} {{first_name}}! {Grab it here directly with 20% discount|You can buy the genuine product here|Here is the direct product link}: {{cta_url}}\n" +
         "{Hello|Hey} {{first_name}}! {Check out the product details and fast delivery options here|Here is where you can get it}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://tubeflow.in/shop/deal");
+      setRuleCtaUrl("https://BigRedHub.in/shop/deal");
       setRuleIntentCategory("BUYING_INTENT");
     } else if (preset === "affiliate") {
       setRuleKeywords("gear, setup, mic, camera, software, tool, recommend, which one");
@@ -607,7 +607,7 @@ export default function DashboardPage() {
         "{Hey|Hi} {{first_name}}! {Here is the exact setup I use (affiliate link)|Check out my official equipment list here}: {{cta_url}}\n" +
         "{Hey|Hello} {{first_name}}! {I got mine from this verified store|You can grab the exact model here}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://tubeflow.in/affiliate/setup-gear");
+      setRuleCtaUrl("https://BigRedHub.in/affiliate/setup-gear");
       setRuleIntentCategory("LINK_REQUEST");
     } else if (preset === "course") {
       setRuleKeywords("course, syllabus, learn, fee, enrollment, class, batch, mentorship");
@@ -615,7 +615,7 @@ export default function DashboardPage() {
         "{Hey|Hello} {{first_name}}! {Here is the complete course curriculum & syllabus|You can view the full batch details and enroll here}: {{cta_url}}\n" +
         "{Hi|Hey} {{first_name}}! {Check out free preview lessons and registration here|Here is the curriculum link}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://tubeflow.in/course/enroll");
+      setRuleCtaUrl("https://BigRedHub.in/course/enroll");
       setRuleIntentCategory("LINK_REQUEST");
     } else if (preset === "landing_page") {
       setRuleKeywords("checklist, guide, download, free, pdf, webinar, funnel, link");
@@ -623,7 +623,7 @@ export default function DashboardPage() {
         "{Hey|Hi|Hello} {{first_name}}! {Download the free guide and cheatsheet here|Grab your free template directly here}: {{cta_url}}\n" +
         "{Hi|Hey} {{first_name}}! {Here is the landing page to access the resources|You can claim the free resource here}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://tubeflow.in/free-guide");
+      setRuleCtaUrl("https://BigRedHub.in/free-guide");
       setRuleIntentCategory("ALL");
     }
     showNotification("info", `Applied ${preset.replace("_", " ")} presets with anti-spam Spintax variations.`);
@@ -651,7 +651,7 @@ export default function DashboardPage() {
       }
       const sample = t
         .replace(/{{first_name}}|{first_name}/gi, names[i % names.length])
-        .replace(/{{cta_url}}|{cta_url}/gi, ruleCtaUrl || "https://tubeflow.in/link");
+        .replace(/{{cta_url}}|{cta_url}/gi, ruleCtaUrl || "https://BigRedHub.in/link");
       samples.push(sample);
     }
     setSpintaxPreviewSamples(samples);
@@ -823,7 +823,7 @@ export default function DashboardPage() {
           keyword_match_operator: ruleOperator,
           intent_category: ruleIntentCategory,
           reply_template: ruleTemplates.split("\n")[0] || "Hey {{first_name}}! Check: {{cta_url}}",
-          cta_url: ruleCtaUrl || "https://tubeflow.in/demo",
+          cta_url: ruleCtaUrl || "https://BigRedHub.in/demo",
         }),
       });
       const data = await res.json();
@@ -838,7 +838,7 @@ export default function DashboardPage() {
   // Insert Tracked Link into reply
   const handleInsertTrackedLink = (slug: string) => {
     if (!slug) return;
-    const url = `https://tubeflow-nine.vercel.app/r/${slug}`;
+    const url = `https://BigRedHub-nine.vercel.app/r/${slug}`;
     setDraftReplyText((prev) => `${prev} ${url}`);
     setSelectedLinkSlug("");
     showNotification("info", `Inserted short link: /r/${slug}`);
@@ -877,7 +877,7 @@ export default function DashboardPage() {
             <RefreshCw className="w-4 h-4" />
           </div>
           <p className="text-xs font-semibold text-zinc-600 tracking-wide">
-            Loading TubeFlow Workspace...
+            Loading BigRedHub Workspace...
           </p>
         </div>
       </div>
@@ -916,7 +916,7 @@ export default function DashboardPage() {
               <Video className="w-3.5 h-3.5 fill-white" />
             </div>
             <span className="font-heading font-bold text-base tracking-tight text-zinc-950">
-              Tube<span className="text-red-600">Flow</span>
+              BigRed<span className="text-red-600">Hub</span>
             </span>
           </Link>
 
@@ -1118,7 +1118,7 @@ export default function DashboardPage() {
             <p className="font-semibold text-zinc-800 truncate">
               {profile?.email || "Account"}
             </p>
-            <p className="text-[10px] text-zinc-600">TubeFlow v0.2.0 • Production</p>
+            <p className="text-[10px] text-zinc-600">BigRedHub v0.2.0 • Production</p>
           </div>
         </aside>
 
@@ -1949,7 +1949,7 @@ export default function DashboardPage() {
                                 "{Hey|Hi|Hello} {{first_name}}! {Here is the exact link mentioned in the video|Check out the product details here}: {{cta_url}}"
                               );
                               setRuleKeywords("link, where to buy, buy, price, cost");
-                              setRuleCtaUrl("https://tubeflow.in/product-deal");
+                              setRuleCtaUrl("https://BigRedHub.in/product-deal");
                               setActiveTab("automations");
                               setIsRuleModalOpen(true);
                             }}
@@ -2016,7 +2016,7 @@ export default function DashboardPage() {
                         "{Hey|Hi|Hello} {{first_name}}! {Grab it here directly with 20% discount|You can buy the genuine product here|Here is the direct product link}: {{cta_url}}\n" +
                         "{Hello|Hey} {{first_name}}! {Check out the product details and fast delivery options here|Here is where you can get it}: {{cta_url}}"
                       );
-                      setRuleCtaUrl("https://tubeflow.in/shop/deal");
+                      setRuleCtaUrl("https://BigRedHub.in/shop/deal");
                       setRuleIntentCategory("ALL");
                       setRuleDelay(5);
                       setSpintaxPreviewSamples([]);
@@ -2287,7 +2287,7 @@ export default function DashboardPage() {
                       Authorized YouTube Channels
                     </h2>
                     <p className="text-xs text-zinc-500">
-                      Channels connected to TubeFlow for automated comment monitoring and link delivery.
+                      Channels connected to BigRedHub for automated comment monitoring and link delivery.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -2950,7 +2950,7 @@ export default function DashboardPage() {
                   </label>
                   <input
                     type="url"
-                    placeholder="https://tubeflow.in/gear-setup"
+                    placeholder="https://BigRedHub.in/gear-setup"
                     value={ruleCtaUrl}
                     onChange={(e) => setRuleCtaUrl(e.target.value)}
                     className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:outline-none"
@@ -3059,19 +3059,19 @@ export default function DashboardPage() {
 
                     <div className="p-2.5 rounded-xl bg-red-50/50 border border-red-200/60">
                       <span className="text-[10px] font-bold text-red-800 uppercase tracking-wider block mb-0.5">
-                        TubeFlow Auto-Reply:
+                        BigRedHub Auto-Reply:
                       </span>
                       <p className="text-zinc-900">
                         {comm.reply_text ||
                           `Hey ${comm.author_name.split(" ")[0]}! Grab the exact link here: ${
-                            campaignRepliesModalRule.cta_url || "https://tubeflow.in"
+                            campaignRepliesModalRule.cta_url || "https://BigRedHub.in"
                           }`}
                       </p>
                       <div className="flex items-center gap-4 mt-2 pt-2 border-t border-red-100 text-[11px] text-zinc-500">
                         <span>
                           🔗 Destination:{" "}
                           <span className="font-mono text-zinc-800">
-                            {campaignRepliesModalRule.cta_url || "https://tubeflow.in"}
+                            {campaignRepliesModalRule.cta_url || "https://BigRedHub.in"}
                           </span>
                         </span>
                         <span className="text-emerald-700 font-bold ml-auto">
@@ -3328,7 +3328,7 @@ export default function DashboardPage() {
 
             <form onSubmit={handleConnectByHandle} className="space-y-3.5 text-xs">
               <p className="text-zinc-600 leading-relaxed">
-                Enter your YouTube Channel handle (e.g. <strong className="text-zinc-900 font-mono">@teepulcurtain</strong> or <strong className="text-zinc-900 font-mono">@MrBeast</strong>) or full Channel ID (<strong className="text-zinc-900 font-mono">UC...</strong>). TubeFlow will pull live subscriber counts and channel metadata.
+                Enter your YouTube Channel handle (e.g. <strong className="text-zinc-900 font-mono">@teepulcurtain</strong> or <strong className="text-zinc-900 font-mono">@MrBeast</strong>) or full Channel ID (<strong className="text-zinc-900 font-mono">UC...</strong>). BigRedHub will pull live subscriber counts and channel metadata.
               </p>
 
               <div>

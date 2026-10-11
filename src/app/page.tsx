@@ -57,7 +57,7 @@ const DEMO_SCENARIOS: Scenario[] = [
     detectedIntent: "High Buyer Intent: Product Link",
     intentConfidence: "99.4%",
     replyText: "Hey Vikram! Grab the exact camera and mic setup here:",
-    trackedUrl: "tubeflow.in/gear-setup",
+    trackedUrl: "BigRedHub.in/gear-setup",
     latency: "1.4s",
     revenue: "₹2,450 Sale",
     conversionTime: "4 mins later",
@@ -70,7 +70,7 @@ const DEMO_SCENARIOS: Scenario[] = [
     detectedIntent: "High Buyer Intent: Course Purchase",
     intentConfidence: "98.8%",
     replyText: "Hey Ananya! Enrollment closes tonight. View curriculum here:",
-    trackedUrl: "tubeflow.in/edit-cohort",
+    trackedUrl: "BigRedHub.in/edit-cohort",
     latency: "1.2s",
     revenue: "₹4,999 Sale",
     conversionTime: "7 mins later",
@@ -82,8 +82,8 @@ const DEMO_SCENARIOS: Scenario[] = [
     comment: "Do you have any active discount code for this software?",
     detectedIntent: "Purchase Inquiry: Promo Code",
     intentConfidence: "97.9%",
-    replyText: "Hey Rohan! Code TUBEFLOW saves 20% right now:",
-    trackedUrl: "tubeflow.in/save20",
+    replyText: "Hey Rohan! Code BigRedHub saves 20% right now:",
+    trackedUrl: "BigRedHub.in/save20",
     latency: "1.1s",
     revenue: "₹1,200 Sale",
     conversionTime: "2 mins later",
@@ -145,7 +145,7 @@ export default function Home() {
               <Video className="w-4 h-4 fill-white text-white" />
             </div>
             <span className="font-heading font-bold text-lg tracking-tight text-zinc-950">
-              Tube<span className="text-red-600">Flow</span>
+              BigRed<span className="text-red-600">Hub</span>
             </span>
           </Link>
 
@@ -686,7 +686,7 @@ export default function Home() {
             </h1>
 
             <p className="text-base sm:text-lg text-zinc-600 leading-relaxed mb-8 max-w-xl">
-              TubeFlow detects buyer intent in viewer comments, auto-delivers trackable links in under 2 seconds, and attributes conversions without manual typing.
+              BigRedHub detects buyer intent in viewer comments, auto-delivers trackable links in under 2 seconds, and attributes conversions without manual typing.
             </p>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto mb-10">
@@ -827,7 +827,7 @@ export default function Home() {
                         <Video className="w-3 h-3 fill-white" />
                       </div>
                       <span className="font-semibold text-zinc-100">
-                        TubeFlow Bot
+                        BigRedHub Bot
                       </span>
                       <span className="text-emerald-400 font-medium text-[11px] flex items-center gap-1">
                         <Check className="w-3 h-3" /> Auto-Replied ({scenario.latency})
@@ -1116,7 +1116,7 @@ export default function Home() {
               Tailored Solutions for Every Growth Model
             </h2>
             <p className="text-base text-zinc-600">
-              TubeFlow replaces manual typing with intelligent comment response pipelines adapted to your specific business model.
+              BigRedHub replaces manual typing with intelligent comment response pipelines adapted to your specific business model.
             </p>
           </div>
 
@@ -1137,7 +1137,7 @@ export default function Home() {
                   Protect your brand and increase ROAS
                 </p>
                 <p className="text-xs text-zinc-600 leading-relaxed mb-6">
-                  Viewers asking &quot;where to buy&quot; or &quot;price&quot; on your YouTube product videos are ready to buy. TubeFlow auto-replies with direct product links in under 2 seconds, preventing lost sales and lifting paid ad ROAS.
+                  Viewers asking &quot;where to buy&quot; or &quot;price&quot; on your YouTube product videos are ready to buy. BigRedHub auto-replies with direct product links in under 2 seconds, preventing lost sales and lifting paid ad ROAS.
                 </p>
 
                 <ul className="space-y-2 text-xs text-zinc-700 mb-6">
@@ -1181,7 +1181,7 @@ export default function Home() {
                   Community growth and monetized interactions
                 </p>
                 <p className="text-xs text-zinc-600 leading-relaxed mb-6">
-                  Stop copy-pasting gear links, course discounts, or newsletter invitations 500 times per upload. TubeFlow gives automatic creator hearts and delivers your links without burnout.
+                  Stop copy-pasting gear links, course discounts, or newsletter invitations 500 times per upload. BigRedHub gives automatic creator hearts and delivers your links without burnout.
                 </p>
 
                 <ul className="space-y-2 text-xs text-zinc-700 mb-6">
@@ -1288,7 +1288,7 @@ export default function Home() {
                 Protect your customers and brand reputation
               </p>
               <p className="text-xs text-zinc-600 leading-relaxed mb-4">
-                Crypto bots, WhatsApp scams, and malicious links erode trust. TubeFlow identifies spam patterns and negative comments, withholding replies so toxic remarks never receive links or creator hearts.
+                Crypto bots, WhatsApp scams, and malicious links erode trust. BigRedHub identifies spam patterns and negative comments, withholding replies so toxic remarks never receive links or creator hearts.
               </p>
             </div>
             <div className="pt-4 border-t border-zinc-100 flex items-center gap-2 text-xs font-semibold text-zinc-800">
@@ -1338,7 +1338,7 @@ export default function Home() {
                 Turn viewer comments into automated lead funnels
               </p>
               <p className="text-xs text-zinc-600 leading-relaxed mb-4">
-                Ask viewers to comment &quot;LINK&quot;, &quot;GUIDE&quot;, or &quot;DEAL&quot;. TubeFlow recognizes the keyword trigger, replies with an attributed shortlink, and tracks conversion events through to checkout.
+                Ask viewers to comment &quot;LINK&quot;, &quot;GUIDE&quot;, or &quot;DEAL&quot;. BigRedHub recognizes the keyword trigger, replies with an attributed shortlink, and tracks conversion events through to checkout.
               </p>
             </div>
             <div className="pt-4 border-t border-zinc-100 flex items-center gap-2 text-xs font-semibold text-zinc-800">
@@ -1364,7 +1364,7 @@ export default function Home() {
               From viewer inquiry to verified revenue
             </h2>
             <p className="text-base text-zinc-600">
-              TubeFlow replaces manual typing with an intelligent intent pipeline that captures sales when interest is fresh.
+              BigRedHub replaces manual typing with an intelligent intent pipeline that captures sales when interest is fresh.
             </p>
           </div>
 
@@ -1378,7 +1378,7 @@ export default function Home() {
                 Detect Buyer Intent
               </h3>
               <p className="text-sm text-zinc-600 leading-relaxed mb-4">
-                TubeFlow continuously monitors new comments on your videos and Shorts. The intent engine distinguishes buyers asking for links and prices from casual noise and spam.
+                BigRedHub continuously monitors new comments on your videos and Shorts. The intent engine distinguishes buyers asking for links and prices from casual noise and spam.
               </p>
               <ul className="space-y-2 text-xs font-medium text-zinc-700">
                 <li className="flex items-center gap-2">
@@ -1401,7 +1401,7 @@ export default function Home() {
                 Deliver Trackable Links
               </h3>
               <p className="text-sm text-zinc-600 leading-relaxed mb-4">
-                When a viewer asks for gear, pricing, or product recommendations, TubeFlow posts a personalized reply with an attributed short URL in under 2 seconds.
+                When a viewer asks for gear, pricing, or product recommendations, BigRedHub posts a personalized reply with an attributed short URL in under 2 seconds.
               </p>
               <ul className="space-y-2 text-xs font-medium text-zinc-700">
                 <li className="flex items-center gap-2">
@@ -1456,7 +1456,7 @@ export default function Home() {
                 Official YouTube Data API v3 Architecture. Zero Bots. Zero Account Risk.
               </h2>
               <p className="text-sm text-zinc-400 leading-relaxed">
-                TubeFlow never asks for your password or runs illegal browser scrapers that trigger YouTube strikes. All authentication happens via encrypted Google OAuth2 tokens with strict rate-limiting and human-paced delivery delays.
+                BigRedHub never asks for your password or runs illegal browser scrapers that trigger YouTube strikes. All authentication happens via encrypted Google OAuth2 tokens with strict rate-limiting and human-paced delivery delays.
               </p>
             </div>
 
@@ -1508,7 +1508,7 @@ export default function Home() {
             Engineered for creators who sell
           </h2>
           <p className="text-base text-zinc-600">
-            Viewers asking for links in comments intend to purchase immediately. TubeFlow locks in that moment before attention wanders.
+            Viewers asking for links in comments intend to purchase immediately. BigRedHub locks in that moment before attention wanders.
           </p>
         </div>
 
@@ -1523,7 +1523,7 @@ export default function Home() {
                 Sub-2-Second Response Window
               </h3>
               <p className="text-sm text-zinc-600 leading-relaxed">
-                Most viewers close YouTube within minutes of posting a query. TubeFlow monitors your channel and answers while they are still holding their phones.
+                Most viewers close YouTube within minutes of posting a query. BigRedHub monitors your channel and answers while they are still holding their phones.
               </p>
             </div>
             <div className="mt-6 pt-6 border-t border-zinc-100 flex items-center gap-3 text-xs font-semibold text-zinc-800">
@@ -1580,7 +1580,7 @@ export default function Home() {
                 Spam and Trolling Shields
               </h3>
               <p className="text-sm text-zinc-600 leading-relaxed">
-                TubeFlow checks negative words, scam patterns, and duplicate comments. Your automations never trigger on trolls or send links to toxic remarks.
+                BigRedHub checks negative words, scam patterns, and duplicate comments. Your automations never trigger on trolls or send links to toxic remarks.
               </p>
             </div>
             <div className="mt-6 pt-6 border-t border-zinc-100 flex items-center gap-3 text-xs font-semibold text-zinc-800">
@@ -1606,16 +1606,16 @@ export default function Home() {
           <div className="space-y-4">
             <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-xs">
               <h3 className="font-heading font-semibold text-base text-zinc-950 mb-2">
-                Does TubeFlow comply with YouTube terms of service?
+                Does BigRedHub comply with YouTube terms of service?
               </h3>
               <p className="text-sm text-zinc-600 leading-relaxed">
-                Yes. TubeFlow connects via official Google OAuth2 and uses the official YouTube Data API v3. Replies occur through authorized API scopes granted by channel owners.
+                Yes. BigRedHub connects via official Google OAuth2 and uses the official YouTube Data API v3. Replies occur through authorized API scopes granted by channel owners.
               </p>
             </div>
 
             <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-xs">
               <h3 className="font-heading font-semibold text-base text-zinc-950 mb-2">
-                How does TubeFlow prevent looking like a spam bot?
+                How does BigRedHub prevent looking like a spam bot?
               </h3>
               <p className="text-sm text-zinc-600 leading-relaxed">
                 You configure Spintax variations so replies rotate naturally. You set custom keyword conditions, negative filters, and cooldown delays to prevent duplicate replies.
@@ -1627,7 +1627,7 @@ export default function Home() {
                 Can I test rules before running them on live comments?
               </h3>
               <p className="text-sm text-zinc-600 leading-relaxed">
-                Yes. The TubeFlow dashboard includes a Dry Run Simulator where you can test any sample comment text against your trigger rules before enabling live polling.
+                Yes. The BigRedHub dashboard includes a Dry Run Simulator where you can test any sample comment text against your trigger rules before enabling live polling.
               </p>
             </div>
           </div>
@@ -1656,7 +1656,7 @@ export default function Home() {
               href="/login"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all shadow-xl shadow-red-600/30 hover:-translate-y-0.5 active:translate-y-0"
             >
-              <span>Get Started with TubeFlow</span>
+              <span>Get Started with BigRedHub</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
@@ -1790,10 +1790,10 @@ export default function Home() {
                 <Video className="w-3.5 h-3.5 fill-white" />
               </div>
               <span className="font-heading font-bold text-sm text-zinc-950">
-                Tube<span className="text-red-600">Flow</span>
+                BigRed<span className="text-red-600">Hub</span>
               </span>
               <span className="text-zinc-400 ml-2">
-                © {new Date().getFullYear()} TubeFlow. All rights reserved.
+                © {new Date().getFullYear()} BigRedHub. All rights reserved.
               </span>
             </div>
 
