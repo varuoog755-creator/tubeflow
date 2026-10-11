@@ -2714,148 +2714,620 @@ export default function Home() {
         </div>
       </section>
 
-      {/* THREE-STEP WORKFLOW SECTION */}
+      {/* THREE-STEP WORKFLOW SECTION (MATCHING REFERENCE IMAGE 1) */}
       <section
         id="workflow"
-        className="py-20 bg-zinc-50 border-y border-zinc-100 px-6 scroll-mt-16"
+        className="py-24 bg-gradient-to-b from-white via-zinc-50/50 to-white border-y border-zinc-100 px-4 sm:px-6 scroll-mt-16 relative overflow-hidden"
       >
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-zinc-200 bg-white text-zinc-700 text-xs font-semibold mb-3">
-              <Target className="w-3.5 h-3.5 text-red-600" />
+        {/* Soft atmospheric radial gradient */}
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[950px] h-[360px] bg-gradient-to-tr from-purple-100/40 via-red-50/30 to-amber-50/30 blur-3xl pointer-events-none -z-10 rounded-full" />
+
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header with Pill, Gradient Title, and Cursive Doodles */}
+          <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20 relative">
+            {/* Top Pill Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-purple-200/80 bg-purple-50/70 text-purple-700 text-xs font-semibold mb-4 shadow-2xs">
+              <Sliders className="w-3.5 h-3.5 text-purple-600" />
               <span>Three-Step Workflow</span>
             </div>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-zinc-950 mb-4">
-              From viewer inquiry to verified revenue
+
+            {/* Main Section Headline */}
+            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-zinc-950 mb-4 leading-tight">
+              From viewer inquiry to{" "}
+              <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 bg-clip-text text-transparent">
+                verified revenue
+              </span>
             </h2>
-            <p className="text-base text-zinc-600">
+
+            <p className="text-sm sm:text-base text-zinc-600 max-w-2xl mx-auto">
               BigRedHub replaces manual typing with an intelligent intent pipeline that captures sales when interest is fresh.
             </p>
+
+            {/* Left Hand-Drawn Annotation: 'Viewer Inquiry...' */}
+            <div className="hidden lg:flex flex-col items-center absolute -left-12 -top-2 select-none pointer-events-none transform -rotate-12 animate-float">
+              <span className="font-cursive text-purple-600 font-bold text-lg tracking-wide">Viewer Inquiry...</span>
+              <svg className="w-8 h-8 text-purple-500 -mt-1 ml-4" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M 10 5 C 10 25, 25 30, 22 35" />
+                <path d="M 16 33 L 23 36 L 24 29" />
+              </svg>
+            </div>
+
+            {/* Right Hand-Drawn Annotation: '...to Verified Revenue!' */}
+            <div className="hidden lg:flex flex-col items-center absolute -right-12 -top-2 select-none pointer-events-none transform rotate-6 animate-float-delayed">
+              <span className="font-cursive text-purple-600 font-bold text-base tracking-wide">...to Verified Revenue!</span>
+              <div className="flex items-end gap-1.5 mt-1.5">
+                <div className="w-2.5 h-4 bg-purple-400 rounded-xs" />
+                <div className="w-2.5 h-6 bg-pink-400 rounded-xs" />
+                <div className="w-2.5 h-8 bg-rose-500 rounded-xs" />
+                <svg className="w-7 h-7 text-rose-500 -ml-1 -mt-4 transform -rotate-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M7 17L17 7" />
+                  <path d="M7 7h10v10" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Floating Soft 3D YouTube Icon Backdrop Accent */}
+            <div className="hidden md:flex items-center justify-center absolute left-8 -top-8 w-14 h-11 bg-gradient-to-tr from-rose-500/15 to-red-600/25 rounded-2xl border border-red-200/50 -rotate-12 blur-[1px] pointer-events-none">
+              <Play className="w-5 h-5 fill-red-500/70 text-red-500/70" />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Step 1 */}
-            <div className="bg-white rounded-3xl p-8 border border-zinc-200/80 shadow-xs hover:border-zinc-300 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 text-red-600 flex items-center justify-center font-heading font-bold text-lg mb-6">
-                01
-              </div>
-              <h3 className="font-heading text-xl font-bold text-zinc-950 mb-3">
-                Detect Buyer Intent
-              </h3>
-              <p className="text-sm text-zinc-600 leading-relaxed mb-4">
-                BigRedHub continuously monitors new comments on your videos and Shorts. The intent engine distinguishes buyers asking for links and prices from casual noise and spam.
-              </p>
-              <ul className="space-y-2 text-xs font-medium text-zinc-700">
-                <li className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                  <span>Keyword and intent matching rules</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                  <span>Negative word filtering to eliminate spam</span>
-                </li>
-              </ul>
+          {/* 3 Step Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative items-stretch">
+            {/* Connecting Pink Curved Arrow 1 -> 2 */}
+            <div className="hidden md:block absolute left-[31.5%] top-[8%] -translate-y-1/2 z-20 pointer-events-none">
+              <svg className="w-16 h-8 text-purple-600 animate-pulse" viewBox="0 0 70 30" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M 5 22 C 25 5, 45 5, 62 18" />
+                <path d="M 54 18 L 63 18 L 61 9" />
+              </svg>
             </div>
 
-            {/* Step 2 */}
-            <div className="bg-white rounded-3xl p-8 border border-zinc-200/80 shadow-xs hover:border-zinc-300 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 text-red-600 flex items-center justify-center font-heading font-bold text-lg mb-6">
-                02
-              </div>
-              <h3 className="font-heading text-xl font-bold text-zinc-950 mb-3">
-                Deliver Trackable Links
-              </h3>
-              <p className="text-sm text-zinc-600 leading-relaxed mb-4">
-                When a viewer asks for gear, pricing, or product recommendations, BigRedHub posts a personalized reply with an attributed short URL in under 2 seconds.
-              </p>
-              <ul className="space-y-2 text-xs font-medium text-zinc-700">
-                <li className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                  <span>Spintax natural response rotation</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                  <span>Automatic creator heart for high visibility</span>
-                </li>
-              </ul>
+            {/* Connecting Pink Curved Arrow 2 -> 3 */}
+            <div className="hidden md:block absolute left-[65%] top-[8%] -translate-y-1/2 z-20 pointer-events-none">
+              <svg className="w-16 h-8 text-pink-600 animate-pulse" viewBox="0 0 70 30" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M 5 22 C 25 5, 45 5, 62 18" />
+                <path d="M 54 18 L 63 18 L 61 9" />
+              </svg>
             </div>
 
-            {/* Step 3 */}
-            <div className="bg-white rounded-3xl p-8 border border-zinc-200/80 shadow-xs hover:border-zinc-300 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 text-red-600 flex items-center justify-center font-heading font-bold text-lg mb-6">
-                03
+            {/* STEP 1: Detect Buyer Intent */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all duration-300 p-6 flex flex-col justify-between group">
+              <div>
+                {/* Header with Step Number Badge & Title */}
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-heading font-extrabold text-lg shadow-sm shrink-0">
+                    01
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-xl font-bold text-zinc-950 leading-snug">Detect Buyer Intent</h3>
+                    <p className="text-xs text-zinc-600 leading-relaxed mt-1">
+                      BigRedHub continuously monitors new comments on your videos and Shorts. The intent engine distinguishes buyers asking for links and prices from casual noise and spam.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Visual Mockup Box: Comments List with Intent Badges */}
+                <div className="bg-zinc-50/90 rounded-2xl border border-zinc-200/80 p-3.5 my-4 shadow-2xs">
+                  {/* Top Bar: Comments Count + Live Monitoring Pill */}
+                  <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-zinc-200/70 text-[9px]">
+                    <div className="flex items-center gap-1.5 font-bold text-zinc-900">
+                      <div className="w-4 h-3 bg-red-600 rounded-xs flex items-center justify-center text-white">
+                        <Play className="w-1.5 h-1.5 fill-white" />
+                      </div>
+                      <span>Comments (324)</span>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[8px] border border-emerald-200/70">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                      <span>Live Monitoring</span>
+                    </div>
+                  </div>
+
+                  {/* Comment Rows */}
+                  <div className="space-y-2">
+                    {/* Comment 1: Neeta Sharma -> Buying Intent */}
+                    <div className="bg-white rounded-xl p-2 border border-zinc-200/70 shadow-2xs flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-rose-400 text-white flex items-center justify-center font-bold text-[8px] shrink-0 overflow-hidden">
+                          <span className="text-[9px]">👩</span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="font-bold text-zinc-900 text-[8.5px] truncate">@neetasharma</span>
+                            <span className="text-[7px] text-zinc-400 shrink-0">2 min ago</span>
+                          </div>
+                          <p className="text-[7.5px] text-zinc-700 font-medium truncate">Price kya hai? Link please 🙏</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-600 font-bold text-[7.5px] border border-rose-200/80 shrink-0">
+                        Buying Intent
+                      </span>
+                    </div>
+
+                    {/* Comment 2: TechGamer -> Link Request */}
+                    <div className="bg-white rounded-xl p-2 border border-zinc-200/70 shadow-2xs flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 text-white flex items-center justify-center font-bold text-[8px] shrink-0 overflow-hidden">
+                          <span className="text-[9px]">👨</span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="font-bold text-zinc-900 text-[8.5px] truncate">@techgamer</span>
+                            <span className="text-[7px] text-zinc-400 shrink-0">5 min ago</span>
+                          </div>
+                          <p className="text-[7.5px] text-zinc-700 font-medium truncate">Where to buy this? 🔥</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 font-bold text-[7.5px] border border-blue-200/80 shrink-0">
+                        Link Request
+                      </span>
+                    </div>
+
+                    {/* Comment 3: Rohit123 -> General */}
+                    <div className="bg-white rounded-xl p-2 border border-zinc-200/70 shadow-2xs flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 text-white flex items-center justify-center font-bold text-[8px] shrink-0 overflow-hidden">
+                          <span className="text-[9px]">🧑</span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="font-bold text-zinc-900 text-[8.5px] truncate">@rohit123</span>
+                            <span className="text-[7px] text-zinc-400 shrink-0">8 min ago</span>
+                          </div>
+                          <p className="text-[7.5px] text-zinc-700 font-medium truncate">Great video! 👍</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 font-bold text-[7.5px] border border-emerald-200/80 shrink-0">
+                        General
+                      </span>
+                    </div>
+
+                    {/* Comment 4: SpamCrypto -> Spam */}
+                    <div className="bg-white rounded-xl p-2 border border-zinc-200/70 shadow-2xs flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-6 h-6 rounded-full bg-zinc-300 text-zinc-600 flex items-center justify-center font-bold text-[8px] shrink-0 overflow-hidden">
+                          <span className="text-[9px]">🤖</span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="font-bold text-zinc-900 text-[8.5px] truncate">@spamcrypto</span>
+                            <span className="text-[7px] text-zinc-400 shrink-0">10 min ago</span>
+                          </div>
+                          <p className="text-[7.5px] text-zinc-500 font-medium truncate">DM me on WhatsApp +91 9876543210</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 font-bold text-[7.5px] border border-red-200/80 shrink-0">
+                        Spam
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-heading text-xl font-bold text-zinc-950 mb-3">
-                Attribute Conversions
-              </h3>
-              <p className="text-sm text-zinc-600 leading-relaxed mb-4">
-                Track clicks and orders tied back to exact videos. Gain clarity on which content drives customers and which replies produce high click-through rates.
-              </p>
-              <ul className="space-y-2 text-xs font-medium text-zinc-700">
-                <li className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                  <span>Video-level attribution analytics</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                  <span>Webhook and conversion tracking support</span>
-                </li>
-              </ul>
+
+              {/* Bottom Feature Box with Icon & Checkmarks */}
+              <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-start gap-3 mt-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <div className="space-y-1 text-xs font-semibold text-zinc-800">
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-blue-600 shrink-0 stroke-[3]" />
+                    <span>Keyword and intent matching rules</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-blue-600 shrink-0 stroke-[3]" />
+                    <span>Negative word filtering to eliminate spam</span>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* STEP 2: Deliver Trackable Links */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-pink-300 transition-all duration-300 p-6 flex flex-col justify-between group">
+              <div>
+                {/* Header with Step Number Badge & Title */}
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-600 text-white flex items-center justify-center font-heading font-extrabold text-lg shadow-sm shrink-0">
+                    02
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-xl font-bold text-zinc-950 leading-snug">Deliver Trackable Links</h3>
+                    <p className="text-xs text-zinc-600 leading-relaxed mt-1">
+                      When a viewer asks for gear, pricing, or product recommendations, BigRedHub posts a personalized reply with an attributed short URL in under 2 seconds.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Visual Mockup Box: YouTube Comment & Auto-Reply with Buy Now Product Card */}
+                <div className="bg-zinc-50/90 rounded-2xl border border-zinc-200/80 p-3.5 my-4 shadow-2xs relative">
+                  {/* Viewer Comment Box */}
+                  <div className="bg-white rounded-xl p-2.5 border border-zinc-200/70 shadow-2xs mb-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-rose-400 to-pink-500 text-white flex items-center justify-center font-bold text-[8px] overflow-hidden">
+                          <span>👩</span>
+                        </div>
+                        <span className="font-bold text-zinc-900 text-[8.5px]">@priya_sharma</span>
+                        <span className="text-[7px] text-zinc-400">1 min ago</span>
+                      </div>
+                      <div className="w-4 h-3 bg-red-600 rounded-xs flex items-center justify-center text-white">
+                        <Play className="w-1.5 h-1.5 fill-white" />
+                      </div>
+                    </div>
+                    <p className="text-[8px] text-zinc-800 font-medium mb-1.5">
+                      Price kya hai? Where to buy? 🤩
+                    </p>
+                    <div className="flex items-center gap-2 text-zinc-400 text-[7.5px]">
+                      <span className="flex items-center gap-0.5"><ThumbsUp className="w-2 h-2" /></span>
+                      <span className="flex items-center gap-0.5"><ThumbsDown className="w-2 h-2" /></span>
+                      <span className="font-semibold text-zinc-600">Reply</span>
+                    </div>
+                  </div>
+
+                  {/* Flow Arrow pointing down to reply */}
+                  <div className="w-5 h-5 -mt-2 ml-4 mb-0.5 text-pink-500">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <path d="M 6 4 C 6 12, 10 14, 14 14" />
+                      <path d="M 11 11 L 15 14 L 11 17" />
+                    </svg>
+                  </div>
+
+                  {/* Automated Reply Box with Product Preview & Buy Now */}
+                  <div className="bg-white rounded-xl p-2.5 border border-purple-200 shadow-sm relative">
+                    {/* Header: Channel Name, Timestamp & Auto Reply Badge */}
+                    <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-zinc-100">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-4 h-3.5 bg-red-600 rounded-xs flex items-center justify-center text-white">
+                          <Play className="w-1.5 h-1.5 fill-white" />
+                        </div>
+                        <span className="font-bold text-zinc-900 text-[8.5px]">BigRedHub</span>
+                        <span className="text-[7px] text-zinc-400">Just now</span>
+                      </div>
+                      <div className="px-2 py-0.5 rounded-md bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-[7.5px] flex items-center gap-1 shadow-2xs">
+                        <Sparkles className="w-2 h-2" />
+                        <span>Auto Reply</span>
+                      </div>
+                    </div>
+
+                    {/* Split: Reply Text + Mini Product Card */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[8px] font-semibold text-zinc-800">Hi Priya! 👋</p>
+                        <p className="text-[7.5px] text-zinc-600 mt-0.5">You can buy it here:</p>
+                        <span className="text-[8px] font-bold text-blue-600 underline truncate block mt-0.5">
+                          https://bigredhub.info/abc123
+                        </span>
+                        <div className="flex items-center gap-2 text-zinc-400 text-[7px] mt-1.5">
+                          <span className="flex items-center gap-0.5"><ThumbsUp className="w-2 h-2" /></span>
+                          <span className="flex items-center gap-0.5"><ThumbsDown className="w-2 h-2" /></span>
+                          <span className="font-semibold text-zinc-600">Reply</span>
+                        </div>
+                      </div>
+
+                      {/* Mini Product Card Thumbnail */}
+                      <div className="w-16 bg-zinc-50 rounded-lg border border-zinc-200 p-1 flex flex-col items-center shrink-0 text-center shadow-2xs">
+                        <div className="w-7 h-10 bg-pink-100 rounded flex items-center justify-center text-pink-500 mb-1">
+                          <span className="text-base">🧴</span>
+                        </div>
+                        <div className="w-full py-0.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-[6.5px] rounded">
+                          Buy Now
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Feature Box with Icon & Checkmarks */}
+              <div className="p-3.5 rounded-2xl bg-pink-50/60 border border-pink-100 flex items-start gap-3 mt-2">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 to-rose-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                  <Send className="w-4 h-4" />
+                </div>
+                <div className="space-y-1 text-xs font-semibold text-zinc-800">
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-pink-600 shrink-0 stroke-[3]" />
+                    <span>Spintax natural response rotation</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-pink-600 shrink-0 stroke-[3]" />
+                    <span>Automatic creator heart for high visibility</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* STEP 3: Attribute Conversions */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all duration-300 p-6 flex flex-col justify-between group">
+              <div>
+                {/* Header with Step Number Badge & Title */}
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white flex items-center justify-center font-heading font-extrabold text-lg shadow-sm shrink-0">
+                    03
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-xl font-bold text-zinc-950 leading-snug">Attribute Conversions</h3>
+                    <p className="text-xs text-zinc-600 leading-relaxed mt-1">
+                      Track clicks and orders tied back to exact videos. Gain clarity on which content drives customers and which replies produce high click-through rates.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Visual Mockup Box: Video Analytics Card & Bar Chart */}
+                <div className="bg-zinc-50/90 rounded-2xl border border-zinc-200/80 p-3.5 my-4 shadow-2xs">
+                  {/* Top Video Header Metric Card */}
+                  <div className="bg-white rounded-xl p-2 border border-zinc-200/70 shadow-2xs flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center text-[10px] shrink-0 font-bold overflow-hidden relative">
+                        <span className="text-xs">🎬</span>
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-bold text-zinc-900 text-[8.5px] block truncate">My Product Review</span>
+                        <span className="text-[7px] text-zinc-400">Published 2 weeks ago</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-right shrink-0">
+                      <div>
+                        <span className="text-[9px] font-extrabold text-blue-600 block leading-tight">124</span>
+                        <span className="text-[6.5px] text-zinc-400 font-medium">Link Clicks</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-extrabold text-emerald-600 block leading-tight">18</span>
+                        <span className="text-[6.5px] text-zinc-400 font-medium">Orders</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-extrabold text-amber-600 block leading-tight">₹12,450</span>
+                        <span className="text-[6.5px] text-zinc-400 font-medium">Revenue</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Chart Header: Title + Dropdown */}
+                  <div className="flex items-center justify-between pb-1.5 mb-2 text-[8px]">
+                    <span className="font-bold text-zinc-800">Clicks & Orders</span>
+                    <div className="px-1.5 py-0.5 rounded bg-white border border-zinc-200 text-zinc-600 font-semibold text-[7px] flex items-center gap-1">
+                      <span>Last 30 Days</span>
+                      <ChevronDown className="w-2 h-2 text-zinc-400" />
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex items-center justify-end gap-3 text-[7px] mb-2 font-medium">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-xs bg-blue-500" />
+                      <span className="text-zinc-600">Link Clicks</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-xs bg-emerald-500" />
+                      <span className="text-zinc-600">Orders</span>
+                    </div>
+                  </div>
+
+                  {/* Bar Chart Visual Graphic */}
+                  <div className="bg-white rounded-xl p-2.5 border border-zinc-200/70">
+                    <div className="h-16 flex items-end justify-between gap-1 border-b border-zinc-100 pb-1">
+                      {/* Bar 1 */}
+                      <div className="flex-1 flex items-end justify-center gap-0.5 h-full">
+                        <div className="w-1.5 bg-blue-500 rounded-t-xs h-[20%]" />
+                        <div className="w-1.5 bg-emerald-500 rounded-t-xs h-[10%]" />
+                      </div>
+                      {/* Bar 2 */}
+                      <div className="flex-1 flex items-end justify-center gap-0.5 h-full">
+                        <div className="w-1.5 bg-blue-500 rounded-t-xs h-[35%]" />
+                        <div className="w-1.5 bg-emerald-500 rounded-t-xs h-[18%]" />
+                      </div>
+                      {/* Bar 3 */}
+                      <div className="flex-1 flex items-end justify-center gap-0.5 h-full">
+                        <div className="w-1.5 bg-blue-500 rounded-t-xs h-[50%]" />
+                        <div className="w-1.5 bg-emerald-500 rounded-t-xs h-[25%]" />
+                      </div>
+                      {/* Bar 4 */}
+                      <div className="flex-1 flex items-end justify-center gap-0.5 h-full">
+                        <div className="w-1.5 bg-blue-500 rounded-t-xs h-[40%]" />
+                        <div className="w-1.5 bg-emerald-500 rounded-t-xs h-[20%]" />
+                      </div>
+                      {/* Bar 5 */}
+                      <div className="flex-1 flex items-end justify-center gap-0.5 h-full">
+                        <div className="w-1.5 bg-blue-500 rounded-t-xs h-[85%]" />
+                        <div className="w-1.5 bg-emerald-500 rounded-t-xs h-[45%]" />
+                      </div>
+                      {/* Bar 6 */}
+                      <div className="flex-1 flex items-end justify-center gap-0.5 h-full">
+                        <div className="w-1.5 bg-blue-500 rounded-t-xs h-[60%]" />
+                        <div className="w-1.5 bg-emerald-500 rounded-t-xs h-[30%]" />
+                      </div>
+                      {/* Bar 7 */}
+                      <div className="flex-1 flex items-end justify-center gap-0.5 h-full">
+                        <div className="w-1.5 bg-blue-500 rounded-t-xs h-[75%]" />
+                        <div className="w-1.5 bg-emerald-500 rounded-t-xs h-[40%]" />
+                      </div>
+                      {/* Bar 8 */}
+                      <div className="flex-1 flex items-end justify-center gap-0.5 h-full">
+                        <div className="w-1.5 bg-blue-500 rounded-t-xs h-[95%]" />
+                        <div className="w-1.5 bg-emerald-500 rounded-t-xs h-[50%]" />
+                      </div>
+                      {/* Bar 9 */}
+                      <div className="flex-1 flex items-end justify-center gap-0.5 h-full">
+                        <div className="w-1.5 bg-blue-500 rounded-t-xs h-[65%]" />
+                        <div className="w-1.5 bg-emerald-500 rounded-t-xs h-[35%]" />
+                      </div>
+                    </div>
+                    {/* X Axis Labels */}
+                    <div className="flex justify-between text-[6.5px] text-zinc-400 font-semibold pt-1">
+                      <span>Sep 1</span>
+                      <span>Sep 7</span>
+                      <span>Sep 14</span>
+                      <span>Sep 21</span>
+                      <span>Sep 28</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Feature Box with Icon & Checkmarks */}
+              <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex items-start gap-3 mt-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                <div className="space-y-1 text-xs font-semibold text-zinc-800">
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 stroke-[3]" />
+                    <span>Video-level attribution analytics</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 stroke-[3]" />
+                    <span>Webhook and conversion tracking support</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
 
-      {/* OFFICIAL YOUTUBE & GOOGLE TRUST VERIFICATION SECTION */}
-      <section className="py-14 bg-zinc-950 text-white border-y border-zinc-800 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-zinc-900/80 border border-zinc-800 rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-72 h-72 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+      {/* OFFICIAL YOUTUBE & GOOGLE TRUST VERIFICATION SECTION (MATCHING REFERENCE IMAGE 2) */}
+      <section className="py-20 bg-zinc-950 text-white border-y border-zinc-900 px-4 sm:px-6 relative overflow-hidden">
+        {/* Glowing backdrop halo */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[400px] bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-red-500/10 blur-3xl pointer-events-none rounded-full" />
 
-            <div className="space-y-4 max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-xs font-semibold">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>100% Platform Safety Guarantee</span>
-              </div>
-              <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
-                Official YouTube Data API v3 Architecture. Zero Bots. Zero Account Risk.
-              </h2>
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                BigRedHub never asks for your password or runs illegal browser scrapers that trigger YouTube strikes. All authentication happens via encrypted Google OAuth2 tokens with strict rate-limiting and human-paced delivery delays.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 w-full md:w-auto shrink-0">
-              <div className="p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-2">
-                <div className="flex items-center gap-2 text-emerald-400">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span className="text-xs font-bold text-white">Google OAuth2</span>
+        <div className="max-w-7xl mx-auto">
+          {/* Main Card Container */}
+          <div className="bg-zinc-900/90 border border-zinc-800/90 rounded-3xl sm:rounded-[32px] p-6 sm:p-10 lg:p-12 shadow-2xl relative overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+              
+              {/* Left Column (5 Cols): Platform Safety, Title, Description */}
+              <div className="lg:col-span-5 space-y-5">
+                {/* Platform Safety Pill */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-semibold shadow-2xs">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>Platform Safety by Design</span>
                 </div>
-                <p className="text-[11px] text-zinc-400">Encrypted token sessions. Passwords stay private.</p>
-              </div>
 
-              <div className="p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-2">
-                <div className="flex items-center gap-2 text-emerald-400">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span className="text-xs font-bold text-white">Spintax Engine</span>
-                </div>
-                <p className="text-[11px] text-zinc-400">Rotates dynamic phrasing to avoid repeat penalties.</p>
+                {/* Big Headline */}
+                <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                  Official YouTube Data API v3 Architecture.{" "}
+                  <span className="text-emerald-400">Zero Bots.</span>{" "}
+                  <span className="text-emerald-400">Zero Account Risk.</span>
+                </h2>
+
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                  BigRedHub uses official YouTube API integrations and encrypted Google OAuth sessions. Authentication and comment workflows are designed around authorized access, API limits, and safe delivery.
+                </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-2">
-                <div className="flex items-center gap-2 text-emerald-400">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span className="text-xs font-bold text-white">Official API v3</span>
+              {/* Center Column (3 Cols): Glowing Holographic Shield & 3D Icons Graphic */}
+              <div className="lg:col-span-3 flex items-center justify-center relative min-h-[220px]">
+                {/* Ambient glowing radial light */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 via-teal-400/15 to-transparent rounded-full blur-2xl pointer-events-none" />
+
+                {/* Circular orbit tracks */}
+                <div className="w-52 h-52 rounded-full border border-emerald-500/30 flex items-center justify-center relative animate-[spin_40s_linear_infinite]">
+                  {/* Floating Google G badge on orbit */}
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-xl bg-zinc-900 border border-emerald-500/50 flex items-center justify-center shadow-lg transform -rotate-12">
+                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                    </svg>
+                  </div>
+
+                  {/* Code Tag badge on orbit */}
+                  <div className="absolute top-1/2 -right-3 -translate-y-1/2 w-8 h-8 rounded-xl bg-zinc-900 border border-teal-500/50 flex items-center justify-center shadow-lg text-teal-400 font-mono text-xs font-bold">
+                    &lt;/&gt;
+                  </div>
+
+                  {/* Mini YouTube badge on orbit */}
+                  <div className="absolute bottom-2 left-6 w-8 h-8 rounded-xl bg-zinc-900 border border-red-500/50 flex items-center justify-center shadow-lg text-red-500">
+                    <Play className="w-3.5 h-3.5 fill-red-500" />
+                  </div>
                 </div>
-                <p className="text-[11px] text-zinc-400">Zero unofficial headless scrapers or bot networks.</p>
+
+                {/* Center 3D Glowing Shield */}
+                <div className="absolute w-24 h-28 rounded-2xl bg-gradient-to-b from-teal-500/40 via-emerald-600/30 to-zinc-900/90 border-2 border-emerald-400/80 shadow-[0_0_40px_rgba(16,185,129,0.4)] flex items-center justify-center backdrop-blur-md">
+                  <ShieldCheck className="w-11 h-11 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
+                </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-2">
-                <div className="flex items-center gap-2 text-emerald-400">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span className="text-xs font-bold text-white">Human Delay</span>
+              {/* Right Column (4 Cols): 4 Safety Feature Cards */}
+              <div className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3.5">
+                {/* Feature 1: Google OAuth2 */}
+                <div className="bg-zinc-950/90 border border-zinc-800/80 rounded-2xl p-4 flex items-start justify-between gap-3 hover:border-emerald-500/40 transition-colors">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-xs sm:text-sm">Google OAuth2</h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
+                        Encrypted token sessions. Passwords stay private.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                    </svg>
+                  </div>
                 </div>
-                <p className="text-[11px] text-zinc-400">Safety cooldown pacing complies with Google terms.</p>
+
+                {/* Feature 2: Official YouTube API v3 */}
+                <div className="bg-zinc-950/90 border border-zinc-800/80 rounded-2xl p-4 flex items-start justify-between gap-3 hover:border-emerald-500/40 transition-colors">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-xs sm:text-sm">Official YouTube API v3</h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
+                        Authorized API access, no unofficial browser scrapers.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0 text-red-500">
+                    <Play className="w-3.5 h-3.5 fill-red-500" />
+                  </div>
+                </div>
+
+                {/* Feature 3: Response Templates */}
+                <div className="bg-zinc-950/90 border border-zinc-800/80 rounded-2xl p-4 flex items-start justify-between gap-3 hover:border-emerald-500/40 transition-colors">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-xs sm:text-sm">Response Templates</h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
+                        Rotate approved response wording naturally.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0 text-blue-400">
+                    <MessageSquare className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+
+                {/* Feature 4: Rate-Limit Controls */}
+                <div className="bg-zinc-950/90 border border-zinc-800/80 rounded-2xl p-4 flex items-start justify-between gap-3 hover:border-emerald-500/40 transition-colors">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-xs sm:text-sm">Rate-Limit Controls</h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
+                        Respect API quotas and configured cooldowns.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0 text-teal-400">
+                    <BarChart3 className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
