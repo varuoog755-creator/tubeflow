@@ -51,6 +51,8 @@ import {
   Workflow,
   AlertTriangle,
   Ban,
+  Megaphone,
+  Building2,
 } from "lucide-react";
 
 interface Scenario {
@@ -1801,154 +1803,480 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION: INDUSTRIES (SOLUTIONS) */}
-      <section id="industries" className="py-20 bg-zinc-50/60 border-t border-zinc-100 px-6 scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-zinc-200 bg-white text-zinc-700 text-xs font-semibold mb-3">
-              <Layers className="w-3.5 h-3.5 text-red-600" />
-              <span>Industries</span>
+      {/* SECTION: TAILORED SOLUTIONS (MATCHING USER REFERENCE IMAGE) */}
+      <section id="solutions" className="py-24 bg-gradient-to-b from-white via-zinc-50/40 to-white border-t border-zinc-100 px-4 sm:px-6 scroll-mt-16 relative overflow-hidden">
+        {/* Soft atmospheric gradient blur */}
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[900px] h-[360px] bg-gradient-to-tr from-purple-100/40 via-pink-50/30 to-amber-50/30 blur-3xl pointer-events-none -z-10 rounded-full" />
+
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header with Pill and Hand-Drawn Annotations */}
+          <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20 relative">
+            {/* Top Pill Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-purple-200/80 bg-purple-50/70 text-purple-700 text-xs font-semibold mb-4 shadow-2xs">
+              <Users className="w-3.5 h-3.5 text-purple-600" />
+              <span>Tailored Solutions</span>
             </div>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-zinc-950 mb-4">
-              Tailored Solutions for Every Growth Model
+
+            {/* Main Headline */}
+            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-zinc-950 mb-4 leading-tight">
+              Tailored Solutions for{" "}
+              <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 bg-clip-text text-transparent">
+                Every Growth Model
+              </span>
             </h2>
-            <p className="text-base text-zinc-600">
+
+            <p className="text-sm sm:text-base text-zinc-600 max-w-2xl mx-auto">
               BigRedHub replaces manual typing with intelligent comment response pipelines adapted to your specific business model.
             </p>
+
+            {/* Left Hand-Drawn Annotation: 'Different goals...' */}
+            <div className="hidden lg:flex flex-col items-center absolute -left-12 -top-2 select-none pointer-events-none transform -rotate-12 animate-float">
+              <span className="font-cursive text-purple-600 font-bold text-lg tracking-wide">Different goals...</span>
+              <svg className="w-8 h-8 text-purple-500 -mt-1 ml-4" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M 10 5 C 10 25, 25 30, 22 35" />
+                <path d="M 16 33 L 23 36 L 24 29" />
+              </svg>
+            </div>
+
+            {/* Right Hand-Drawn Annotation: '...same powerful engine!' */}
+            <div className="hidden lg:flex flex-col items-center absolute -right-12 -top-2 select-none pointer-events-none transform rotate-12 animate-float-reverse">
+              <span className="font-cursive text-purple-600 font-bold text-lg tracking-wide">...same powerful engine!</span>
+              <div className="flex items-center gap-1 -mt-1 mr-4">
+                <div className="flex items-end gap-0.5 h-6">
+                  <div className="w-1.5 h-2 bg-purple-200 rounded-xs" />
+                  <div className="w-1.5 h-3.5 bg-purple-300 rounded-xs" />
+                  <div className="w-1.5 h-5 bg-purple-400 rounded-xs" />
+                </div>
+                <svg className="w-7 h-7 text-purple-500" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M 8 30 C 15 10, 25 8, 30 18" />
+                  <path d="M 24 16 L 31 18 L 29 25" />
+                </svg>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Industry 1: E-commerce */}
-            <div
-              id="solutions-ecommerce"
-              className="bg-white rounded-3xl p-8 border border-zinc-200/90 shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
-            >
+          {/* 3 Main Solutions Cards Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* CARD 1: For E-Commerce & D2C Brands */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-pink-300 transition-all duration-300 p-6 flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-6">
-                  <ShoppingCart className="w-6 h-6" />
+                {/* Visual Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-4 mb-6 shadow-2xs relative">
+                  {/* Floating Shopping Cart Doodle */}
+                  <div className="absolute top-2 right-2 w-8 h-8 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shadow-xs">
+                    <ShoppingCart className="w-4 h-4" />
+                  </div>
+
+                  {/* Viewer Comment Bubble */}
+                  <div className="flex items-start gap-2.5 mb-4 max-w-[85%]">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-400 to-pink-500 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                      A
+                    </div>
+                    <div className="bg-white px-3 py-2 rounded-2xl border border-zinc-200/80 shadow-2xs text-[10px] text-zinc-800">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="font-bold text-zinc-900">Anjali Verma</span>
+                        <span className="text-[8px] text-zinc-400">2 hours ago</span>
+                      </div>
+                      <p className="font-medium text-zinc-700">Price kya hai? Where to buy? 🤩</p>
+                      <div className="flex items-center gap-2 mt-1 text-zinc-400 text-[8px]">
+                        <span className="flex items-center gap-0.5"><ThumbsUp className="w-2.5 h-2.5" /></span>
+                        <span className="flex items-center gap-0.5"><ThumbsDown className="w-2.5 h-2.5" /></span>
+                        <span className="font-semibold text-zinc-600">Reply</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Connecting Curved Arrow */}
+                  <div className="flex justify-center -my-2 mr-12 text-pink-400">
+                    <svg className="w-6 h-6 rotate-12" viewBox="0 0 30 30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M 5 5 C 10 18, 18 20, 25 22" />
+                      <path d="M 20 18 L 26 22 L 22 27" />
+                    </svg>
+                  </div>
+
+                  {/* Automated BigRedHub Reply Card with Product Widget */}
+                  <div className="bg-white rounded-2xl border border-zinc-200/80 p-3 shadow-sm ml-auto max-w-[92%]">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <div className="w-3.5 h-3.5 bg-red-600 rounded flex items-center justify-center text-white">
+                        <Play className="w-2 h-2 fill-white" />
+                      </div>
+                      <span className="font-bold text-zinc-900 text-[9px]">BigRedHub</span>
+                      <span className="text-[7.5px] text-zinc-400">Just now</span>
+                    </div>
+
+                    <p className="text-[9px] text-zinc-700 font-medium mb-2">
+                      You can buy it here 👇
+                    </p>
+
+                    {/* Product Card Inside Reply */}
+                    <div className="bg-zinc-50 rounded-xl p-2 border border-zinc-200/80 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {/* Tumbler Product Visual */}
+                        <div className="w-8 h-10 rounded-lg bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-600 shrink-0">
+                          <div className="w-4 h-7 rounded-sm bg-pink-400 border border-pink-500 shadow-2xs" />
+                        </div>
+                        <div>
+                          <h5 className="font-bold text-[9px] text-zinc-900 leading-tight">Premium Tumbler</h5>
+                          <span className="text-[8px] text-zinc-500">750ml – ₹499</span>
+                        </div>
+                      </div>
+
+                      <div className="px-2.5 py-1 rounded-lg bg-blue-600 text-white font-bold text-[8px] flex items-center gap-1 shadow-2xs hover:bg-blue-700 transition-colors">
+                        <span>Buy Now</span>
+                        <ShoppingCart className="w-2.5 h-2.5" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mini '+ Sales from YouTube' badge */}
+                  <div className="mt-3 flex items-center justify-end gap-1.5">
+                    <div className="flex items-end gap-0.5 h-4">
+                      <div className="w-1 h-1.5 bg-emerald-400 rounded-2xs" />
+                      <div className="w-1 h-2.5 bg-emerald-500 rounded-2xs" />
+                      <div className="w-1 h-3.5 bg-emerald-600 rounded-2xs" />
+                    </div>
+                    <span className="text-[9px] font-bold text-emerald-600">+ Sales from YouTube</span>
+                  </div>
                 </div>
-                <h3 className="font-heading text-xl font-bold text-zinc-950 mb-2">
-                  For E-Commerce & D2C Brands
-                </h3>
-                <p className="text-sm font-semibold text-red-600 mb-3">
-                  Protect your brand and increase ROAS
-                </p>
-                <p className="text-xs text-zinc-600 leading-relaxed mb-6">
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-600 text-white flex items-center justify-center shadow-xs">
+                    <ShoppingCart className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-lg font-bold text-zinc-950">For E-Commerce & D2C Brands</h3>
+                    <p className="text-xs font-semibold text-pink-600">Protect your brand and increase ROAS</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-zinc-600 leading-relaxed mb-5">
                   Viewers asking &quot;where to buy&quot; or &quot;price&quot; on your YouTube product videos are ready to buy. BigRedHub auto-replies with direct product links in under 2 seconds, preventing lost sales and lifting paid ad ROAS.
                 </p>
 
-                <ul className="space-y-2 text-xs text-zinc-700 mb-6">
+                {/* Bullet Points */}
+                <ul className="space-y-2 text-xs text-zinc-700 mb-6 font-medium">
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                    <div className="w-4 h-4 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </div>
                     <span>Auto-deliver tracked checkout and cart links</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                    <div className="w-4 h-4 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </div>
                     <span>Attribute real sales revenue to specific videos</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                    <div className="w-4 h-4 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </div>
                     <span>Block scam bots targeting your customers</span>
                   </li>
                 </ul>
               </div>
 
+              {/* Action Button */}
               <Link
                 href="/login"
-                className="inline-flex items-center justify-between w-full px-4 py-2.5 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-700 hover:to-rose-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md"
               >
                 <span>Deploy for E-Commerce</span>
-                <ChevronRight className="w-4 h-4 text-zinc-400" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
-            {/* Industry 2: Creators & Influencers */}
-            <div
-              id="solutions-creators"
-              className="bg-white rounded-3xl p-8 border border-zinc-200/90 shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
-            >
+
+            {/* CARD 2: For Creators & Influencers */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-purple-300 transition-all duration-300 p-6 flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-6">
-                  <Users className="w-6 h-6" />
+                {/* Visual Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-4 mb-6 shadow-2xs relative">
+                  {/* Floating Megaphone Doodle */}
+                  <div className="absolute -top-2 left-2 w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shadow-xs">
+                    <Megaphone className="w-4 h-4" />
+                  </div>
+
+                  {/* Center Video Player Mockup */}
+                  <div className="rounded-xl overflow-hidden border border-zinc-200 shadow-xs mb-3 bg-zinc-950 relative">
+                    <div className="relative h-28 bg-gradient-to-tr from-purple-900/60 via-zinc-800 to-zinc-900 flex items-center justify-center">
+                      {/* Creator Visual Representation */}
+                      <div className="w-16 h-16 rounded-full bg-purple-200/20 border-2 border-white/40 flex items-center justify-center text-white font-bold text-xs">
+                        <Users className="w-7 h-7 text-white/80" />
+                      </div>
+                      {/* Play Button Overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-red-600/90 flex items-center justify-center text-white shadow-lg">
+                          <Play className="w-3.5 h-3.5 fill-white ml-0.5" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Video Player Controls Bar */}
+                    <div className="bg-zinc-900/95 px-2 py-1 flex items-center justify-between text-[7px] text-white/70">
+                      <div className="flex items-center gap-1.5">
+                        <Play className="w-2 h-2 fill-white text-white" />
+                        <span>0:00 / 8:24</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span>CC</span>
+                        <Sliders className="w-2 h-2" />
+                        <Monitor className="w-2 h-2" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Floating Heart Reaction Badge */}
+                  <div className="absolute bottom-16 right-3 w-7 h-7 rounded-full bg-pink-500 text-white flex items-center justify-center shadow-md animate-pulse">
+                    <Heart className="w-3.5 h-3.5 fill-white" />
+                  </div>
+
+                  {/* Viewer Comment & Auto-Reply Flow */}
+                  <div className="space-y-2">
+                    {/* Viewer Comment */}
+                    <div className="flex items-start gap-2 max-w-[85%]">
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[8px] shrink-0">
+                        R
+                      </div>
+                      <div className="bg-white px-2.5 py-1.5 rounded-xl border border-zinc-200/80 shadow-2xs text-[9px] text-zinc-800">
+                        <div className="flex items-center gap-1">
+                          <span className="font-bold text-zinc-900 text-[8.5px]">Rohan</span>
+                          <span className="text-[7.5px] text-zinc-400">1 hour ago</span>
+                        </div>
+                        <p className="text-[8.5px] text-zinc-700">Awesome video! Links pls? 🙏</p>
+                      </div>
+                    </div>
+
+                    {/* BigRedHub Multi-Link Reply */}
+                    <div className="bg-white rounded-xl border border-zinc-200/80 p-2.5 shadow-2xs ml-auto max-w-[92%]">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-3 h-3 bg-red-600 rounded flex items-center justify-center text-white">
+                          <Play className="w-1.5 h-1.5 fill-white" />
+                        </div>
+                        <span className="font-bold text-zinc-900 text-[8.5px]">BigRedHub</span>
+                        <span className="text-[7px] text-zinc-400">Just now</span>
+                      </div>
+
+                      <p className="text-[8px] text-zinc-700 font-medium mb-1">
+                        Here are my gear links 👇
+                      </p>
+
+                      <div className="space-y-0.5 text-[7.5px] text-zinc-600">
+                        <div className="flex items-center gap-1">
+                          <span className="font-semibold text-zinc-800">My Camera →</span>
+                          <span className="font-semibold text-purple-600">[short link]</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-semibold text-zinc-800">My Mic →</span>
+                          <span className="font-semibold text-purple-600">[short link]</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-semibold text-zinc-800">Full Setup →</span>
+                          <span className="font-semibold text-purple-600">[short link]</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-heading text-xl font-bold text-zinc-950 mb-2">
-                  For Creators & Influencers
-                </h3>
-                <p className="text-sm font-semibold text-red-600 mb-3">
-                  Community growth and monetized interactions
-                </p>
-                <p className="text-xs text-zinc-600 leading-relaxed mb-6">
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-11 h-11 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-lg font-bold text-zinc-950">For Creators & Influencers</h3>
+                    <p className="text-xs font-semibold text-purple-600">Community growth and monetized interactions</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-zinc-600 leading-relaxed mb-5">
                   Stop copy-pasting gear links, course discounts, or newsletter invitations 500 times per upload. BigRedHub gives automatic creator hearts and delivers your links without burnout.
                 </p>
 
-                <ul className="space-y-2 text-xs text-zinc-700 mb-6">
+                {/* Bullet Points */}
+                <ul className="space-y-2 text-xs text-zinc-700 mb-6 font-medium">
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                    <div className="w-4 h-4 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </div>
                     <span>Deliver affiliate gear and sponsor links</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                    <div className="w-4 h-4 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </div>
                     <span>Auto-heart to send phone notifications</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                    <div className="w-4 h-4 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </div>
                     <span>Spintax natural response rotation</span>
                   </li>
                 </ul>
               </div>
 
+              {/* Action Button */}
               <Link
                 href="/login"
-                className="inline-flex items-center justify-between w-full px-4 py-2.5 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md"
               >
                 <span>Deploy for Creators</span>
-                <ChevronRight className="w-4 h-4 text-zinc-400" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
-            {/* Industry 3: Agencies */}
-            <div
-              id="solutions-agencies"
-              className="bg-white rounded-3xl p-8 border border-zinc-200/90 shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
-            >
+
+            {/* CARD 3: For Marketing Agencies */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all duration-300 p-6 flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-6">
-                  <Briefcase className="w-6 h-6" />
+                {/* Visual Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-4 mb-6 shadow-2xs">
+                  {/* Agency Multi-Tenant Header */}
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-200/60 text-[9px]">
+                    <div className="flex items-center gap-1.5 font-bold text-zinc-900">
+                      <div className="w-3.5 h-3.5 bg-red-600 rounded flex items-center justify-center text-white">
+                        <Play className="w-2 h-2 fill-white" />
+                      </div>
+                      <span>BigRedHub</span>
+                    </div>
+                    <div className="px-2 py-0.5 rounded bg-purple-600 text-white font-bold text-[8px] flex items-center gap-1 shadow-2xs">
+                      <span>+ Add Client</span>
+                    </div>
+                  </div>
+
+                  {/* Split: Mini Nav + Client Channels List */}
+                  <div className="grid grid-cols-12 gap-2">
+                    {/* Left Mini Nav */}
+                    <div className="col-span-4 bg-white/90 rounded-lg p-1.5 border border-zinc-100 flex flex-col gap-1 text-[7.5px] font-medium text-zinc-500">
+                      <div className="px-1 py-0.5 flex items-center gap-1 text-zinc-400">
+                        <Monitor className="w-2 h-2" />
+                        <span>Dashboard</span>
+                      </div>
+                      <div className="px-1 py-0.5 rounded bg-purple-50 text-purple-700 font-semibold flex items-center gap-1">
+                        <Building2 className="w-2 h-2 text-purple-600" />
+                        <span>Clients</span>
+                      </div>
+                      <div className="px-1 py-0.5 flex items-center gap-1 text-zinc-400">
+                        <MessageSquare className="w-2 h-2" />
+                        <span>Comments</span>
+                      </div>
+                      <div className="px-1 py-0.5 flex items-center gap-1 text-zinc-400">
+                        <Zap className="w-2 h-2" />
+                        <span>Automations</span>
+                      </div>
+                      <div className="px-1 py-0.5 flex items-center gap-1 text-zinc-400">
+                        <BarChart3 className="w-2 h-2" />
+                        <span>Analytics</span>
+                      </div>
+                    </div>
+
+                    {/* Right Client Channels Table */}
+                    <div className="col-span-8 bg-white/90 rounded-lg p-1.5 border border-zinc-100 space-y-1.5">
+                      <span className="text-[7.5px] font-bold text-zinc-500 block mb-0.5">Client Channels</span>
+
+                      {/* Client 1: Fashion Brand */}
+                      <div className="bg-zinc-50/80 p-1 rounded border border-zinc-100 flex items-center justify-between text-[7.5px]">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <div className="w-4 h-4 rounded-md bg-pink-500 text-white flex items-center justify-center font-bold text-[7px] shrink-0">F</div>
+                          <div className="truncate">
+                            <span className="font-bold text-zinc-900 block truncate leading-tight">Fashion Brand</span>
+                            <span className="text-[6.5px] text-zinc-400">24,530 comments</span>
+                          </div>
+                        </div>
+                        <span className="font-bold text-emerald-600 text-[7px] shrink-0">+320%</span>
+                      </div>
+
+                      {/* Client 2: Tech Gadgets */}
+                      <div className="bg-zinc-50/80 p-1 rounded border border-zinc-100 flex items-center justify-between text-[7.5px]">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <div className="w-4 h-4 rounded-md bg-blue-500 text-white flex items-center justify-center font-bold text-[7px] shrink-0">T</div>
+                          <div className="truncate">
+                            <span className="font-bold text-zinc-900 block truncate leading-tight">Tech Gadgets</span>
+                            <span className="text-[6.5px] text-zinc-400">12,450 comments</span>
+                          </div>
+                        </div>
+                        <span className="font-bold text-emerald-600 text-[7px] shrink-0">+180%</span>
+                      </div>
+
+                      {/* Client 3: Fitness Coach */}
+                      <div className="bg-zinc-50/80 p-1 rounded border border-zinc-100 flex items-center justify-between text-[7.5px]">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <div className="w-4 h-4 rounded-md bg-amber-500 text-white flex items-center justify-center font-bold text-[7px] shrink-0">C</div>
+                          <div className="truncate">
+                            <span className="font-bold text-zinc-900 block truncate leading-tight">Fitness Coach</span>
+                            <span className="text-[6.5px] text-zinc-400">8,920 comments</span>
+                          </div>
+                        </div>
+                        <span className="font-bold text-emerald-600 text-[7px] shrink-0">+240%</span>
+                      </div>
+
+                      {/* Client 4: Food Brand */}
+                      <div className="bg-zinc-50/80 p-1 rounded border border-zinc-100 flex items-center justify-between text-[7.5px]">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <div className="w-4 h-4 rounded-md bg-orange-500 text-white flex items-center justify-center font-bold text-[7px] shrink-0">B</div>
+                          <div className="truncate">
+                            <span className="font-bold text-zinc-900 block truncate leading-tight">Food Brand</span>
+                            <span className="text-[6.5px] text-zinc-400">15,670 comments</span>
+                          </div>
+                        </div>
+                        <span className="font-bold text-emerald-600 text-[7px] shrink-0">+210%</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-heading text-xl font-bold text-zinc-950 mb-2">
-                  For Marketing Agencies
-                </h3>
-                <p className="text-sm font-semibold text-red-600 mb-3">
-                  Deliver full-coverage response systems for clients
-                </p>
-                <p className="text-xs text-zinc-600 leading-relaxed mb-6">
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-lg font-bold text-zinc-950">For Marketing Agencies</h3>
+                    <p className="text-xs font-semibold text-emerald-600">Deliver full-coverage response systems for clients</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-zinc-600 leading-relaxed mb-5">
                   Manage YouTube comment pipelines for multiple client brands under one dashboard. Guarantee response coverage and prove attribution return with verified client conversion reporting.
                 </p>
 
-                <ul className="space-y-2 text-xs text-zinc-700 mb-6">
+                {/* Bullet Points */}
+                <ul className="space-y-2 text-xs text-zinc-700 mb-6 font-medium">
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                    <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </div>
                     <span>Multi-tenant channel workspace management</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                    <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </div>
                     <span>Auditable client conversion reports</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                    <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </div>
                     <span>Brand voice customization per channel</span>
                   </li>
                 </ul>
               </div>
 
+              {/* Action Button */}
               <Link
                 href="/login"
-                className="inline-flex items-center justify-between w-full px-4 py-2.5 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md"
               >
                 <span>Deploy for Agencies</span>
-                <ChevronRight className="w-4 h-4 text-zinc-400" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
+
           </div>
         </div>
       </section>
