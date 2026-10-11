@@ -43,6 +43,14 @@ import {
   Clock,
   Sparkle,
   Radio,
+  Copy,
+  Search,
+  Filter,
+  Globe,
+  Share2,
+  Workflow,
+  AlertTriangle,
+  Ban,
 } from "lucide-react";
 
 interface Scenario {
@@ -1034,222 +1042,761 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION: 8 CORE FUNCTIONS */}
-      <section id="functions" className="py-20 bg-white border-t border-zinc-100 px-6 scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-zinc-200 bg-zinc-50 text-zinc-700 text-xs font-semibold mb-3">
-              <Sparkles className="w-3.5 h-3.5 text-red-600" />
-              <span>Core Platform Functions</span>
+      {/* SECTION: 8 CORE FUNCTIONS (MATCHING USER REFERENCE IMAGE) */}
+      <section id="functions" className="py-24 bg-gradient-to-b from-white via-zinc-50/50 to-white border-t border-zinc-100 px-4 sm:px-6 scroll-mt-16 relative overflow-hidden">
+        {/* Soft atmospheric gradient blurs */}
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[900px] h-[360px] bg-gradient-to-tr from-purple-100/40 via-red-50/30 to-amber-50/30 blur-3xl pointer-events-none -z-10 rounded-full" />
+
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header with Badges and Hand-Drawn Cursive Doodles */}
+          <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20 relative">
+            {/* Top Pill */}
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-purple-200/80 bg-purple-50/70 text-purple-700 text-xs font-semibold mb-4 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-purple-600 animate-spin-slow" />
+              <span>Everything You Need</span>
             </div>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-zinc-950 mb-4">
-              Everything Needed to Monetize YouTube Comments
+
+            {/* Main Section Headline */}
+            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-zinc-950 mb-4 leading-tight">
+              Everything Needed to{" "}
+              <span className="bg-gradient-to-r from-purple-600 via-red-500 to-amber-500 bg-clip-text text-transparent">
+                Monetize YouTube Comments
+              </span>
             </h2>
-            <p className="text-base text-zinc-600">
+
+            <p className="text-sm sm:text-base text-zinc-600 max-w-2xl mx-auto">
               Eight powerful modules designed to manage, filter, automate, and attribute viewer conversations at scale.
             </p>
+
+            {/* Left Hand-Drawn Annotation: 'From comments...' with curved arrow */}
+            <div className="hidden lg:flex flex-col items-center absolute -left-16 -top-2 select-none pointer-events-none transform -rotate-12 animate-float">
+              <span className="font-cursive text-purple-600 font-bold text-lg tracking-wide">From comments...</span>
+              <svg className="w-8 h-8 text-purple-500 -mt-1 ml-4" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M 10 5 C 10 25, 25 30, 22 35" />
+                <path d="M 16 33 L 23 36 L 24 29" />
+              </svg>
+            </div>
+
+            {/* Right Hand-Drawn Annotation: '...to customers' with curved arrow & mini chart */}
+            <div className="hidden lg:flex flex-col items-center absolute -right-16 -top-2 select-none pointer-events-none transform rotate-12 animate-float-reverse">
+              <span className="font-cursive text-purple-600 font-bold text-lg tracking-wide">...to customers</span>
+              <div className="flex items-center gap-1 -mt-1 mr-4">
+                <div className="flex items-end gap-0.5 h-6">
+                  <div className="w-1.5 h-2 bg-purple-200 rounded-xs" />
+                  <div className="w-1.5 h-3.5 bg-purple-300 rounded-xs" />
+                  <div className="w-1.5 h-5 bg-purple-400 rounded-xs" />
+                </div>
+                <svg className="w-7 h-7 text-purple-500" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M 8 30 C 15 10, 25 8, 30 18" />
+                  <path d="M 24 16 L 31 18 L 29 25" />
+                </svg>
+              </div>
+            </div>
           </div>
 
+          {/* 8-Card Grid Layout (2 rows of 4 columns) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Function 1: Central Dashboard */}
-            <div
-              id="functions-dashboard"
-              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
-            >
+
+            {/* CARD 1: Central Dashboard */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-purple-300 transition-all duration-300 p-5 flex flex-col justify-between group">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
-                  <Monitor className="w-5 h-5" />
+                {/* Visual UI Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-3 mb-5 shadow-2xs">
+                  {/* Mockup Header */}
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-200/60 text-[10px]">
+                    <div className="flex items-center gap-1.5 font-bold text-zinc-900">
+                      <div className="w-3.5 h-3.5 bg-red-600 rounded flex items-center justify-center text-white">
+                        <Play className="w-2 h-2 fill-white" />
+                      </div>
+                      <span>BigRedHub</span>
+                    </div>
+                    <span className="font-semibold text-zinc-500">All Comments (842)</span>
+                  </div>
+
+                  {/* Inner Split Layout: Mini Sidebar + Feed */}
+                  <div className="grid grid-cols-12 gap-1.5">
+                    {/* Left Mini Nav */}
+                    <div className="col-span-4 bg-white/90 rounded-lg p-1.5 border border-zinc-100 flex flex-col gap-1 text-[8px] font-medium text-zinc-500">
+                      <div className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-semibold flex items-center gap-1">
+                        <MessageSquare className="w-2 h-2 text-purple-600" />
+                        <span>Comments</span>
+                      </div>
+                      <div className="px-1.5 py-0.5 flex items-center gap-1 text-zinc-400">
+                        <Users className="w-2 h-2" />
+                        <span>Leads</span>
+                      </div>
+                      <div className="px-1.5 py-0.5 flex items-center gap-1 text-zinc-400">
+                        <Sliders className="w-2 h-2" />
+                        <span>Templates</span>
+                      </div>
+                      <div className="px-1.5 py-0.5 flex items-center gap-1 text-zinc-400">
+                        <Zap className="w-2 h-2" />
+                        <span>Automations</span>
+                      </div>
+                      <div className="px-1.5 py-0.5 flex items-center gap-1 text-zinc-400">
+                        <BarChart3 className="w-2 h-2" />
+                        <span>Analytics</span>
+                      </div>
+                    </div>
+
+                    {/* Right Mini Comment List */}
+                    <div className="col-span-8 bg-white/90 rounded-lg p-1.5 border border-zinc-100 flex flex-col gap-1.5">
+                      {/* Search Pill */}
+                      <div className="bg-zinc-50 rounded px-1.5 py-0.5 border border-zinc-200/60 flex items-center gap-1 text-[8px] text-zinc-400">
+                        <Search className="w-2 h-2" />
+                        <span>Search comments...</span>
+                      </div>
+
+                      {/* Comment 1 */}
+                      <div className="bg-zinc-50/70 p-1 rounded border border-zinc-100 flex items-center justify-between text-[8px]">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <div className="w-3.5 h-3.5 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[7px] shrink-0">P</div>
+                          <div className="truncate">
+                            <span className="font-bold text-zinc-800">Priya Sharma</span>
+                            <p className="text-[7px] text-zinc-500 truncate">Price kya hai? 🤝</p>
+                          </div>
+                        </div>
+                        <span className="px-1 py-0.2 rounded bg-red-100 text-red-700 font-semibold text-[6.5px] shrink-0">Buying Intent</span>
+                      </div>
+
+                      {/* Comment 2 */}
+                      <div className="bg-zinc-50/70 p-1 rounded border border-zinc-100 flex items-center justify-between text-[8px]">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <div className="w-3.5 h-3.5 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-[7px] shrink-0">R</div>
+                          <div className="truncate">
+                            <span className="font-bold text-zinc-800">Rohit Verma</span>
+                            <p className="text-[7px] text-zinc-500 truncate">Link please 🙏</p>
+                          </div>
+                        </div>
+                        <span className="px-1 py-0.2 rounded bg-blue-100 text-blue-700 font-semibold text-[6.5px] shrink-0">Link Request</span>
+                      </div>
+
+                      {/* Comment 3 */}
+                      <div className="bg-zinc-50/70 p-1 rounded border border-zinc-100 flex items-center justify-between text-[8px]">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-[7px] shrink-0">N</div>
+                          <div className="truncate">
+                            <span className="font-bold text-zinc-800">Neha Singh</span>
+                            <p className="text-[7px] text-zinc-500 truncate">Is this on Amazon?</p>
+                          </div>
+                        </div>
+                        <span className="px-1 py-0.2 rounded bg-zinc-200 text-zinc-700 font-semibold text-[6.5px] shrink-0">Question</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
-                  Central Dashboard
-                </h3>
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                    <Monitor className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-heading font-bold text-base text-zinc-950">Central Dashboard</h3>
+                </div>
+
                 <p className="text-xs text-zinc-600 leading-relaxed mb-4">
                   Manage all YouTube comments in one place. Three-panel inbox with saved views, instant search, and real-time reply workspace.
                 </p>
               </div>
+
+              {/* Action Button */}
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+                className="w-full py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md"
               >
                 <span>Launch Dashboard</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
-            {/* Function 2: DM & Comment Funnels */}
-            <div
-              id="functions-funnels"
-              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
-            >
+
+            {/* CARD 2: Comment Lead Funnels */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-pink-300 transition-all duration-300 p-5 flex flex-col justify-between group">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
-                  <MessageSquare className="w-5 h-5" />
+                {/* Visual UI Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-3 mb-5 shadow-2xs">
+                  {/* Customer Avatar & Bubble */}
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-pink-500 text-white flex items-center justify-center font-bold text-[9px]">C</div>
+                    <div className="bg-white px-2.5 py-1 rounded-xl border border-zinc-200/80 shadow-2xs text-[9px] text-zinc-800">
+                      <span className="font-semibold block text-[8px] text-zinc-400">Customer</span>
+                      <span>Where can I buy this? 🤩</span>
+                    </div>
+                  </div>
+
+                  {/* Flow Arrow */}
+                  <div className="flex justify-center mb-1.5 text-zinc-300">
+                    <ChevronDown className="w-3.5 h-3.5 animate-bounce" />
+                  </div>
+
+                  {/* Tracked Short Link Box */}
+                  <div className="bg-white rounded-xl border border-purple-200 p-2 shadow-2xs mb-3 text-center">
+                    <span className="text-[8px] font-semibold text-zinc-400 block mb-0.5">Tracked Short Link</span>
+                    <div className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded text-[9px]">
+                      <span>bigredhub.info/l/abc123</span>
+                      <Copy className="w-2.5 h-2.5 text-purple-500" />
+                    </div>
+                  </div>
+
+                  {/* 3 Step Icons: Comment -> Tracked Link -> Order */}
+                  <div className="flex items-center justify-around pt-1 border-t border-zinc-200/60">
+                    <div className="flex flex-col items-center">
+                      <div className="w-7 h-7 rounded-lg bg-red-600 text-white flex items-center justify-center shadow-2xs">
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                      </div>
+                      <span className="text-[7.5px] font-semibold text-zinc-600 mt-1">Comment</span>
+                    </div>
+
+                    <ArrowRight className="w-3 h-3 text-zinc-300" />
+
+                    <div className="flex flex-col items-center">
+                      <div className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center shadow-2xs">
+                        <Share2 className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-[7.5px] font-semibold text-zinc-600 mt-1">Tracked Link</span>
+                    </div>
+
+                    <ArrowRight className="w-3 h-3 text-zinc-300" />
+
+                    <div className="flex flex-col items-center">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-2xs">
+                        <ShoppingCart className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-[7.5px] font-semibold text-zinc-600 mt-1">Order</span>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
-                  Comment Lead Funnels
-                </h3>
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-pink-600 text-white flex items-center justify-center shadow-xs">
+                    <Filter className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-heading font-bold text-base text-zinc-950">Comment Lead Funnels</h3>
+                </div>
+
                 <p className="text-xs text-zinc-600 leading-relaxed mb-4">
                   Turn viewer comments and keywords into attributed leads and orders. Delivers unique shortlinks like ManyChat for YouTube.
                 </p>
               </div>
+
+              {/* Action Button */}
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+                className="w-full py-2.5 px-4 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md"
               >
                 <span>Setup Tracked Links</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
-            {/* Function 3: Intelligent Tagging */}
-            <div
-              id="functions-tagging"
-              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
-            >
+
+            {/* CARD 3: Intelligent Intent Tagging */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-purple-300 transition-all duration-300 p-5 flex flex-col justify-between group">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
-                  <Tag className="w-5 h-5" />
+                {/* Visual UI Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-3 mb-5 shadow-2xs">
+                  {/* Top: Comment Header & Robot Tag */}
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-200/60 text-[9px]">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[8px]">R</div>
+                      <div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-bold text-zinc-800">Rohit Verma</span>
+                          <span className="text-[7px] text-zinc-400">5 min ago</span>
+                        </div>
+                        <p className="text-[8px] text-zinc-600 font-medium">Price kya hai?</p>
+                      </div>
+                    </div>
+                    <div className="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
+                      <Bot className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+
+                  {/* AI Intent Classification Bars */}
+                  <div className="space-y-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider block">AI Intent Classification</span>
+
+                    {/* Intent 1: Buying Intent */}
+                    <div>
+                      <div className="flex justify-between text-[8px] font-semibold mb-0.5">
+                        <span className="text-red-700 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-600" /> Buying Intent
+                        </span>
+                        <span className="text-zinc-600 font-mono">92%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-zinc-200/80 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-red-500 to-pink-500 rounded-full" style={{ width: "92%" }} />
+                      </div>
+                    </div>
+
+                    {/* Intent 2: Price Inquiry */}
+                    <div>
+                      <div className="flex justify-between text-[8px] font-semibold mb-0.5">
+                        <span className="text-blue-700 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" /> Price Inquiry
+                        </span>
+                        <span className="text-zinc-600 font-mono">85%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-zinc-200/80 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: "85%" }} />
+                      </div>
+                    </div>
+
+                    {/* Intent 3: Link Request */}
+                    <div>
+                      <div className="flex justify-between text-[8px] font-semibold mb-0.5">
+                        <span className="text-purple-700 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-600" /> Link Request
+                        </span>
+                        <span className="text-zinc-600 font-mono">78%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-zinc-200/80 rounded-full overflow-hidden">
+                        <div className="h-full bg-purple-500 rounded-full" style={{ width: "78%" }} />
+                      </div>
+                    </div>
+
+                    {/* Intent 4: General Question */}
+                    <div>
+                      <div className="flex justify-between text-[8px] font-semibold mb-0.5">
+                        <span className="text-emerald-700 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" /> General Question
+                        </span>
+                        <span className="text-zinc-600 font-mono">60%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-zinc-200/80 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: "60%" }} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
-                  Intelligent Intent Tagging
-                </h3>
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                    <Tag className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-heading font-bold text-base text-zinc-950">Intelligent Intent Tagging</h3>
+                </div>
+
                 <p className="text-xs text-zinc-600 leading-relaxed mb-4">
                   Automatic AI classification of comments. Tags Buying Intent, Price Inquiries, and Link Requests with confidence scores.
                 </p>
               </div>
+
+              {/* Action Button */}
               <a
                 href="#demo"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+                className="w-full py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md"
               >
                 <span>Test Classification</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </a>
             </div>
 
-            {/* Function 4: AI-Powered Answers */}
-            <div
-              id="functions-answers"
-              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
-            >
+
+            {/* CARD 4: AI-Powered Answers */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all duration-300 p-5 flex flex-col justify-between group">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
-                  <Bot className="w-5 h-5" />
+                {/* Visual UI Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-3 mb-5 shadow-2xs">
+                  {/* Viewer Comment */}
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-200/60 text-[9px]">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[8px]">N</div>
+                      <div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-bold text-zinc-800">Neha Singh</span>
+                          <span className="text-[7px] text-zinc-400">1 hour ago</span>
+                        </div>
+                        <p className="text-[8px] text-zinc-600 font-medium">Is this available on Amazon?</p>
+                      </div>
+                    </div>
+                    <div className="w-4 h-4 rounded bg-red-600 text-white flex items-center justify-center">
+                      <Play className="w-2 h-2 fill-white" />
+                    </div>
+                  </div>
+
+                  {/* Pill: AI Generated Reply + Generate Button */}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[8px] font-bold text-zinc-600 flex items-center gap-1">
+                      <Bot className="w-2.5 h-2.5 text-purple-600" /> AI Generated Reply
+                    </span>
+                    <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-600 text-white font-bold text-[7.5px] shadow-2xs">
+                      <Sparkles className="w-2 h-2" />
+                      <span>Generate</span>
+                    </div>
+                  </div>
+
+                  {/* Generated Reply Bubble */}
+                  <div className="bg-white rounded-xl border border-zinc-200/80 p-2 text-[8.5px] text-zinc-700 shadow-2xs relative">
+                    <p className="leading-snug pr-4">
+                      Hi Neha! 👋 Yes, this is available on Amazon. You can check it here: <span className="font-semibold text-purple-600">[short link]</span>
+                    </p>
+                    <button className="absolute bottom-1.5 right-1.5 text-zinc-400 hover:text-zinc-600">
+                      <Copy className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
                 </div>
-                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
-                  AI-Powered Answers
-                </h3>
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                    <Bot className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-heading font-bold text-base text-zinc-950">AI-Powered Answers</h3>
+                </div>
+
                 <p className="text-xs text-zinc-600 leading-relaxed mb-4">
                   Brand-compliant answers with just one click. Natural Spintax message rotation prevents duplicate bot detection.
                 </p>
               </div>
+
+              {/* Action Button */}
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+                className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md"
               >
                 <span>Configure Templates</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
-            {/* Function 5: Activity Logs */}
-            <div
-              id="functions-logs"
-              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
-            >
+
+            {/* CARD 5: Activity Logs & Traces */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-amber-300 transition-all duration-300 p-5 flex flex-col justify-between group">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
-                  <ScrollText className="w-5 h-5" />
+                {/* Visual UI Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-3 mb-5 shadow-2xs">
+                  {/* Top Logs Header */}
+                  <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-zinc-200/60 text-[9px]">
+                    <span className="font-bold text-zinc-900">Activity Logs</span>
+                    <span className="text-[7.5px] font-semibold text-zinc-500 bg-white px-1.5 py-0.5 rounded border border-zinc-200">All Activities ▾</span>
+                  </div>
+
+                  {/* 4 Log Items */}
+                  <div className="space-y-1.5 text-[8px]">
+                    {/* Log 1: Reply Sent */}
+                    <div className="bg-white rounded-lg p-1.5 border border-zinc-200/70 flex items-center justify-between shadow-2xs">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-zinc-900 block leading-tight">Reply Sent</span>
+                          <span className="text-[7px] text-zinc-400 font-mono">Comment ID: Ugy....8k2</span>
+                        </div>
+                      </div>
+                      <span className="text-[7px] text-zinc-400 font-medium">2 min ago</span>
+                    </div>
+
+                    {/* Log 2: Comment Fetched */}
+                    <div className="bg-white rounded-lg p-1.5 border border-zinc-200/70 flex items-center justify-between shadow-2xs">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-4 h-4 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                          <Play className="w-2 h-2 fill-blue-600" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-zinc-900 block leading-tight">Comment Fetched</span>
+                          <span className="text-[7px] text-zinc-400">200 comments processed</span>
+                        </div>
+                      </div>
+                      <span className="text-[7px] text-zinc-400 font-medium">5 min ago</span>
+                    </div>
+
+                    {/* Log 3: API Success */}
+                    <div className="bg-white rounded-lg p-1.5 border border-zinc-200/70 flex items-center justify-between shadow-2xs">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                          <CheckCircle2 className="w-2.5 h-2.5" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-zinc-900 block leading-tight">API Success</span>
+                          <span className="text-[7px] text-zinc-400">Status: 200 OK</span>
+                        </div>
+                      </div>
+                      <span className="text-[7px] text-zinc-400 font-medium">5 min ago</span>
+                    </div>
+
+                    {/* Log 4: Reply Failed */}
+                    <div className="bg-white rounded-lg p-1.5 border border-red-100 flex items-center justify-between shadow-2xs">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-4 h-4 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
+                          <AlertTriangle className="w-2.5 h-2.5" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-red-700 block leading-tight">Reply Failed</span>
+                          <span className="text-[7px] text-red-500">Status: 403 - Quota Exceeded</span>
+                        </div>
+                      </div>
+                      <span className="text-[7px] text-zinc-400 font-medium">1 hour ago</span>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
-                  Activity Logs & Traces
-                </h3>
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-xs">
+                    <ScrollText className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-heading font-bold text-base text-zinc-950">Activity Logs & Traces</h3>
+                </div>
+
                 <p className="text-xs text-zinc-600 leading-relaxed mb-4">
                   Audit trail of all comment activity. View real YouTube comment reply IDs, delivery timestamps, and API status codes.
                 </p>
               </div>
+
+              {/* Action Button */}
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+                className="w-full py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md"
               >
                 <span>View Activity Feed</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
-            {/* Function 6: Custom Automations */}
-            <div
-              id="functions-automations"
-              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
-            >
+
+            {/* CARD 6: Custom Automations */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all duration-300 p-5 flex flex-col justify-between group">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
-                  <Zap className="w-5 h-5" />
+                {/* Visual UI Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-3 mb-5 shadow-2xs">
+                  {/* IF Rule Box */}
+                  <div className="bg-white rounded-xl border border-zinc-200/80 p-2 shadow-2xs mb-2">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[7.5px]">IF</span>
+                      <span className="text-[8px] font-bold text-zinc-700">Comment contains</span>
+                    </div>
+                    <span className="text-[7px] text-zinc-400 block mb-1">ANY of these keywords</span>
+                    <div className="flex flex-wrap gap-1">
+                      <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-[7.5px] border border-blue-200">price ✕</span>
+                      <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-[7.5px] border border-blue-200">buy ✕</span>
+                      <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-[7.5px] border border-blue-200">order ✕</span>
+                      <span className="px-1 py-0.5 rounded bg-zinc-100 text-zinc-500 text-[7.5px]">+</span>
+                    </div>
+                  </div>
+
+                  {/* AND Rule Box */}
+                  <div className="bg-white rounded-xl border border-zinc-200/80 p-2 shadow-2xs mb-2">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-[7.5px]">AND</span>
+                      <span className="text-[8px] font-bold text-zinc-700">Not contains</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-semibold text-[7.5px] border border-red-200">scam ✕</span>
+                      <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-semibold text-[7.5px] border border-red-200">whatsapp ✕</span>
+                      <span className="px-1 py-0.5 rounded bg-zinc-100 text-zinc-500 text-[7.5px]">+</span>
+                    </div>
+                  </div>
+
+                  {/* THEN Action Box */}
+                  <div className="bg-white rounded-xl border border-blue-200 p-2 shadow-2xs flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-lg bg-blue-500 text-white flex items-center justify-center">
+                        <Send className="w-2.5 h-2.5" />
+                      </div>
+                      <div>
+                        <span className="text-[7px] text-zinc-400 block leading-tight">THEN</span>
+                        <span className="font-bold text-zinc-800 text-[8px]">Send AI Reply</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-[7.5px] text-zinc-500 bg-zinc-50 px-1.5 py-0.5 rounded border border-zinc-200">
+                      <Clock className="w-2.5 h-2.5" />
+                      <span>Wait 10 minutes</span>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
-                  Custom Automations
-                </h3>
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                    <Workflow className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-heading font-bold text-base text-zinc-950">Custom Automations</h3>
+                </div>
+
                 <p className="text-xs text-zinc-600 leading-relaxed mb-4">
                   Create rule-based workflows with ANY or ALL keyword matching, negative exclusion lists, and custom response cooldowns.
                 </p>
               </div>
+
+              {/* Action Button */}
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md"
               >
                 <span>Create Rules</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
-            {/* Function 7: Mobile Web App */}
-            <div
-              id="functions-mobile"
-              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
-            >
+
+            {/* CARD 7: Mobile Responsive App */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-pink-300 transition-all duration-300 p-5 flex flex-col justify-between group">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
-                  <Smartphone className="w-5 h-5" />
+                {/* Visual UI Mockup Box: Phone + Laptop Device Composition */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-3 mb-5 shadow-2xs flex items-center justify-center relative min-h-[160px] overflow-hidden">
+                  {/* Laptop Mockup (Background) */}
+                  <div className="w-[155px] bg-white rounded-t-lg border-2 border-zinc-800 shadow-md p-1 transform translate-x-4 translate-y-1">
+                    <div className="flex items-center justify-between pb-1 border-b border-zinc-100 text-[6px]">
+                      <div className="flex items-center gap-0.5">
+                        <div className="w-1 h-1 rounded-full bg-red-400" />
+                        <div className="w-1 h-1 rounded-full bg-amber-400" />
+                        <div className="w-1 h-1 rounded-full bg-emerald-400" />
+                      </div>
+                      <span className="font-bold text-zinc-700 text-[6px]">BigRedHub</span>
+                    </div>
+                    <div className="space-y-1 pt-1 text-[5.5px]">
+                      <div className="bg-zinc-50 p-0.5 rounded flex justify-between items-center">
+                        <span className="font-semibold text-zinc-800">Priya Sharma</span>
+                        <span className="px-1 rounded bg-red-100 text-red-600 font-bold">Buying</span>
+                      </div>
+                      <div className="bg-zinc-50 p-0.5 rounded flex justify-between items-center">
+                        <span className="font-semibold text-zinc-800">Rohit Verma</span>
+                        <span className="px-1 rounded bg-blue-100 text-blue-600 font-bold">Link</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Phone Mockup (Foreground) */}
+                  <div className="w-[82px] bg-white rounded-2xl border-2 border-zinc-900 shadow-xl p-1.5 absolute left-3 bottom-2 transform -rotate-3">
+                    <div className="flex items-center justify-between pb-1 mb-1 border-b border-zinc-100 text-[6px]">
+                      <span className="font-bold text-zinc-900">BigRedHub</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                    </div>
+                    <div className="flex gap-1 text-[5px] font-semibold text-zinc-500 mb-1">
+                      <span className="text-red-600 border-b border-red-600">Comments</span>
+                      <span>Leads</span>
+                    </div>
+                    <div className="space-y-1 text-[5px]">
+                      <div className="bg-zinc-50 p-1 rounded">
+                        <span className="font-bold block text-zinc-800">Priya Sharma</span>
+                        <span className="text-zinc-500">Price kya hai?</span>
+                      </div>
+                      <div className="bg-zinc-50 p-1 rounded">
+                        <span className="font-bold block text-zinc-800">Rohit Verma</span>
+                        <span className="text-zinc-500">Link please</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
-                  Mobile Responsive App
-                </h3>
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-pink-600 text-white flex items-center justify-center shadow-xs">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-heading font-bold text-base text-zinc-950">Mobile Responsive App</h3>
+                </div>
+
                 <p className="text-xs text-zinc-600 leading-relaxed mb-4">
                   Reply to viewer inquiries on the go. Complete lightweight web app accessible from phones, tablets, and desktop workstations.
                 </p>
               </div>
+
+              {/* Action Button */}
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+                className="w-full py-2.5 px-4 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md"
               >
                 <span>Open Mobile App</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
-            {/* Function 8: Automatic Spam Shields */}
-            <div
-              id="functions-spam-shield"
-              className="p-6 rounded-3xl border border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between scroll-mt-24"
-            >
+
+            {/* CARD 8: Automatic Spam Shields */}
+            <div className="bg-white rounded-3xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all duration-300 p-5 flex flex-col justify-between group">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
-                  <ShieldAlert className="w-5 h-5" />
+                {/* Visual UI Mockup Box */}
+                <div className="bg-zinc-50/80 rounded-2xl border border-zinc-200/70 p-3 mb-5 shadow-2xs">
+                  {/* Filter Header */}
+                  <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-zinc-200/60 text-[9px] font-bold text-zinc-800">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Comment Filter</span>
+                  </div>
+
+                  {/* Filter Toggles */}
+                  <div className="space-y-1.5 mb-2.5 text-[8px]">
+                    {/* Toggle 1: Phishing Links */}
+                    <div className="flex items-center justify-between bg-white px-2 py-1 rounded-lg border border-zinc-200/70 shadow-2xs">
+                      <span className="text-zinc-700 flex items-center gap-1">
+                        <AlertTriangle className="w-2.5 h-2.5 text-red-500" /> Phishing Links
+                      </span>
+                      <div className="w-6 h-3 bg-red-500 rounded-full flex items-center justify-end px-0.5 shadow-2xs">
+                        <div className="w-2 h-2 bg-white rounded-full" />
+                      </div>
+                    </div>
+
+                    {/* Toggle 2: WhatsApp Scams */}
+                    <div className="flex items-center justify-between bg-white px-2 py-1 rounded-lg border border-zinc-200/70 shadow-2xs">
+                      <span className="text-zinc-700 flex items-center gap-1">
+                        <MessageCircle className="w-2.5 h-2.5 text-emerald-500" /> WhatsApp Scams
+                      </span>
+                      <div className="w-6 h-3 bg-emerald-500 rounded-full flex items-center justify-end px-0.5 shadow-2xs">
+                        <div className="w-2 h-2 bg-white rounded-full" />
+                      </div>
+                    </div>
+
+                    {/* Toggle 3: Hate Comments */}
+                    <div className="flex items-center justify-between bg-white px-2 py-1 rounded-lg border border-zinc-200/70 shadow-2xs">
+                      <span className="text-zinc-700 flex items-center gap-1">
+                        <ThumbsDown className="w-2.5 h-2.5 text-amber-500" /> Hate Comments
+                      </span>
+                      <div className="w-6 h-3 bg-amber-500 rounded-full flex items-center justify-end px-0.5 shadow-2xs">
+                        <div className="w-2 h-2 bg-white rounded-full" />
+                      </div>
+                    </div>
+
+                    {/* Toggle 4: Irrelevant Spam */}
+                    <div className="flex items-center justify-between bg-white px-2 py-1 rounded-lg border border-zinc-200/70 shadow-2xs">
+                      <span className="text-zinc-700 flex items-center gap-1">
+                        <Ban className="w-2.5 h-2.5 text-blue-500" /> Irrelevant Spam
+                      </span>
+                      <div className="w-6 h-3 bg-blue-500 rounded-full flex items-center justify-end px-0.5 shadow-2xs">
+                        <div className="w-2 h-2 bg-white rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Intercepted Bad Comment Callout */}
+                  <div className="bg-red-50/80 rounded-xl border border-red-100 p-1.5 flex items-center justify-between text-[7.5px]">
+                    <div>
+                      <span className="font-semibold text-zinc-700 block">DM me on WhatsApp +91 9876543210</span>
+                      <span className="text-zinc-400">for discount 🤫</span>
+                    </div>
+                    <div className="px-1.5 py-0.5 rounded bg-red-600 text-white font-bold flex items-center gap-0.5 shadow-2xs shrink-0">
+                      <Ban className="w-2 h-2" />
+                      <span>Blocked</span>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-heading font-bold text-base text-zinc-950 mb-2">
-                  Automatic Spam Shields
-                </h3>
+
+                {/* Card Icon & Title */}
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-heading font-bold text-base text-zinc-950">Automatic Spam Shields</h3>
+                </div>
+
                 <p className="text-xs text-zinc-600 leading-relaxed mb-4">
                   No bots, no nonsense. Automatically filter phishing, WhatsApp contact scams, and hate comments without sending replies.
                 </p>
               </div>
+
+              {/* Action Button */}
               <a
                 href="#benefits"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 pt-2 border-t border-zinc-100"
+                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md"
               >
                 <span>View Security Specs</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </a>
             </div>
+
           </div>
         </div>
       </section>
