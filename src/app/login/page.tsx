@@ -22,7 +22,7 @@ function LoginForm() {
     fetch("/api/auth/me")
       .then((res) => {
         if (res.ok) {
-          router.replace("/dashboard");
+          window.location.href = "/dashboard";
         } else {
           setCheckingAuth(false);
         }
@@ -30,7 +30,7 @@ function LoginForm() {
       .catch(() => {
         setCheckingAuth(false);
       });
-  }, [router]);
+  }, []);
 
   const handleGoogleLogin = () => {
     setLoggingIn(true);
