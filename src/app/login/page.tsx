@@ -19,7 +19,15 @@ function LoginForm() {
   const errorParam = searchParams.get("auth_error") || searchParams.get("error");
 
   useEffect(() => {
-    fetch("/api/auth/me")
+    const headers: Record<string, string> = {};
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("tf_session_token");
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+    }
+
+    fetch("/api/auth/me", { headers })
       .then((res) => {
         if (res.ok) {
           window.location.href = "/dashboard";

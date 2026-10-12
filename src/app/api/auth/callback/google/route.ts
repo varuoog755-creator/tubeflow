@@ -200,28 +200,13 @@ export async function GET(request: NextRequest) {
       workspaceId,
     });
 
-    const redirectTarget = mode === "channel"
-      ? `${origin}/dashboard?channel_connected=true`
-      : `${origin}/dashboard?authenticated=true`;
+    const redirectTarget =
+      mode === "channel"
+        ? `${origin}/dashboard?channel_connected=true&token=${encodeURIComponent(sessionToken)}`
+        : `${origin}/dashboard?authenticated=true&token=${encodeURIComponent(sessionToken)}`;
 
     const response = NextResponse.redirect(redirectTarget);
     setSessionCookie(response, sessionToken);
-
-    try {
-      const { cookies } = await import("next/headers");
-      const cookieStore = await cookies();
-      const thirtyDays = 60 * 60 * 24 * 30;
-      cookieStore.set("tf_session_token", sessionToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: thirtyDays,
-        expires: new Date(Date.now() + thirtyDays * 1000),
-      });
-    } catch (cookieErr) {
-      console.warn("Cookie store set notice:", cookieErr);
-    }
 
     return response;
   } catch (err: unknown) {

@@ -14,7 +14,18 @@ export async function middleware(request: NextRequest) {
 
   // Protect /dashboard, /admin, and their subpaths
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
-    const sessionToken = request.cookies.get("tf_session_token")?.value;
+    let sessionToken = request.cookies.get("tf_session_token")?.value;
+
+    if (!sessionToken) {
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        sessionToken = authHeader.substring(7).trim();
+      }
+    }
+
+    if (!sessionToken) {
+      sessionToken = request.nextUrl.searchParams.get("token") || undefined;
+    }
 
     let isAuthenticated = false;
 

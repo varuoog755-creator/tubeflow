@@ -121,12 +121,6 @@ export function setSessionCookie(response: any, token: string): void {
       expires,
     });
   }
-
-  // Explicit Set-Cookie header for Next.js redirect responses
-  if (response?.headers?.append) {
-    const headerVal = `${SESSION_COOKIE_NAME}=${token}; Path=/; Max-Age=${thirtyDays}; Expires=${expires.toUTCString()}; HttpOnly; ${isProd ? "Secure; " : ""}SameSite=Lax`;
-    response.headers.append("Set-Cookie", headerVal);
-  }
 }
 
 export function clearSessionCookie(response: any): void {

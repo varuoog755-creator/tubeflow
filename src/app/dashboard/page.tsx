@@ -259,11 +259,36 @@ export default function DashboardPage() {
     setTimeout(() => setNotification(null), 5000);
   };
 
+  const getAuthHeaders = (extra: Record<string, string> = {}): Record<string, string> => {
+    const headers: Record<string, string> = { ...extra };
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("tf_session_token");
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+    }
+    return headers;
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tokenFromUrl = params.get("token");
+      if (tokenFromUrl) {
+        localStorage.setItem("tf_session_token", tokenFromUrl);
+        params.delete("token");
+        const remaining = params.toString();
+        const cleanUrl = remaining ? `${window.location.pathname}?${remaining}` : window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    }
+  }, []);
+
   // Initial Data Fetch
   const fetchDashboardData = async () => {
     try {
       setIsRefreshing(true);
-      const res = await fetch("/api/dashboard");
+      const res = await fetch("/api/dashboard", { headers: getAuthHeaders() });
       if (!res.ok) {
         if (res.status === 401) {
           router.replace("/login");
@@ -602,7 +627,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch(`/api/rules?id=${rule.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ is_active: !rule.is_active }),
       });
       if (res.ok) {
@@ -815,7 +840,7 @@ export default function DashboardPage() {
       const method = editingRule ? "PUT" : "POST";
       const res = await fetch("/api/rules", {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
 
@@ -845,7 +870,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch("/api/rules", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           action: "dry_run",
           comment_text: dryRunComment,
@@ -885,7 +910,10 @@ export default function DashboardPage() {
       confirmText: "Delete Rule",
       onConfirm: async () => {
         try {
-          const res = await fetch(`/api/rules?id=${id}`, { method: "DELETE" });
+          const res = await fetch(`/api/rules?id=${id}`, {
+            method: "DELETE",
+            headers: getAuthHeaders(),
+          });
           if (res.ok) {
             setRules((prev) => prev.filter((r) => r.id !== id));
             showNotification("success", "Rule deleted.");
@@ -1013,6 +1041,11 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/api/auth/logout"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  localStorage.removeItem("tf_session_token");
+                }
+              }}
               className="text-xs text-zinc-500 hover:text-zinc-950 p-1.5 rounded-md hover:bg-zinc-100 transition-colors"
               title="Sign Out"
             >
