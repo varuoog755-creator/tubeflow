@@ -2,8 +2,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Terms of Service — TubeFlow",
-  description: "TubeFlow terms of service and acceptable use guidelines.",
+  title: "Terms of Service — BigRedHub",
+  description: "BigRedHub terms of service and acceptable use guidelines.",
 };
 
 export default function TermsPage() {
@@ -15,7 +15,7 @@ export default function TermsPage() {
             <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white font-black">
               TF
             </div>
-            <span className="font-extrabold text-lg text-white">TubeFlow</span>
+            <span className="font-extrabold text-lg text-white">BigRedHub</span>
           </Link>
           <Link href="/" className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
@@ -32,7 +32,7 @@ export default function TermsPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-white">1. Acceptance of Terms</h2>
           <p>
-            By accessing or using TubeFlow, you agree to comply with and be bound by these Terms of Service and all applicable laws and regulations.
+            By accessing or using BigRedHub, you agree to comply with and be bound by these Terms of Service and all applicable laws and regulations.
           </p>
         </section>
 
@@ -46,13 +46,13 @@ export default function TermsPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-white">3. Limitation of Liability</h2>
           <p>
-            TubeFlow is an independent productivity software suite and is not affiliated with or endorsed by YouTube or Google LLC. Users are solely responsible for compliance with YouTube platform policies on their channels.
+            BigRedHub is an independent productivity software suite and is not affiliated with or endorsed by YouTube or Google LLC. Users are solely responsible for compliance with YouTube platform policies on their channels.
           </p>
         </section>
       </main>
 
       <footer className="border-t border-slate-900 py-6 text-center text-xs text-slate-600">
-        © 2026 TubeFlow. All rights reserved.
+        © 2026 BigRedHub. All rights reserved.
       </footer>
     </div>
   );

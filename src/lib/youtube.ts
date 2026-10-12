@@ -4,7 +4,7 @@ export function getAppUrl(): string {
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
   }
-  return "https://tubeflow-nine.vercel.app";
+  return "https://bigredhub.info";
 }
 
 export function getOAuth2Client(redirectUri?: string) {
