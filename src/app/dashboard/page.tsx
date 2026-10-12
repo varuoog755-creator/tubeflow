@@ -274,6 +274,39 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (!data.authenticated) {
+        // Graceful retry once to allow cookies to settle after OAuth callback
+        const retryRes = await new Promise<Response>((resolve) => {
+          setTimeout(async () => {
+            try {
+              const r = await fetch("/api/dashboard");
+              resolve(r);
+            } catch {
+              resolve(
+                new Response(JSON.stringify({ authenticated: false }), { status: 401 })
+              );
+            }
+          }, 800);
+        });
+
+        if (retryRes.ok) {
+          const retryData = await retryRes.json();
+          if (retryData.authenticated) {
+            setProfile(retryData.profile);
+            setChannels(retryData.channels || []);
+            setRules(retryData.rules || []);
+            if (retryData.workspace?.plan) {
+              setCurrentPlan(retryData.workspace.plan);
+            }
+            if (retryData.channels?.[0]?.id) {
+              setActiveChannelId(retryData.channels[0].id);
+            }
+            if (retryData.stats) {
+              setStats(retryData.stats);
+            }
+            return;
+          }
+        }
+
         router.replace("/login");
         return;
       }
