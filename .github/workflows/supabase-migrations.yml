@@ -10,16 +10,6 @@ on:
       - ".github/workflows/supabase-migrations.yml"
   workflow_dispatch:
 
-# `Production` is an existing GitHub Environment on this repository. Environment
-# names are case sensitive, so this must match the name exactly - referring to a
-# lowercase `production` makes the run fail before any job is created.
-#
-# Add required reviewers to it (Settings -> Environments -> Production ->
-# Required reviewers) so that migrations cannot be applied to the live database
-# without a human approving. It currently has no protection rules, so migrations
-# apply without a prompt.
-environment: Production
-
 concurrency:
   group: supabase-migrations
   cancel-in-progress: false
@@ -27,6 +17,17 @@ concurrency:
 jobs:
   apply:
     runs-on: ubuntu-latest
+    # `environment` is a job-level key, not a workflow-level one. Declaring it
+    # at the top level makes GitHub reject the whole file with
+    # "Unexpected value 'environment'" before any job is created.
+    #
+    # `Production` is an existing environment on this repository and names are
+    # case sensitive, so it must match exactly.
+    #
+    # Add required reviewers under Settings -> Environments -> Production to
+    # gate schema changes on a human. It currently has no protection rules, so
+    # migrations apply without a prompt.
+    environment: Production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
