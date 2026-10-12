@@ -117,6 +117,14 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   animation: orbit-delayed 26s linear infinite;
 }
 
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+.rotate-y-12 {
+  transform: rotateY(-12deg) rotateX(6deg);
+}
+
 /* Respect user's reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *,
