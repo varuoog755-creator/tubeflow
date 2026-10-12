@@ -258,13 +258,13 @@ export default function Home() {
           {/* Right Action CTAs */}
           <div className="hidden sm:flex items-center gap-5">
             <Link
-              href="/auth"
+              href="/login"
               className="text-sm font-medium text-zinc-300 hover:text-white transition-colors"
             >
               Sign in
             </Link>
             <Link
-              href="/auth"
+              href="/login"
               className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-red-600 via-rose-600 to-red-500 hover:from-red-500 hover:to-rose-500 shadow-md shadow-red-600/30 hover:shadow-red-600/50 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <span>Start free</span>
@@ -318,14 +318,14 @@ export default function Home() {
             </a>
             <div className="pt-3 border-t border-zinc-800 flex flex-col gap-2">
               <Link
-                href="/auth"
+                href="/login"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full text-center py-2.5 rounded-xl text-zinc-200 font-medium hover:bg-zinc-800"
               >
                 Sign in
               </Link>
               <Link
-                href="/auth"
+                href="/login"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full text-center py-3 rounded-full text-white font-semibold bg-gradient-to-r from-red-600 to-rose-600 shadow-md shadow-red-600/30"
               >
@@ -375,7 +375,7 @@ export default function Home() {
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-4 mb-8">
                 <Link
-                  href="/auth"
+                  href="/login"
                   className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-semibold text-white bg-gradient-to-r from-red-600 via-rose-600 to-red-500 hover:from-red-500 hover:to-rose-500 shadow-xl shadow-red-600/35 hover:scale-[1.03] active:scale-[0.98] transition-all"
                 >
                   <span>Start free</span>
@@ -1128,7 +1128,7 @@ export default function Home() {
                 </ul>
 
                 <Link
-                  href="/auth"
+                  href="/login"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 transition-all text-sm mb-6"
                 >
                   <span>Start free</span>
@@ -1328,7 +1328,7 @@ export default function Home() {
               </div>
 
               <Link
-                href="/auth"
+                href="/login"
                 className="w-full text-center py-2.5 rounded-xl border border-zinc-300 hover:border-zinc-400 font-semibold text-xs sm:text-sm text-zinc-800 hover:bg-zinc-50 transition-colors"
               >
                 Get started
@@ -1370,7 +1370,7 @@ export default function Home() {
               </div>
 
               <Link
-                href="/auth"
+                href="/login"
                 className="w-full text-center py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 font-semibold text-xs sm:text-sm text-white shadow-lg shadow-red-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
                 Start free
@@ -1407,7 +1407,7 @@ export default function Home() {
               </div>
 
               <Link
-                href="/auth"
+                href="/login"
                 className="w-full text-center py-2.5 rounded-xl border border-zinc-300 hover:border-zinc-400 font-semibold text-xs sm:text-sm text-zinc-800 hover:bg-zinc-50 transition-colors"
               >
                 Get started
@@ -1651,7 +1651,7 @@ export default function Home() {
               <div className="flex items-center justify-between pt-4 border-t border-zinc-800 text-xs">
                 <span className="text-zinc-500">BigRedHub Engine: Active</span>
                 <Link
-                  href="/auth"
+                  href="/login"
                   onClick={() => setVideoModalOpen(false)}
                   className="px-4 py-1.5 rounded-full bg-red-600 hover:bg-red-500 font-semibold text-white shadow-md shadow-red-600/30 transition-all"
                 >
