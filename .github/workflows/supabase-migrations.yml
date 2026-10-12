@@ -10,11 +10,15 @@ on:
       - ".github/workflows/supabase-migrations.yml"
   workflow_dispatch:
 
-# `production` is a GitHub Environment. Add required reviewers to it
-# (Settings -> Environments -> production -> Required reviewers) so that
-# migrations cannot be applied to the live database without a human approving.
-# Until reviewers are configured the job applies without a prompt.
-environment: production
+# `Production` is an existing GitHub Environment on this repository. Environment
+# names are case sensitive, so this must match the name exactly - referring to a
+# lowercase `production` makes the run fail before any job is created.
+#
+# Add required reviewers to it (Settings -> Environments -> Production ->
+# Required reviewers) so that migrations cannot be applied to the live database
+# without a human approving. It currently has no protection rules, so migrations
+# apply without a prompt.
+environment: Production
 
 concurrency:
   group: supabase-migrations
