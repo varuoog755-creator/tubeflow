@@ -207,6 +207,22 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(redirectTarget);
     setSessionCookie(response, sessionToken);
 
+    try {
+      const { cookies } = await import("next/headers");
+      const cookieStore = await cookies();
+      const thirtyDays = 60 * 60 * 24 * 30;
+      cookieStore.set("tf_session_token", sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: thirtyDays,
+        expires: new Date(Date.now() + thirtyDays * 1000),
+      });
+    } catch (cookieErr) {
+      console.warn("Cookie store set notice:", cookieErr);
+    }
+
     return response;
   } catch (err: unknown) {
     console.error("OAuth Callback failed:", err);

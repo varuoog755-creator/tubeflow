@@ -108,14 +108,25 @@ export async function getSession(request?: any): Promise<UserSession | null> {
 
 export function setSessionCookie(response: any, token: string): void {
   const thirtyDays = 60 * 60 * 24 * 30; // 30 days
-  response.cookies.set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: thirtyDays,
-    expires: new Date(Date.now() + thirtyDays * 1000),
-  });
+  const isProd = process.env.NODE_ENV === "production";
+  const expires = new Date(Date.now() + thirtyDays * 1000);
+
+  if (response?.cookies?.set) {
+    response.cookies.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "lax",
+      path: "/",
+      maxAge: thirtyDays,
+      expires,
+    });
+  }
+
+  // Explicit Set-Cookie header for Next.js redirect responses
+  if (response?.headers?.append) {
+    const headerVal = `${SESSION_COOKIE_NAME}=${token}; Path=/; Max-Age=${thirtyDays}; Expires=${expires.toUTCString()}; HttpOnly; ${isProd ? "Secure; " : ""}SameSite=Lax`;
+    response.headers.append("Set-Cookie", headerVal);
+  }
 }
 
 export function clearSessionCookie(response: any): void {
