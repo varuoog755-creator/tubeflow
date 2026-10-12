@@ -7,10 +7,8 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    if (!session?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const email = session.email;
+    const email = session?.email;
+    if (!email || !session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await request.json();
     const { message } = body;
 
@@ -33,12 +31,14 @@ export async function POST(request: NextRequest) {
     // 2. Gather Active Rules
     const { data: rules } = await supabaseAdmin
       .from("trigger_rules")
-      .select("name, keywords, cta_url, match_type, is_active");
+      .select("name, keywords, cta_url, match_type, is_active")
+      .eq("workspace_id", session.workspaceId);
 
     // 3. Gather Conversions and Links
     const { data: links } = await supabaseAdmin
       .from("tracked_links")
-      .select("destination_url, clicks_count, conversions_count, revenue_generated");
+      .select("destination_url, clicks_count, conversions_count, revenue_generated")
+      .eq("workspace_id", session.workspaceId);
 
     const channelSummary = channels?.map(c => `${c.channel_title} (${c.subscriber_count} subs, ${c.video_count} videos)`).join(", ") || "No channel connected";
     const activeRulesCount = rules?.filter(r => r.is_active).length || 0;
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     if (normalized.includes("best converting") || normalized.includes("trigger")) {
       advice = `Based on your channel data (${channelSummary}), high-intent keywords like "LINK", "BUY", and "PRICE" yield the strongest click-through rates. Ensure your reply contains an instant direct link rather than asking them to DM you.`;
     } else if (normalized.includes("cta") || normalized.includes("shorts")) {
-      advice = `For YouTube Shorts, high-performing creators place the CTA in the first 2 seconds of the description and use this pinned pattern: "Pin a top comment: 'Drop LINK below and I will send you the secret formula instantly.' BigRedHub then delivers within 2 seconds while viewer intent is 100%."`;
+      advice = `For YouTube Shorts, high-performing creators place the CTA in the first 2 seconds of the description and use this pinned pattern: "Pin a top comment: 'Drop LINK below and I will send you the secret formula instantly.' TubeFlow then delivers within 2 seconds while viewer intent is 100%."`;
     } else if (normalized.includes("competitor")) {
       advice = `When analyzing competitor channels, identify video titles with a view-to-subscriber ratio exceeding 3x. Post a contrasting breakdown Short addressing the exact viewer questions from their comments.`;
     } else {

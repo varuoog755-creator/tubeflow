@@ -1,14 +1,16 @@
 import { SignJWT, jwtVerify } from "jose";
+import type { NextResponse } from "next/server";
 
-const UNIFORM_SESSION_SECRET =
-  process.env.SESSION_SECRET ||
-  "bigredhub_super_secret_jwt_session_auth_key_2026_prod_vault_x99!";
+const SESSION_COOKIE_NAME = "tf_session_token";
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
 function getJwtSecret(): Uint8Array {
-  return new TextEncoder().encode(UNIFORM_SESSION_SECRET);
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error("SESSION_SECRET must be configured with at least 32 characters");
+  }
+  return new TextEncoder().encode(secret);
 }
-
-export const SESSION_COOKIE_NAME = "tf_session_token";
 
 export interface UserSession {
   userId: string;
@@ -19,6 +21,9 @@ export interface UserSession {
 }
 
 export async function createSessionToken(payload: UserSession): Promise<string> {
+  if (!payload.userId || !payload.email || !payload.workspaceId) {
+    throw new Error("Cannot create a session without a verified user and workspace");
+  }
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -27,103 +32,55 @@ export async function createSessionToken(payload: UserSession): Promise<string> 
 }
 
 export async function verifySessionToken(token: string): Promise<UserSession | null> {
-  if (!token) return null;
-
-  // 1. Primary verification with uniform secret
   try {
-    const { payload } = await jwtVerify(token, getJwtSecret());
+    const { payload } = await jwtVerify(token, getJwtSecret(), {
+      algorithms: ["HS256"],
+    });
+    if (
+      typeof payload.userId !== "string" ||
+      typeof payload.email !== "string" ||
+      typeof payload.workspaceId !== "string" ||
+      !payload.userId ||
+      !payload.email ||
+      !payload.workspaceId
+    ) {
+      return null;
+    }
     return {
-      userId: payload.userId as string,
-      email: payload.email as string,
-      fullName: payload.fullName as string,
-      avatarUrl: (payload.avatarUrl as string) || null,
-      workspaceId: payload.workspaceId as string,
+      userId: payload.userId,
+      email: payload.email,
+      fullName: typeof payload.fullName === "string" ? payload.fullName : "Creator",
+      avatarUrl: typeof payload.avatarUrl === "string" ? payload.avatarUrl : null,
+      workspaceId: payload.workspaceId,
     };
   } catch {
-    // 2. Fallback verification for tokens signed with previous service key or legacy fallback
-    const fallbacks = [
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
-      "bigredhub_super_secret_jwt_session_auth_key_2026_prod!",
-    ].filter(Boolean) as string[];
-
-    for (const fb of fallbacks) {
-      try {
-        const { payload } = await jwtVerify(token, new TextEncoder().encode(fb));
-        return {
-          userId: payload.userId as string,
-          email: payload.email as string,
-          fullName: payload.fullName as string,
-          avatarUrl: (payload.avatarUrl as string) || null,
-          workspaceId: payload.workspaceId as string,
-        };
-      } catch {
-        continue;
-      }
-    }
-
     return null;
   }
 }
 
-export async function getSession(request?: any): Promise<UserSession | null> {
+export async function getSession(): Promise<UserSession | null> {
   try {
-    let token: string | undefined;
-
-    // Check request cookies if request object provided
-    if (request?.cookies) {
-      if (typeof request.cookies.get === "function") {
-        token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-      } else if (request.cookies[SESSION_COOKIE_NAME]) {
-        token = request.cookies[SESSION_COOKIE_NAME];
-      }
-    }
-
-    // Check request Authorization header
-    if (!token && request?.headers) {
-      const authHeader =
-        typeof request.headers.get === "function"
-          ? request.headers.get("authorization")
-          : request.headers["authorization"];
-      if (authHeader?.startsWith("Bearer ")) {
-        token = authHeader.substring(7).trim();
-      }
-    }
-
-    // Fallback to Next.js headers cookies()
-    if (!token) {
-      const { cookies } = await import("next/headers");
-      const cookieStore = await cookies();
-      token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-    }
-
-    if (!token) {
-      return null;
-    }
-
+    const { cookies } = await import("next/headers");
+    const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+    if (!token) return null;
     return verifySessionToken(token);
   } catch {
     return null;
   }
 }
 
-export function setSessionCookie(response: any, token: string): void {
-  const thirtyDays = 60 * 60 * 24 * 30; // 30 days
-  const isProd = process.env.NODE_ENV === "production";
-  const expires = new Date(Date.now() + thirtyDays * 1000);
-
-  if (response?.cookies?.set) {
-    response.cookies.set(SESSION_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: "lax",
-      path: "/",
-      maxAge: thirtyDays,
-      expires,
-    });
-  }
+export function setSessionCookie(response: NextResponse, token: string): void {
+  response.cookies.set(SESSION_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  });
 }
 
-export function clearSessionCookie(response: any): void {
+export function clearSessionCookie(response: NextResponse): void {
   response.cookies.delete(SESSION_COOKIE_NAME);
+  // Clear old compatibility identity cookie so it cannot be reused by older code.
   response.cookies.delete("tf_user_email");
 }

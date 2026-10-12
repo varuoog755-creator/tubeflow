@@ -1063,7 +1063,7 @@ export default function Home() {
                     <span className="font-bold text-[10px] text-red-600">Auto Reply (BigRedHub)</span>
                   </div>
                   <p className="text-[11px] text-zinc-800 leading-snug">
-                    Thanks! I'll share a detailed tutorial soon. Stay tuned! 🚀
+                    Thanks! I&apos;ll share a detailed tutorial soon. Stay tuned! 🚀
                   </p>
                 </div>
               </div>
@@ -1090,7 +1090,7 @@ export default function Home() {
                     <span className="font-bold text-[10px] text-red-600">Auto Reply (BigRedHub)</span>
                   </div>
                   <p className="text-[11px] text-zinc-800 leading-snug">
-                    I use the Rode NT-USB. It's great for beginners too! 🎙️
+                    I use the Rode NT-USB. It&apos;s great for beginners too! 🎙️
                   </p>
                 </div>
               </div>
@@ -1194,7 +1194,7 @@ export default function Home() {
                 </div>
 
                 <p className="text-zinc-700 text-xs sm:text-sm leading-relaxed italic">
-                  "BigRedHub saves me hours every week! Replies are natural and my engagement has increased a lot."
+                  &quot;BigRedHub saves me hours every week! Replies are natural and my engagement has increased a lot.&quot;
                 </p>
               </div>
             </div>
@@ -1219,7 +1219,7 @@ export default function Home() {
                 </div>
 
                 <p className="text-zinc-700 text-xs sm:text-sm leading-relaxed italic">
-                  "Super easy to set up and works perfectly. My audience loves the quick replies."
+                  &quot;Super easy to set up and works perfectly. My audience loves the quick replies.&quot;
                 </p>
               </div>
             </div>
@@ -1244,7 +1244,7 @@ export default function Home() {
                 </div>
 
                 <p className="text-zinc-700 text-xs sm:text-sm leading-relaxed italic">
-                  "A must-have tool for every creator. Clean interface and very reliable."
+                  &quot;A must-have tool for every creator. Clean interface and very reliable.&quot;
                 </p>
               </div>
             </div>
@@ -1635,14 +1635,14 @@ export default function Home() {
               <div className="space-y-3 max-w-lg mx-auto w-full my-auto">
                 <div className="p-3 bg-zinc-800/90 rounded-xl border border-zinc-700">
                   <p className="text-xs text-zinc-300">
-                    Viewer: <span className="text-white font-medium">"Where did you buy that microphone?"</span>
+                    Viewer: <span className="text-white font-medium">&quot;Where did you buy that microphone?&quot;</span>
                   </p>
                 </div>
                 <div className="p-3 bg-red-950/40 border border-red-800/60 rounded-xl ml-4">
                   <p className="text-xs text-red-200">
                     Auto-Replied in 1.2s:{" "}
                     <span className="text-white font-medium">
-                      "Hey! I use the Rode NT-USB. Check the gear link in my description! 🎙️"
+                      &quot;Hey! I use the Rode NT-USB. Check the gear link in my description! 🎙️&quot;
                     </span>
                   </p>
                 </div>

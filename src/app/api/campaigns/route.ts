@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
+import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    if (!session?.email) {
-      return NextResponse.json({
-        authenticated: false,
-        channel: null,
-        campaigns: [],
-        stats: { totalReplies: 0, activeRules: 0, heartsLikes: 0, quotaUsed: 0 },
-        logs: [],
-      }, { status: 401 });
-    }
-    const email = session.email;
+    const email = session?.email;
+    if (!email || !session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     // 1. Get Profile
     const { data: profile } = await supabaseAdmin
@@ -53,6 +45,7 @@ export async function GET(_request: NextRequest) {
     const { data: logs } = await supabaseAdmin
       .from("comment_logs")
       .select("*")
+      .eq("channel_id", channel?.id || "00000000-0000-0000-0000-000000000000")
       .order("processed_at", { ascending: false })
       .limit(10);
 
@@ -82,59 +75,31 @@ export async function GET(_request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    if (!session?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const email = session.email;
+    const email = session?.email;
+    if (!email || !session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const body = await request.json();
     const { name, keywords, replyTemplate, targetMode } = body;
-
     if (!name || !keywords || !replyTemplate) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Get user id
-    let { data: profile } = await supabaseAdmin
+    const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("id")
+      .eq("id", session.userId)
       .eq("email", email)
       .maybeSingle();
+    if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 403 });
 
-    if (!profile) {
-      const { data: newProfile } = await supabaseAdmin
-        .from("profiles")
-        .insert({ id: crypto.randomUUID(), email, full_name: "Creator" })
-        .select("id")
-        .single();
-      profile = newProfile;
-    }
-
-    if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
-
-    // Get channel id
-    let { data: channel } = await supabaseAdmin
+    const { data: channel } = await supabaseAdmin
       .from("youtube_channels")
       .select("id")
       .eq("user_id", profile.id)
+      .eq("is_active", true)
       .maybeSingle();
-
     if (!channel) {
-      const { data: newChannel } = await supabaseAdmin
-        .from("youtube_channels")
-        .insert({
-          id: crypto.randomUUID(),
-          user_id: profile.id,
-          channel_id: "UC_demo_channel",
-          channel_title: "My YouTube Channel",
-          access_token: "demo",
-          refresh_token: "demo",
-          token_expiry: new Date().toISOString(),
-        })
-        .select("id")
-        .single();
-      channel = newChannel;
+      return NextResponse.json({ error: "Connect a YouTube channel before creating a campaign" }, { status: 409 });
     }
 
     const keywordList = Array.isArray(keywords)

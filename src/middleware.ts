@@ -1,69 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const UNIFORM_SESSION_SECRET =
-  process.env.SESSION_SECRET ||
-  "bigredhub_super_secret_jwt_session_auth_key_2026_prod_vault_x99!";
-
-function getJwtSecret(): Uint8Array {
-  return new TextEncoder().encode(UNIFORM_SESSION_SECRET);
+function getJwtSecret(): Uint8Array | null {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) return null;
+  return new TextEncoder().encode(secret);
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const secret = getJwtSecret();
+  const token = request.cookies.get("tf_session_token")?.value;
+  let authenticated = false;
 
-  // Protect /dashboard, /admin, and their subpaths
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
-    let sessionToken = request.cookies.get("tf_session_token")?.value;
-
-    if (!sessionToken) {
-      const authHeader = request.headers.get("authorization");
-      if (authHeader?.startsWith("Bearer ")) {
-        sessionToken = authHeader.substring(7).trim();
-      }
+  if (secret && token) {
+    try {
+      const { payload } = await jwtVerify(token, secret, { algorithms: ["HS256"] });
+      authenticated =
+        typeof payload.userId === "string" &&
+        payload.userId.length > 0 &&
+        typeof payload.email === "string" &&
+        payload.email.length > 0 &&
+        typeof payload.workspaceId === "string" &&
+        payload.workspaceId.length > 0;
+    } catch {
+      authenticated = false;
     }
+  }
 
-    if (!sessionToken) {
-      sessionToken = request.nextUrl.searchParams.get("token") || undefined;
-    }
-
-    let isAuthenticated = false;
-
-    if (sessionToken) {
-      try {
-        await jwtVerify(sessionToken, getJwtSecret());
-        isAuthenticated = true;
-      } catch {
-        // Fallback for tokens signed with SUPABASE_SERVICE_ROLE_KEY or legacy key
-        const fallbacks = [
-          process.env.SUPABASE_SERVICE_ROLE_KEY,
-          "bigredhub_super_secret_jwt_session_auth_key_2026_prod!",
-        ].filter(Boolean) as string[];
-
-        for (const fb of fallbacks) {
-          try {
-            await jwtVerify(sessionToken, new TextEncoder().encode(fb));
-            isAuthenticated = true;
-            break;
-          } catch {
-            continue;
-          }
-        }
-      }
-    }
-
-    if (!isAuthenticated) {
-      const loginUrl = new URL("/login", request.url);
-      if (request.nextUrl.search) {
-        loginUrl.search = request.nextUrl.search;
-      }
-      return NextResponse.redirect(loginUrl);
-    }
+  if (!authenticated) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", request.nextUrl.pathname);
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.delete("tf_session_token");
+    response.cookies.delete("tf_user_email");
+    return response;
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*"],
 };

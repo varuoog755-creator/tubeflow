@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
 import { getOAuth2Client, getYoutubeClient } from "@/lib/youtube";
 import { supabaseAdmin } from "@/lib/supabase";
 import { createSessionToken, setSessionCookie } from "@/lib/session";
@@ -14,18 +15,22 @@ export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin;
   const redirectUri = `${origin}/api/auth/callback/google`;
 
-  let mode = "connect_youtube";
-  if (rawState) {
-    try {
-      const parsed = JSON.parse(Buffer.from(rawState, "base64").toString("utf-8"));
-      mode = parsed.mode || mode;
-    } catch {
-      // ignore
-    }
+  const expectedState = request.cookies.get("tf_oauth_state")?.value;
+  const requestedMode = request.cookies.get("tf_oauth_mode")?.value;
+  const mode = requestedMode === "connect_youtube" ? "connect_youtube" : "login";
+  const clearOAuthCookies = (response: NextResponse) => {
+    response.cookies.delete("tf_oauth_state");
+    response.cookies.delete("tf_oauth_mode");
+    return response;
+  };
+
+  // OAuth state must be unpredictable and match the same browser that initiated login.
+  if (!rawState || !expectedState || rawState.length > 256 || rawState !== expectedState) {
+    return clearOAuthCookies(NextResponse.json({ error: "Invalid or expired OAuth state" }, { status: 400 }));
   }
 
   if (error || !code) {
-    return NextResponse.redirect(`${origin}/login?auth_error=${encodeURIComponent(error || "no_code")}`);
+    return clearOAuthCookies(NextResponse.redirect(`${origin}/login?auth_error=${encodeURIComponent(error || "no_code")}`));
   }
 
   try {
@@ -45,18 +50,25 @@ export async function GET(request: NextRequest) {
       throw new Error("Unable to retrieve Google email address");
     }
 
-    // 3. Upsert Creator Profile in Supabase safely
-    let userId = crypto.randomUUID();
-    let workspaceId = crypto.randomUUID();
-
-    try {
+    let userId: string;
+    let workspaceId: string;
+    if (mode === "connect_youtube") {
+      const session = await getSession();
+      if (!session) {
+        return clearOAuthCookies(NextResponse.redirect(`${origin}/login?auth_error=session_required`));
+      }
+      userId = session.userId;
+      workspaceId = session.workspaceId;
+    } else {
+      // 3. Upsert Creator Profile in Supabase
+  
       const { data: existingProfile } = await supabaseAdmin
         .from("profiles")
         .select("id")
         .eq("email", email)
         .maybeSingle();
-
-      if (existingProfile?.id) {
+  
+      if (existingProfile) {
         userId = existingProfile.id;
         await supabaseAdmin
           .from("profiles")
@@ -65,7 +77,7 @@ export async function GET(request: NextRequest) {
       } else {
         const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
         const existingAuthUser = userList?.users?.find((u) => u.email === email);
-        if (existingAuthUser?.id) {
+        if (existingAuthUser) {
           userId = existingAuthUser.id;
         } else {
           const { data: createdUser } = await supabaseAdmin.auth.admin.createUser({
@@ -73,11 +85,9 @@ export async function GET(request: NextRequest) {
             email_confirm: true,
             user_metadata: { full_name: name, avatar_url: avatar },
           });
-          if (createdUser?.user?.id) {
-            userId = createdUser.user.id;
-          }
+          userId = createdUser?.user?.id || crypto.randomUUID();
         }
-
+  
         await supabaseAdmin
           .from("profiles")
           .upsert({
@@ -88,15 +98,16 @@ export async function GET(request: NextRequest) {
             updated_at: new Date().toISOString(),
           });
       }
-
+  
       // 4. Ensure Default Workspace exists for this user
+  
       const { data: existingWorkspace } = await supabaseAdmin
         .from("workspaces")
         .select("id")
         .eq("owner_id", userId)
         .maybeSingle();
-
-      if (existingWorkspace?.id) {
+  
+      if (existingWorkspace) {
         workspaceId = existingWorkspace.id;
       } else {
         const slug = `${email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -110,21 +121,21 @@ export async function GET(request: NextRequest) {
             plan_status: "active",
           })
           .select("id")
-          .maybeSingle();
-
-        if (newWorkspace?.id) {
-          workspaceId = newWorkspace.id;
-          await supabaseAdmin
-            .from("workspace_members")
-            .insert({
-              workspace_id: workspaceId,
-              user_id: userId,
-              role: "owner",
-            });
-        }
+          .single();
+  
+        workspaceId = newWorkspace?.id || crypto.randomUUID();
+  
+        // Add to workspace_members as owner
+        await supabaseAdmin
+          .from("workspace_members")
+          .insert({
+            workspace_id: workspaceId,
+            user_id: userId,
+            role: "owner",
+          });
       }
-    } catch (dbErr) {
-      console.warn("Database user profile/workspace sync notice:", dbErr);
+  
+  
     }
 
     // 5. Fetch and upsert YouTube channel info whenever tokens.access_token is present
@@ -192,26 +203,21 @@ export async function GET(request: NextRequest) {
     }
 
     // 6. Issue secure Signed JWT Session Cookie
-    const sessionToken = await createSessionToken({
-      userId,
-      email,
-      fullName: name,
-      avatarUrl: avatar,
-      workspaceId,
-    });
-
-    const redirectTarget =
-      mode === "channel"
-        ? `${origin}/dashboard?channel_connected=true&token=${encodeURIComponent(sessionToken)}`
-        : `${origin}/dashboard?authenticated=true&token=${encodeURIComponent(sessionToken)}`;
-
-    const response = NextResponse.redirect(redirectTarget);
-    setSessionCookie(response, sessionToken);
-
-    return response;
+    const response = NextResponse.redirect(`${origin}/dashboard?authenticated=true`);
+    // Account linking must preserve the existing app session and never switch identities.
+    if (mode !== "connect_youtube") {
+      const sessionToken = await createSessionToken({
+        userId,
+        email,
+        fullName: name,
+        avatarUrl: avatar,
+        workspaceId,
+      });
+      setSessionCookie(response, sessionToken);
+    }
+    return clearOAuthCookies(response);
   } catch (err: unknown) {
     console.error("OAuth Callback failed:", err);
-    return NextResponse.redirect(`${origin}/login?auth_error=callback_failed`);
+    return clearOAuthCookies(NextResponse.redirect(`${origin}/login?auth_error=callback_failed`));
   }
 }
-

@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
-import { isAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession(request);
+    const session = await getSession();
+    const email = session?.email;
 
-    if (!session?.email) {
+    if (!email) {
       return NextResponse.json({
         authenticated: false,
         channel: null,
@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
         },
       });
     }
-    const email = session.email;
 
     // 1. Get or create Profile
     let { data: profile } = await supabaseAdmin
@@ -77,7 +76,7 @@ export async function GET(request: NextRequest) {
           name: `${profile.full_name}'s Workspace`,
           slug,
           owner_id: profile.id,
-          plan: "growth",
+          plan: "free",
           plan_status: "active",
         })
         .select("*")
@@ -86,102 +85,93 @@ export async function GET(request: NextRequest) {
       workspace = createdWs;
     }
 
-    // Channels owned by user (or all channels if platform admin)
-    const isUserAdmin = isAdmin(email);
-    let channelsQuery = supabaseAdmin
+    // 3. Get Channels owned by user
+    const { data: channels } = await supabaseAdmin
       .from("youtube_channels")
       .select("*")
+      .eq("user_id", profile.id)
       .order("created_at", { ascending: false });
 
-    if (!isUserAdmin) {
-      channelsQuery = channelsQuery.eq("user_id", profile.id);
-    }
-
-    const { data: channels } = await channelsQuery;
     const activeChannel = channels?.[0] || null;
     const channelIds = (channels || []).map((c) => c.id);
 
-    // 4. Prepare queries to execute in parallel
-    let rulesQuery = supabaseAdmin
-      .from("trigger_rules")
-      .select("*, youtube_channels(channel_title)")
-      .order("created_at", { ascending: false });
+    // 4. Get Rules (scoped to workspace or user's channels)
+    let rules: Record<string, unknown>[] = [];
+    if (workspace?.id || channelIds.length > 0) {
+      let rulesQuery = supabaseAdmin
+        .from("trigger_rules")
+        .select("*, youtube_channels(channel_title)")
+        .order("created_at", { ascending: false });
 
-    if (!isUserAdmin) {
       if (workspace?.id && channelIds.length > 0) {
         rulesQuery = rulesQuery.or(`workspace_id.eq.${workspace.id},channel_id.in.(${channelIds.join(",")})`);
       } else if (workspace?.id) {
         rulesQuery = rulesQuery.eq("workspace_id", workspace.id);
-      } else if (channelIds.length > 0) {
+      } else {
         rulesQuery = rulesQuery.in("channel_id", channelIds);
       }
+
+      const { data: userRules } = await rulesQuery;
+      rules = userRules || [];
     }
 
-    let logsQuery = supabaseAdmin
-      .from("processed_comments")
-      .select("*, trigger_rules(name)", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    if (!isUserAdmin && channelIds.length > 0) {
-      logsQuery = logsQuery.in("channel_id", channelIds);
-    }
-
-    let statsQuery = supabaseAdmin
-      .from("processed_comments")
-      .select("reply_status, matched_rule_id, youtube_reply_id")
-      .limit(1000);
-
-    if (!isUserAdmin) {
-      statsQuery = statsQuery.in("channel_id", channelIds);
-    }
-
-    let linksQuery = supabaseAdmin
-      .from("tracked_links")
-      .select("clicks_count, conversions_count, revenue_generated");
-
-    if (workspace?.id) {
-      linksQuery = linksQuery.eq("workspace_id", workspace.id);
-    } else if (channelIds.length > 0) {
-      linksQuery = linksQuery.in("channel_id", channelIds);
-    }
-
-    // Execute queries concurrently
-    const [rulesRes, logsRes, statsRes, linksRes] = await Promise.all([
-      rulesQuery,
-      isUserAdmin || channelIds.length > 0 ? logsQuery : Promise.resolve({ data: [], count: 0 }),
-      isUserAdmin || channelIds.length > 0 ? statsQuery : Promise.resolve({ data: [] }),
-      workspace?.id || channelIds.length > 0 ? linksQuery : Promise.resolve({ data: [] }),
-    ]);
-
-    const rules = rulesRes.data || [];
-    const logs = logsRes.data || [];
-    const commentsMonitored = logsRes.count || logs.length;
-
+    // 5. Get Processed Comments Logs (scoped to user's channels)
+    let logs: Record<string, unknown>[] = [];
+    let commentsMonitored = 0;
+    let commentsMatched = 0;
     let repliesSent = 0;
     let failedReplies = 0;
     let spamBlocked = 0;
-    let commentsMatched = 0;
 
-    const statsLogs = statsRes.data;
-    if (statsLogs) {
-      repliesSent = statsLogs.filter(
-        (l: any) => l.reply_status === "replied" && l.youtube_reply_id !== null
-      ).length;
-      failedReplies = statsLogs.filter((l: any) => l.reply_status === "error").length;
-      spamBlocked = statsLogs.filter((l: any) => l.reply_status === "spam").length;
-      commentsMatched = statsLogs.filter((l: any) => l.matched_rule_id !== null).length;
+    if (channelIds.length > 0) {
+      const { data: recentLogs, count } = await supabaseAdmin
+        .from("processed_comments")
+        .select("*, trigger_rules(name)", { count: "exact" })
+        .in("channel_id", channelIds)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      logs = recentLogs || [];
+      commentsMonitored = count || logs.length;
+
+      // Calculate totals accurately across user's channels
+      const { data: statsLogs } = await supabaseAdmin
+        .from("processed_comments")
+        .select("reply_status, matched_rule_id, youtube_reply_id")
+        .in("channel_id", channelIds);
+
+      if (statsLogs) {
+        repliesSent = statsLogs.filter(
+          (l) => l.reply_status === "replied" && l.youtube_reply_id !== null
+        ).length;
+        failedReplies = statsLogs.filter((l) => l.reply_status === "error").length;
+        spamBlocked = statsLogs.filter((l) => l.reply_status === "spam").length;
+        commentsMatched = statsLogs.filter((l) => l.matched_rule_id !== null).length;
+      }
     }
 
+    // 6. Get Tracked Links metrics (scoped to workspace or channels)
     let clicks = 0;
     let conversions = 0;
     let revenue = 0;
 
-    const links = linksRes.data;
-    if (links) {
-      clicks = links.reduce((acc: number, l: any) => acc + (l.clicks_count || 0), 0);
-      conversions = links.reduce((acc: number, l: any) => acc + (l.conversions_count || 0), 0);
-      revenue = links.reduce((acc: number, l: any) => acc + parseFloat(l.revenue_generated || "0"), 0);
+    if (workspace?.id || channelIds.length > 0) {
+      let linksQuery = supabaseAdmin
+        .from("tracked_links")
+        .select("clicks_count, conversions_count, revenue_generated");
+
+      if (workspace?.id) {
+        linksQuery = linksQuery.eq("workspace_id", workspace.id);
+      } else {
+        linksQuery = linksQuery.in("channel_id", channelIds);
+      }
+
+      const { data: links } = await linksQuery;
+      if (links) {
+        clicks = links.reduce((acc, l) => acc + (l.clicks_count || 0), 0);
+        conversions = links.reduce((acc, l) => acc + (l.conversions_count || 0), 0);
+        revenue = links.reduce((acc, l) => acc + parseFloat(l.revenue_generated || "0"), 0);
+      }
     }
 
     const totalAttempts = repliesSent + failedReplies;

@@ -8,11 +8,11 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
+    const email = session?.email;
 
-    if (!session?.email) {
+    if (!email) {
       return NextResponse.json({ error: "Unauthorized session" }, { status: 401 });
     }
-    const email = session.email;
 
     const body = await request.json();
     const { logId, commentId, channelId, replyText, action } = body;
@@ -34,6 +34,13 @@ export async function POST(request: NextRequest) {
 
     // Handle "dismiss" action
     if (action === "dismiss") {
+      const { data: ownedLog } = await supabaseAdmin
+        .from("processed_comments")
+        .select("id, channel_id, youtube_channels!inner(user_id)")
+        .eq("id", logId)
+        .eq("youtube_channels.user_id", profile.id)
+        .maybeSingle();
+      if (!ownedLog) return NextResponse.json({ error: "Comment not found" }, { status: 404 });
       const { error: updateErr } = await supabaseAdmin
         .from("processed_comments")
         .update({
@@ -57,6 +64,7 @@ export async function POST(request: NextRequest) {
 
     // Get channel record
     let targetChannel = null;
+    let storedCommentId: string | null = null;
     if (channelId) {
       const { data: chan } = await supabaseAdmin
         .from("youtube_channels")
@@ -71,11 +79,12 @@ export async function POST(request: NextRequest) {
       // Fallback: look up channel via the log record
       const { data: logRec } = await supabaseAdmin
         .from("processed_comments")
-        .select("channel_id")
+        .select("channel_id, comment_id")
         .eq("id", logId)
         .maybeSingle();
 
       if (logRec?.channel_id) {
+        storedCommentId = logRec.comment_id;
         const { data: chan } = await supabaseAdmin
           .from("youtube_channels")
           .select("*")
@@ -86,52 +95,48 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (logId && !storedCommentId) {
+      const { data: ownedLog } = await supabaseAdmin.from("processed_comments").select("comment_id, channel_id").eq("id", logId).maybeSingle();
+      if (!ownedLog || !targetChannel || ownedLog.channel_id !== targetChannel.id) return NextResponse.json({ error: "Comment not found for this channel" }, { status: 404 });
+      storedCommentId = ownedLog.comment_id;
+    }
+    const effectiveCommentId = storedCommentId || commentId;
+    if (!targetChannel) return NextResponse.json({ error: "Channel not found for this account" }, { status: 404 });
     let youtubeReplyId: string | null = null;
     let replyStatus: "replied" | "error" = "replied";
     let errorMessage: string | null = null;
 
     if (targetChannel && targetChannel.access_token) {
-      const isSimulated =
-        targetChannel.access_token === "demo" ||
-        targetChannel.access_token.startsWith("demo_");
+      try {
+        const youtube = await getValidYoutubeClient({
+          id: targetChannel.id,
+          access_token: targetChannel.access_token,
+          refresh_token: targetChannel.refresh_token,
+          token_expiry: targetChannel.token_expiry,
+        });
 
-      if (isSimulated) {
-        // Graceful execution for demo and test channel accounts
-        youtubeReplyId = `reply_sim_${Date.now()}`;
-        replyStatus = "replied";
-        errorMessage = null;
-      } else {
-        try {
-          const youtube = await getValidYoutubeClient({
-            id: targetChannel.id,
-            access_token: targetChannel.access_token,
-            refresh_token: targetChannel.refresh_token,
-            token_expiry: targetChannel.token_expiry,
-          });
-
-          // Insert reply to YouTube comment
-          const apiRes = await youtube.comments.insert({
-            part: ["snippet"],
-            requestBody: {
-              snippet: {
-                parentId: commentId,
-                textOriginal: replyText.trim(),
-              },
+        // Insert reply to YouTube comment
+        const apiRes = await youtube.comments.insert({
+          part: ["snippet"],
+          requestBody: {
+            snippet: {
+              parentId: effectiveCommentId,
+              textOriginal: replyText.trim(),
             },
-          });
+          },
+        });
 
-          youtubeReplyId = apiRes.data.id || null;
-          if (!youtubeReplyId) {
-            replyStatus = "error";
-            errorMessage = "YouTube API returned empty comment ID";
-          }
-        } catch (ytErr: unknown) {
+        youtubeReplyId = apiRes.data.id || null;
+        if (!youtubeReplyId) {
           replyStatus = "error";
-          errorMessage = ytErr instanceof Error ? ytErr.message : String(ytErr);
+          errorMessage = "YouTube API returned empty comment ID";
+        }
+      } catch (ytErr: unknown) {
+        replyStatus = "error";
+        errorMessage = ytErr instanceof Error ? ytErr.message : String(ytErr);
 
-          if (isYoutubeQuotaError(ytErr)) {
-            errorMessage = "YouTube API daily quota reached. Retry when quota resets.";
-          }
+        if (isYoutubeQuotaError(ytErr)) {
+          errorMessage = "YouTube API daily quota reached. Retry when quota resets.";
         }
       }
     } else {
@@ -141,7 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update log in database
-    const updatePayload: Record<string, any> = {
+    const updatePayload: Record<string, string | null> = {
       reply_text: replyText.trim(),
       reply_status: replyStatus,
       processed_at: new Date().toISOString(),
@@ -156,7 +161,8 @@ export async function POST(request: NextRequest) {
       await supabaseAdmin
         .from("processed_comments")
         .update(updatePayload)
-        .eq("id", logId);
+        .eq("id", logId)
+        .eq("channel_id", targetChannel.id);
     }
 
     if (replyStatus === "error") {

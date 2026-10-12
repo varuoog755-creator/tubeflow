@@ -4,25 +4,24 @@ import { getValidYoutubeClient, isYoutubeQuotaError, isYoutubeTokenRevoked } fro
 import { detectIntent } from "@/lib/intent";
 import { renderReply, evaluateRuleMatch } from "@/lib/reply-engine";
 import { getSession } from "@/lib/session";
-import { isAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
-async function handlePoll(request: NextRequest) {
+export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET || "tubeflow_cron_secret";
+  const cronSecret = process.env.CRON_SECRET;
   const { searchParams } = new URL(request.url);
   const manual = searchParams.get("manual") === "true";
 
-  // Check auth: Cron header or valid session
-  const session = await getSession();
-  const userEmail = session?.email || null;
-  const isCronAuthorized = authHeader === `Bearer ${cronSecret}`;
-  const isUserAuthorized = Boolean(session?.userId);
-  const isUserAdmin = userEmail ? isAdmin(userEmail) : false;
+  if (!manual && (!cronSecret || authHeader !== `Bearer ${cronSecret}`)) {
+    return NextResponse.json({ error: "Unauthorized cron execution" }, { status: 401 });
+  }
 
-  if (!isCronAuthorized && !isUserAuthorized) {
-    return NextResponse.json({ error: "Unauthorized polling execution" }, { status: 401 });
+  if (manual) {
+    const session = await getSession();
+    if (!session?.userId || !session.workspaceId) {
+      return NextResponse.json({ error: "Unauthorized user session" }, { status: 401 });
+    }
   }
 
   try {
@@ -31,23 +30,16 @@ async function handlePoll(request: NextRequest) {
       .from("youtube_channels")
       .select("*, trigger_rules(*)")
       .eq("is_active", true);
-
-    // If triggered manually by a standard creator, prioritize their channel
-    if (session?.userId && !isCronAuthorized && !isUserAdmin) {
-      channelsQuery = channelsQuery.eq("user_id", session.userId);
+    if (manual) {
+      const session = await getSession();
+      if (!session) return NextResponse.json({ error: "Unauthorized user session" }, { status: 401 });
+      channelsQuery = channelsQuery.eq("user_id", session.userId).eq("workspace_id", session.workspaceId);
     }
-
-    const { data: channels } = await channelsQuery;
+    const { data: channels, error: channelsError } = await channelsQuery;
+    if (channelsError) return NextResponse.json({ error: "Failed to load channels" }, { status: 500 });
 
     if (!channels || channels.length === 0) {
-      return NextResponse.json({
-        success: true,
-        commentsInspected: 0,
-        repliesConfirmed: 0,
-        commentsInspectedCount: 0,
-        confirmedRepliesCount: 0,
-        message: "No active channels found to poll.",
-      });
+      return NextResponse.json({ message: "No active channels to process", processedCount: 0 });
     }
 
     let confirmedRepliesCount = 0;
@@ -59,77 +51,15 @@ async function handlePoll(request: NextRequest) {
         (r: { is_active: boolean }) => r.is_active
       );
 
-      if (activeRules.length === 0) {
-        executionResults.push({ channel: channel.channel_title, status: "no_active_rules" });
+      if (activeRules.length === 0) continue;
+
+      if (!channel.access_token || channel.access_token === "demo") {
+        executionResults.push({ channel: channel.channel_title, status: "skipped_demo_token" });
         continue;
       }
 
-      // If channel does not have an OAuth token, check local queued comments
-      if (!channel.access_token || channel.access_token === "demo" || channel.access_token.startsWith("demo_")) {
-        // Process any queued pending comments in database for this channel
-        const { data: pendingComments } = await supabaseAdmin
-          .from("processed_comments")
-          .select("*")
-          .eq("channel_id", channel.id)
-          .eq("reply_status", "pending")
-          .limit(10);
-
-        if (pendingComments && pendingComments.length > 0) {
-          for (const comm of pendingComments) {
-            commentsInspectedCount++;
-            const intentResult = detectIntent(comm.comment_text);
-            let matchedRule = null;
-            for (const rule of activeRules) {
-              const evalRes = evaluateRuleMatch(
-                {
-                  keywords: rule.keywords || [],
-                  negativeKeywords: rule.negative_keywords || [],
-                  matchType: rule.match_type || "contains",
-                  keywordMatchOperator: rule.keyword_match_operator || "ANY",
-                  intentCategory: rule.intent_category || "ALL",
-                },
-                comm.comment_text,
-                intentResult.category
-              );
-              if (evalRes.matched) {
-                matchedRule = rule;
-                break;
-              }
-            }
-            if (matchedRule) {
-              const template =
-                matchedRule.reply_templates?.[
-                  Math.floor(Math.random() * matchedRule.reply_templates.length)
-                ] || "Hey {{first_name}}! Check out: {{cta_url}}";
-              const replyText = renderReply(template, {
-                authorName: comm.author_name,
-                channelTitle: channel.channel_title,
-                ctaUrl: matchedRule.cta_url || undefined,
-              });
-              await supabaseAdmin
-                .from("processed_comments")
-                .update({
-                  reply_status: "replied",
-                  reply_text: replyText,
-                  youtube_reply_id: `reply_${Date.now()}`,
-                  processed_at: new Date().toISOString(),
-                })
-                .eq("id", comm.id);
-              confirmedRepliesCount++;
-            }
-          }
-        }
-
-        executionResults.push({
-          channel: channel.channel_title,
-          status: "processed_queued",
-          replies: confirmedRepliesCount,
-        });
-        continue;
-      }
-
-      // Real live YouTube Data API channel processing
       try {
+        // Authenticate with automatic token refresh if expired
         const youtube = await getValidYoutubeClient({
           id: channel.id,
           access_token: channel.access_token,
@@ -137,7 +67,7 @@ async function handlePoll(request: NextRequest) {
           token_expiry: channel.token_expiry,
         });
 
-        // Fetch latest comment threads from YouTube
+        // Fetch latest comment threads from the channel
         const commentsRes = await youtube.commentThreads.list({
           part: ["snippet"],
           allThreadsRelatedToChannelId: channel.channel_id,
@@ -194,6 +124,8 @@ async function handlePoll(request: NextRequest) {
 
           // Deterministic rule evaluation
           let matchedRule = null;
+          let matchEvaluation = null;
+
           for (const rule of activeRules) {
             // Video scope filtering (All, Single video, or Shorts only)
             if (
@@ -201,7 +133,7 @@ async function handlePoll(request: NextRequest) {
               rule.target_video_ids?.length > 0
             ) {
               if (!rule.target_video_ids.includes(videoId)) {
-                continue;
+                continue; // Comment is not on this rule's target video
               }
             }
 
@@ -219,6 +151,7 @@ async function handlePoll(request: NextRequest) {
 
             if (evalResult.matched) {
               matchedRule = rule;
+              matchEvaluation = evalResult;
               break;
             }
           }
@@ -250,26 +183,33 @@ async function handlePoll(request: NextRequest) {
                   },
                 },
               });
-
               youtubeReplyId = insertRes.data.id || null;
               if (youtubeReplyId) {
                 confirmedRepliesCount++;
+              } else {
+                replyStatus = "error";
+                replyErrorMessage = "YouTube API returned empty comment ID";
               }
-            } catch (replyErr: unknown) {
+            } catch (replyError: unknown) {
               replyStatus = "error";
               replyErrorMessage =
-                replyErr instanceof Error ? replyErr.message : "YouTube reply post failed";
-              console.error(`Reply failed for comment ${commentId}:`, replyErr);
+                replyError instanceof Error ? replyError.message : String(replyError);
+              console.warn(
+                `YouTube API comment insert failure on channel ${channel.channel_title}:`,
+                replyErrorMessage
+              );
 
-              if (isYoutubeQuotaError(replyErr)) {
-                await supabaseAdmin.from("system_alerts").insert({
+              if (isYoutubeQuotaError(replyError)) {
+                // Log notification about quota exhaustion
+                await supabaseAdmin.from("notifications").insert({
+                  user_id: channel.user_id,
                   workspace_id: channel.workspace_id,
                   type: "quota_warning",
                   title: "YouTube API Quota Reached",
                   message:
                     "Daily YouTube API quota limit reached. Automated replies will resume on quota reset.",
                 });
-                break;
+                break; // Stop further requests for this channel in this run
               }
             }
 
@@ -311,10 +251,8 @@ async function handlePoll(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      commentsInspected: commentsInspectedCount,
-      repliesConfirmed: confirmedRepliesCount,
-      commentsInspectedCount,
       confirmedRepliesCount,
+      commentsInspectedCount,
       results: executionResults,
       timestamp: new Date().toISOString(),
     });
@@ -322,12 +260,4 @@ async function handlePoll(request: NextRequest) {
     console.error("Auto-reply worker error:", error);
     return NextResponse.json({ error: "Failed to process auto-replies" }, { status: 500 });
   }
-}
-
-export async function GET(request: NextRequest) {
-  return handlePoll(request);
-}
-
-export async function POST(request: NextRequest) {
-  return handlePoll(request);
 }

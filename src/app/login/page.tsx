@@ -156,7 +156,7 @@ function LoginForm() {
               </span>
               <div className="flex items-center gap-2 text-xs text-zinc-700">
                 <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                <span>Sub-2s automated replies</span>
+                <span>Rule-based comment reply automation</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-zinc-700">
                 <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />

@@ -46,10 +46,7 @@ import {
   Flame,
   Target,
   Layers,
-  CreditCard,
-  ShieldAlert,
 } from "lucide-react";
-import { PLAN_CONFIGS } from "@/lib/admin";
 
 // Types
 interface Channel {
@@ -62,7 +59,6 @@ interface Channel {
   video_count: number;
   view_count: number;
   is_active: boolean;
-  access_token?: string | null;
   token_expiry?: string | null;
 }
 
@@ -125,6 +121,7 @@ interface TrackedLink {
   slug: string;
   destination_url: string;
   campaign_name: string;
+  rule_id?: string | null;
   clicks_count: number;
   conversions_count: number;
   revenue_generated: string;
@@ -138,7 +135,6 @@ type DashboardTab =
   | "automations"
   | "links"
   | "conversions"
-  | "billing"
   | "settings";
 
 type InboxFilterView =
@@ -148,6 +144,8 @@ type InboxFilterView =
   | "replied"
   | "failed"
   | "spam";
+
+
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -216,16 +214,6 @@ export default function DashboardPage() {
   const [videoSearch, setVideoSearch] = useState("");
   const [loadingVideos, setLoadingVideos] = useState(false);
 
-  // Direct Channel Connect by Handle / ID
-  const [isHandleModalOpen, setIsHandleModalOpen] = useState(false);
-  const [handleInput, setHandleInput] = useState("");
-  const [handleConnecting, setHandleConnecting] = useState(false);
-
-  // Subscription & Admin State
-  const [currentPlan, setCurrentPlan] = useState<string>("free");
-  const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
-  const [isAdminUser, setIsAdminUser] = useState<boolean>(false);
-
   // Campaign Scope & Spintax Anti-Spam State
   const [campaignScope, setCampaignScope] = useState<"all" | "single" | "shorts">("all");
   const [selectedVideoForRule, setSelectedVideoForRule] = useState<string>("");
@@ -236,7 +224,7 @@ export default function DashboardPage() {
   // Dry Run Modal
   const [isDryRunOpen, setIsDryRunOpen] = useState(false);
   const [dryRunComment, setDryRunComment] = useState("");
-  const [dryRunResult, setDryRunResult] = useState<any>(null);
+  const [dryRunResult, setDryRunResult] = useState<{ matched: boolean; rendered_reply?: string | null } | null>(null);
   const [dryRunLoading, setDryRunLoading] = useState(false);
 
   // Tracked Link Modal
@@ -259,36 +247,11 @@ export default function DashboardPage() {
     setTimeout(() => setNotification(null), 5000);
   };
 
-  const getAuthHeaders = (extra: Record<string, string> = {}): Record<string, string> => {
-    const headers: Record<string, string> = { ...extra };
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("tf_session_token");
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-    }
-    return headers;
-  };
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const tokenFromUrl = params.get("token");
-      if (tokenFromUrl) {
-        localStorage.setItem("tf_session_token", tokenFromUrl);
-        params.delete("token");
-        const remaining = params.toString();
-        const cleanUrl = remaining ? `${window.location.pathname}?${remaining}` : window.location.pathname;
-        window.history.replaceState({}, document.title, cleanUrl);
-      }
-    }
-  }, []);
-
   // Initial Data Fetch
   const fetchDashboardData = async () => {
     try {
       setIsRefreshing(true);
-      const res = await fetch("/api/dashboard", { headers: getAuthHeaders() });
+      const res = await fetch("/api/dashboard");
       if (!res.ok) {
         if (res.status === 401) {
           router.replace("/login");
@@ -299,39 +262,6 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (!data.authenticated) {
-        // Graceful retry once to allow cookies to settle after OAuth callback
-        const retryRes = await new Promise<Response>((resolve) => {
-          setTimeout(async () => {
-            try {
-              const r = await fetch("/api/dashboard");
-              resolve(r);
-            } catch {
-              resolve(
-                new Response(JSON.stringify({ authenticated: false }), { status: 401 })
-              );
-            }
-          }, 800);
-        });
-
-        if (retryRes.ok) {
-          const retryData = await retryRes.json();
-          if (retryData.authenticated) {
-            setProfile(retryData.profile);
-            setChannels(retryData.channels || []);
-            setRules(retryData.rules || []);
-            if (retryData.workspace?.plan) {
-              setCurrentPlan(retryData.workspace.plan);
-            }
-            if (retryData.channels?.[0]?.id) {
-              setActiveChannelId(retryData.channels[0].id);
-            }
-            if (retryData.stats) {
-              setStats(retryData.stats);
-            }
-            return;
-          }
-        }
-
         router.replace("/login");
         return;
       }
@@ -340,79 +270,74 @@ export default function DashboardPage() {
       setChannels(data.channels || []);
       setRules(data.rules || []);
 
-      if (data.workspace?.plan) {
-        setCurrentPlan(data.workspace.plan.toLowerCase());
-      }
-      const adminEmailList = ["varuoog755@gmail.com", "govinda755rock755@gmail.com"];
-      if (adminEmailList.includes((data.profile?.email || "").toLowerCase().trim())) {
-        setIsAdminUser(true);
-      }
-
-      // Load real database comments and stats
+      // Only show comments persisted from this workspace; never substitute demo rows.
       const loadedLogs: ProcessedComment[] = data.logs || [];
       setComments(loadedLogs);
 
+      // Calculate intent detected from comments
       const intentCount = loadedLogs.filter(
         (c) => c.detected_intent && c.detected_intent !== "OTHER" && c.detected_intent !== "SPAM"
       ).length;
 
       setStats({
         commentsMonitored: data.stats?.commentsMonitored ?? loadedLogs.length,
-        intentDetected: data.stats?.commentsMatched ?? intentCount,
+        intentDetected: data.stats?.commentsMatched || intentCount,
         repliesDelivered: data.stats?.repliesSent ?? 0,
         failedReplies: data.stats?.failedReplies ?? 0,
         spamBlocked: data.stats?.spamBlocked ?? 0,
-        replySuccessRate: data.stats?.replySuccessRate ?? 100,
+        replySuccessRate: data.stats?.replySuccessRate ?? 0,
         clicks: data.stats?.clicks ?? 0,
         conversions: data.stats?.conversions ?? 0,
         revenue: data.stats?.revenue ?? 0,
       });
 
-      // Render dashboard immediately with primary data
-      setLoading(false);
-      setIsRefreshing(false);
+      // Load Tracked Links
+      try {
+        const linkRes = await fetch("/api/conversions");
+        if (linkRes.ok) {
+          const linkData = await linkRes.json();
+          setTrackedLinks(linkData.links || []);
+        }
+      } catch (err) {
+        // Non-blocking
+      }
 
-      // Load Tracked Links non-blockingly
-      fetch("/api/conversions")
-        .then((res) => (res.ok ? res.json() : null))
-        .then((linkData) => {
-          if (linkData?.links) {
-            setTrackedLinks(linkData.links);
-          }
-        })
-        .catch(() => {});
-
-      // Load Channel Videos and Per-Video Metrics non-blockingly
-      setLoadingVideos(true);
-      fetch("/api/channels/videos")
-        .then((res) => (res.ok ? res.json() : null))
-        .then((vidData) => {
-          if (vidData?.videos) {
+      // Load Channel Videos and Per-Video Metrics
+      try {
+        setLoadingVideos(true);
+        const vidRes = await fetch("/api/channels/videos");
+        if (vidRes.ok) {
+          const vidData = await vidRes.json();
+          if (vidData.videos && vidData.videos.length > 0) {
             setChannelVideos(vidData.videos);
           }
-          if (vidData?.totals) {
+          if (vidData.totals) {
             setVideoStatsSummary(vidData.totals);
           }
-        })
-        .catch(() => {})
-        .finally(() => {
-          setLoadingVideos(false);
-        });
+        }
+      } catch (vidErr) {
+        // Non-blocking
+      } finally {
+        setLoadingVideos(false);
+      }
     } catch (err: unknown) {
       console.error("Dashboard fetch error:", err);
       showNotification("error", "Could not sync dashboard data. Check connection.");
+    } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load remote dashboard state on mount
     fetchDashboardData();
   }, []);
 
   // Set default selected comment when comments load
   useEffect(() => {
     if (!selectedCommentId && comments.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- select the first loaded inbox item
       setSelectedCommentId(comments[0].id);
     }
   }, [comments, selectedCommentId]);
@@ -425,6 +350,7 @@ export default function DashboardPage() {
   // Sync draft reply when selected comment changes
   useEffect(() => {
     if (selectedComment) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset draft when selection changes
       setDraftReplyText(selectedComment.reply_text || `Hey ${selectedComment.author_name}! Thanks for checking out the video.`);
     }
   }, [selectedComment]);
@@ -434,7 +360,7 @@ export default function DashboardPage() {
     return comments
       .filter((c) => {
         // Channel filter
-        if (activeChannelId !== "ALL" && c.channel_id !== activeChannelId && !c.is_demo) {
+        if (activeChannelId !== "ALL" && c.channel_id !== activeChannelId) {
           return false;
         }
 
@@ -627,7 +553,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch(`/api/rules?id=${rule.id}`, {
         method: "PATCH",
-        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_active: !rule.is_active }),
       });
       if (res.ok) {
@@ -655,7 +581,7 @@ export default function DashboardPage() {
         "{Hey|Hi|Hello} {{first_name}}! {Grab it here directly with 20% discount|You can buy the genuine product here|Here is the direct product link}: {{cta_url}}\n" +
         "{Hello|Hey} {{first_name}}! {Check out the product details and fast delivery options here|Here is where you can get it}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://BigRedHub.in/shop/deal");
+      setRuleCtaUrl("https://tubeflow.in/shop/deal");
       setRuleIntentCategory("BUYING_INTENT");
     } else if (preset === "affiliate") {
       setRuleKeywords("gear, setup, mic, camera, software, tool, recommend, which one");
@@ -663,7 +589,7 @@ export default function DashboardPage() {
         "{Hey|Hi} {{first_name}}! {Here is the exact setup I use (affiliate link)|Check out my official equipment list here}: {{cta_url}}\n" +
         "{Hey|Hello} {{first_name}}! {I got mine from this verified store|You can grab the exact model here}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://BigRedHub.in/affiliate/setup-gear");
+      setRuleCtaUrl("https://tubeflow.in/affiliate/setup-gear");
       setRuleIntentCategory("LINK_REQUEST");
     } else if (preset === "course") {
       setRuleKeywords("course, syllabus, learn, fee, enrollment, class, batch, mentorship");
@@ -671,7 +597,7 @@ export default function DashboardPage() {
         "{Hey|Hello} {{first_name}}! {Here is the complete course curriculum & syllabus|You can view the full batch details and enroll here}: {{cta_url}}\n" +
         "{Hi|Hey} {{first_name}}! {Check out free preview lessons and registration here|Here is the curriculum link}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://BigRedHub.in/course/enroll");
+      setRuleCtaUrl("https://tubeflow.in/course/enroll");
       setRuleIntentCategory("LINK_REQUEST");
     } else if (preset === "landing_page") {
       setRuleKeywords("checklist, guide, download, free, pdf, webinar, funnel, link");
@@ -679,7 +605,7 @@ export default function DashboardPage() {
         "{Hey|Hi|Hello} {{first_name}}! {Download the free guide and cheatsheet here|Grab your free template directly here}: {{cta_url}}\n" +
         "{Hi|Hey} {{first_name}}! {Here is the landing page to access the resources|You can claim the free resource here}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://BigRedHub.in/free-guide");
+      setRuleCtaUrl("https://tubeflow.in/free-guide");
       setRuleIntentCategory("ALL");
     }
     showNotification("info", `Applied ${preset.replace("_", " ")} presets with anti-spam Spintax variations.`);
@@ -707,105 +633,10 @@ export default function DashboardPage() {
       }
       const sample = t
         .replace(/{{first_name}}|{first_name}/gi, names[i % names.length])
-        .replace(/{{cta_url}}|{cta_url}/gi, ruleCtaUrl || "https://BigRedHub.in/link");
+        .replace(/{{cta_url}}|{cta_url}/gi, ruleCtaUrl || "https://tubeflow.in/link");
       samples.push(sample);
     }
     setSpintaxPreviewSamples(samples);
-  };
-
-  // Direct Channel Connect by Handle / ID
-  const handleConnectByHandle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!handleInput.trim()) {
-      showNotification("error", "Enter a YouTube handle or Channel ID.");
-      return;
-    }
-    setHandleConnecting(true);
-    try {
-      const res = await fetch("/api/channels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "connect_by_handle", handle: handleInput.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        showNotification("error", data.error || "Failed to connect channel.");
-      } else {
-        showNotification("success", `Channel "${data.channel?.channel_title}" successfully connected!`);
-        setIsHandleModalOpen(false);
-        setHandleInput("");
-        fetchDashboardData();
-      }
-    } catch {
-      showNotification("error", "Network error while connecting channel.");
-    } finally {
-      setHandleConnecting(false);
-    }
-  };
-
-  // Sync Live Channel Metrics
-  const handleSyncMetrics = async (channelDbId: string) => {
-    try {
-      showNotification("info", "Syncing channel statistics from YouTube...");
-      const res = await fetch("/api/channels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "sync_metrics", channelDbId }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showNotification("success", "Channel statistics updated from YouTube!");
-        fetchDashboardData();
-      } else {
-        showNotification("error", data.error || "Failed to sync metrics.");
-      }
-    } catch {
-      showNotification("error", "Network error syncing channel.");
-    }
-  };
-
-  // Disconnect Channel
-  const handleDisconnectChannel = async (channelDbId: string) => {
-    if (!confirm("Are you sure you want to disconnect this channel?")) return;
-    try {
-      const res = await fetch("/api/channels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "disconnect", channelDbId }),
-      });
-      if (res.ok) {
-        showNotification("success", "Channel disconnected.");
-        fetchDashboardData();
-      } else {
-        showNotification("error", "Failed to disconnect channel.");
-      }
-    } catch {
-      showNotification("error", "Network error disconnecting channel.");
-    }
-  };
-
-  // Switch or Upgrade Workspace Subscription Plan
-  const handleUpgradePlan = async (targetPlan: string) => {
-    setUpgradingPlan(targetPlan);
-    try {
-      const res = await fetch("/api/subscription", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: targetPlan }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showNotification("success", data.message || `Switched to ${targetPlan.toUpperCase()} plan!`);
-        setCurrentPlan(targetPlan);
-        fetchDashboardData();
-      } else {
-        showNotification("error", data.error || "Failed to switch plan.");
-      }
-    } catch {
-      showNotification("error", "Network error updating subscription.");
-    } finally {
-      setUpgradingPlan(null);
-    }
   };
 
   // Rule Save (Create / Edit)
@@ -840,7 +671,7 @@ export default function DashboardPage() {
       const method = editingRule ? "PUT" : "POST";
       const res = await fetch("/api/rules", {
         method,
-        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -851,7 +682,6 @@ export default function DashboardPage() {
         );
         setIsRuleModalOpen(false);
         setEditingRule(null);
-        setRuleName("");
         fetchDashboardData();
       } else {
         const data = await res.json();
@@ -870,7 +700,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch("/api/rules", {
         method: "POST",
-        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "dry_run",
           comment_text: dryRunComment,
@@ -880,7 +710,7 @@ export default function DashboardPage() {
           keyword_match_operator: ruleOperator,
           intent_category: ruleIntentCategory,
           reply_template: ruleTemplates.split("\n")[0] || "Hey {{first_name}}! Check: {{cta_url}}",
-          cta_url: ruleCtaUrl || "https://BigRedHub.in/demo",
+          cta_url: ruleCtaUrl || undefined,
         }),
       });
       const data = await res.json();
@@ -895,7 +725,7 @@ export default function DashboardPage() {
   // Insert Tracked Link into reply
   const handleInsertTrackedLink = (slug: string) => {
     if (!slug) return;
-    const url = `https://BigRedHub-nine.vercel.app/r/${slug}`;
+    const url = `https://tubeflow-nine.vercel.app/r/${slug}`;
     setDraftReplyText((prev) => `${prev} ${url}`);
     setSelectedLinkSlug("");
     showNotification("info", `Inserted short link: /r/${slug}`);
@@ -910,10 +740,7 @@ export default function DashboardPage() {
       confirmText: "Delete Rule",
       onConfirm: async () => {
         try {
-          const res = await fetch(`/api/rules?id=${id}`, {
-            method: "DELETE",
-            headers: getAuthHeaders(),
-          });
+          const res = await fetch(`/api/rules?id=${id}`, { method: "DELETE" });
           if (res.ok) {
             setRules((prev) => prev.filter((r) => r.id !== id));
             showNotification("success", "Rule deleted.");
@@ -937,7 +764,7 @@ export default function DashboardPage() {
             <RefreshCw className="w-4 h-4" />
           </div>
           <p className="text-xs font-semibold text-zinc-600 tracking-wide">
-            Loading BigRedHub Workspace...
+            Loading TubeFlow Workspace...
           </p>
         </div>
       </div>
@@ -976,7 +803,7 @@ export default function DashboardPage() {
               <Video className="w-3.5 h-3.5 fill-white" />
             </div>
             <span className="font-heading font-bold text-base tracking-tight text-zinc-950">
-              BigRed<span className="text-red-600">Hub</span>
+              Tube<span className="text-red-600">Flow</span>
             </span>
           </Link>
 
@@ -1001,18 +828,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Admin Console Shortcut for Platform Administrators */}
-          {isAdminUser && (
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-950 border border-red-800 text-red-200 text-[11px] font-semibold hover:bg-red-900 transition-colors shadow-xs"
-              title="Open SuperAdmin Control Console"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
-              <span>Admin Console</span>
-            </Link>
-          )}
-
           {/* Channel Live Status Pill */}
           <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200/80 text-[11px] font-semibold text-emerald-800">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
@@ -1041,11 +856,6 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/api/auth/logout"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  localStorage.removeItem("tf_session_token");
-                }
-              }}
               className="text-xs text-zinc-500 hover:text-zinc-950 p-1.5 rounded-md hover:bg-zinc-100 transition-colors"
               title="Sign Out"
             >
@@ -1073,7 +883,7 @@ export default function DashboardPage() {
                 <span>Comment Inbox</span>
               </div>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-800">
-                {comments.filter((c) => c.reply_status === "pending").length}
+                {comments.filter((c) => c.reply_status === "pending").length || comments.length}
               </span>
             </button>
 
@@ -1102,7 +912,7 @@ export default function DashboardPage() {
                 <span>Channel & Videos</span>
               </div>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-700">
-                {channelVideos.length}
+                {channelVideos.length || 52}
               </span>
             </button>
 
@@ -1136,23 +946,6 @@ export default function DashboardPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab("billing")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === "billing"
-                  ? "bg-red-50 text-red-700 border border-red-200/60"
-                  : "text-zinc-600 hover:bg-zinc-100/70 hover:text-zinc-950"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <CreditCard className="w-4 h-4 text-zinc-500" />
-                <span>Plans & Billing</span>
-              </div>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-800 uppercase tracking-wider">
-                {currentPlan}
-              </span>
-            </button>
-
-            <button
               onClick={() => setActiveTab("settings")}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === "settings"
@@ -1163,19 +956,6 @@ export default function DashboardPage() {
               <Settings className="w-4 h-4 text-zinc-500" />
               <span>Channels & Setup</span>
             </button>
-
-            {isAdminUser && (
-              <Link
-                href="/admin"
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-red-700 bg-red-50/70 border border-red-200 hover:bg-red-100 transition-all mt-1"
-              >
-                <div className="flex items-center gap-2.5">
-                  <ShieldAlert className="w-4 h-4 text-red-600" />
-                  <span>Admin Console</span>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-red-500" />
-              </Link>
-            )}
           </div>
 
           {/* Sidebar Footer info */}
@@ -1183,7 +963,7 @@ export default function DashboardPage() {
             <p className="font-semibold text-zinc-800 truncate">
               {profile?.email || "Account"}
             </p>
-            <p className="text-[10px] text-zinc-600">BigRedHub v0.2.0 • Production</p>
+            <p className="text-[10px] text-zinc-600">TubeFlow v0.2.0 • Production</p>
           </div>
         </aside>
 
@@ -1351,7 +1131,9 @@ export default function DashboardPage() {
                       <span>Sort:</span>
                       <select
                         value={sortBy}
-                        onChange={(e: any) => setSortBy(e.target.value)}
+                        onChange={(e) =>
+                          setSortBy(e.target.value as "newest" | "intent" | "oldest")
+                        }
                         className="bg-transparent font-medium text-zinc-800 focus:outline-none cursor-pointer"
                       >
                         <option value="newest">Newest</option>
@@ -1543,11 +1325,11 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Full Comment Text */}
-                    <div className="p-4 sm:p-5 rounded-2xl border border-zinc-200/90 bg-white shadow-xs">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 block mb-1.5">
+                    <div className="p-4 rounded-xl border border-zinc-200/90 bg-white shadow-xs">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600 block mb-1">
                         Viewer Comment
                       </span>
-                      <p className="text-sm sm:text-base text-zinc-950 font-medium leading-relaxed">
+                      <p className="text-sm text-zinc-950 font-medium leading-relaxed">
                         &ldquo;{selectedComment.comment_text}&rdquo;
                       </p>
                     </div>
@@ -1627,13 +1409,13 @@ export default function DashboardPage() {
 
                       <div className="relative">
                         <textarea
-                          rows={5}
+                          rows={4}
                           value={draftReplyText}
                           onChange={(e) => setDraftReplyText(e.target.value)}
                           placeholder="Type response to viewer on YouTube..."
-                          className="w-full p-4 rounded-xl border border-zinc-300 text-sm text-zinc-900 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all font-mono leading-relaxed shadow-xs"
+                          className="w-full p-3.5 rounded-xl border border-zinc-300 text-xs text-zinc-900 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all font-mono leading-relaxed"
                         />
-                        <span className="absolute bottom-3 right-3 text-[11px] text-zinc-400 font-mono">
+                        <span className="absolute bottom-2.5 right-3 text-[10px] text-zinc-400">
                           {draftReplyText.length} characters
                         </span>
                       </div>
@@ -1813,16 +1595,14 @@ export default function DashboardPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h1 className="font-heading font-bold text-lg text-zinc-950">
-                          {channels[0]?.channel_title || "No Channel Connected"}
+                          {channels[0]?.channel_title || "Himalayan Pine Studio"}
                         </h1>
-                        {channels[0] && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
-                            Connected & Synced
-                          </span>
-                        )}
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+                          Connected & Synced
+                        </span>
                       </div>
                       <p className="text-xs text-zinc-500">
-                        {channels[0]?.custom_url || "Connect your YouTube channel in Settings"} {channels[0]?.channel_id ? `• Channel ID: ${channels[0]?.channel_id}` : ""}
+                        {channels[0]?.custom_url || "@himalayanpine"} • Channel ID: {channels[0]?.channel_id || "UC_HimalayanPine"}
                       </p>
                     </div>
                   </div>
@@ -1849,7 +1629,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Total Videos</span>
                     <span className="text-xl font-heading font-bold text-zinc-950 mt-1 block">
-                      {videoStatsSummary?.totalVideos ?? channelVideos.length}
+                      {videoStatsSummary.totalVideos || channelVideos.length || 0}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-medium">Long-form & Shorts</span>
                   </div>
@@ -1857,7 +1637,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Total Views</span>
                     <span className="text-xl font-heading font-bold text-zinc-950 mt-1 block">
-                      {(videoStatsSummary?.totalViews ?? (channels[0]?.view_count ?? 0)).toLocaleString()}
+                      {(videoStatsSummary.totalViews ?? 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-medium">All-time Impressions</span>
                   </div>
@@ -1865,7 +1645,7 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-2xl bg-red-50/60 border border-red-200/80">
                     <span className="text-[11px] font-semibold text-red-900 block">Total Comments</span>
                     <span className="text-xl font-heading font-bold text-red-700 mt-1 block">
-                      {(videoStatsSummary?.totalComments ?? 0).toLocaleString()}
+                      {(videoStatsSummary.totalComments ?? 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] text-red-600 font-medium">Buyer Intent Pool</span>
                   </div>
@@ -1883,7 +1663,7 @@ export default function DashboardPage() {
                         : "bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-950"
                     }`}
                   >
-                    All Videos ({channelVideos.length})
+                    All Videos ({channelVideos.length || 5})
                   </button>
                   <button
                     onClick={() => setVideoFormatFilter("long")}
@@ -1893,7 +1673,7 @@ export default function DashboardPage() {
                         : "bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-950"
                     }`}
                   >
-                    🎥 Long-form ({channelVideos.filter((v) => !v.isShort).length})
+                    🎥 Long-form ({channelVideos.filter((v) => !v.isShort).length || 3})
                   </button>
                   <button
                     onClick={() => setVideoFormatFilter("shorts")}
@@ -1903,7 +1683,7 @@ export default function DashboardPage() {
                         : "bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-950"
                     }`}
                   >
-                    ⚡ Shorts Only ({channelVideos.filter((v) => v.isShort).length})
+                    ⚡ Shorts Only ({channelVideos.filter((v) => v.isShort).length || 2})
                   </button>
                 </div>
 
@@ -1921,122 +1701,108 @@ export default function DashboardPage() {
 
               {/* Per-Video Cards */}
               <div className="space-y-3">
-                {channelVideos.length === 0 ? (
-                  <div className="p-12 text-center bg-white rounded-2xl border border-zinc-200">
-                    <Video className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
-                    <h3 className="font-heading font-bold text-base text-zinc-900 mb-1">
-                      {channels.length === 0 ? "No YouTube Channel Connected" : "No Videos Uploaded Yet"}
-                    </h3>
-                    <p className="text-xs text-zinc-500 max-w-md mx-auto">
-                      {channels.length === 0
-                        ? "Connect your YouTube channel in Settings to view your video library and automate comment conversions."
-                        : "Your channel does not have any public videos or Shorts yet. Once you publish content on YouTube, it will appear here with live metrics."}
-                    </p>
-                  </div>
-                ) : (
-                  channelVideos
-                    .filter((v) => {
-                      if (videoFormatFilter === "long" && v.isShort) return false;
-                      if (videoFormatFilter === "shorts" && !v.isShort) return false;
-                      if (
-                        videoSearch.trim() &&
-                        !v.title.toLowerCase().includes(videoSearch.toLowerCase().trim())
-                      ) {
-                        return false;
-                      }
-                      return true;
-                    })
-                    .map((video) => (
-                      <div
-                        key={video.id}
-                        className="p-4 sm:p-5 rounded-2xl border border-zinc-200 bg-white hover:border-zinc-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-                      >
-                        <div className="flex items-start gap-4 flex-1">
-                          {/* Thumbnail with duration */}
-                          <div className="relative w-28 h-18 sm:w-36 sm:h-20 rounded-xl overflow-hidden bg-zinc-900 shrink-0 border border-zinc-100">
-                            <img
-                              src={video.thumbnail}
-                              alt={video.title}
-                              className="w-full h-full object-cover"
-                            />
-                            <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-zinc-950/80 text-white text-[10px] font-mono font-medium">
-                              {video.duration}
+                {channelVideos
+                  .filter((v) => {
+                    if (videoFormatFilter === "long" && v.isShort) return false;
+                    if (videoFormatFilter === "shorts" && !v.isShort) return false;
+                    if (
+                      videoSearch.trim() &&
+                      !v.title.toLowerCase().includes(videoSearch.toLowerCase().trim())
+                    ) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map((video) => (
+                    <div
+                      key={video.id}
+                      className="p-4 sm:p-5 rounded-2xl border border-zinc-200 bg-white hover:border-zinc-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-4 flex-1">
+                        {/* Thumbnail with duration */}
+                        <div className="relative w-28 h-18 sm:w-36 sm:h-20 rounded-xl overflow-hidden bg-zinc-900 shrink-0 border border-zinc-100">
+                          <img
+                            src={video.thumbnail}
+                            alt={video.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-zinc-950/80 text-white text-[10px] font-mono font-medium">
+                            {video.duration}
+                          </span>
+                          {video.isShort && (
+                            <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold tracking-wider uppercase">
+                              Shorts
                             </span>
-                            {video.isShort && (
-                              <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold tracking-wider uppercase">
-                                Shorts
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Title and stats */}
-                          <div className="space-y-2 flex-1">
-                            <div className="flex items-start justify-between gap-2">
-                              <h2 className="font-heading font-bold text-sm text-zinc-950 line-clamp-2">
-                                {video.title}
-                              </h2>
-                              <a
-                                href={video.videoUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-zinc-400 hover:text-zinc-700 shrink-0 p-1"
-                                title="Open on YouTube"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-600">
-                              <span className="inline-flex items-center gap-1 font-semibold text-zinc-800">
-                                <Eye className="w-3.5 h-3.5 text-zinc-500" />
-                                {video.viewCount.toLocaleString()} views
-                              </span>
-                              <span className="inline-flex items-center gap-1 font-semibold text-zinc-800">
-                                <ThumbsUp className="w-3.5 h-3.5 text-zinc-500" />
-                                {video.likeCount.toLocaleString()} likes
-                              </span>
-                              <span className="inline-flex items-center gap-1 font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
-                                <MessageSquare className="w-3.5 h-3.5 text-red-600" />
-                                {video.commentCount.toLocaleString()} comments
-                              </span>
-                            </div>
-                          </div>
+                          )}
                         </div>
 
-                        {/* Video Actions */}
-                        <div className="flex items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0 shrink-0">
-                          <button
-                            onClick={() => {
-                              setCampaignScope("single");
-                              setSelectedVideoForRule(video.id);
-                              setRuleName(`${video.title.slice(0, 32)} Campaign`);
-                              setRuleTemplates(
-                                "{Hey|Hi|Hello} {{first_name}}! {Here is the exact link mentioned in the video|Check out the product details here}: {{cta_url}}"
-                              );
-                              setRuleKeywords("link, where to buy, buy, price, cost");
-                              setRuleCtaUrl("https://BigRedHub.in/product-deal");
-                              setActiveTab("automations");
-                              setIsRuleModalOpen(true);
-                            }}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs transition-all shadow-xs"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Create Campaign</span>
-                          </button>
+                        {/* Title and stats */}
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h2 className="font-heading font-bold text-sm text-zinc-950 line-clamp-2">
+                              {video.title}
+                            </h2>
+                            <a
+                              href={video.videoUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-zinc-400 hover:text-zinc-700 shrink-0 p-1"
+                              title="Open on YouTube"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
 
-                          <button
-                            onClick={() => {
-                              setSearchQuery(video.title.slice(0, 20));
-                              setActiveTab("inbox");
-                            }}
-                            className="px-3 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-semibold text-xs transition-all"
-                          >
-                            View Comments
-                          </button>
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-600">
+                            <span className="inline-flex items-center gap-1 font-semibold text-zinc-800">
+                              <Eye className="w-3.5 h-3.5 text-zinc-500" />
+                              {video.viewCount.toLocaleString()} views
+                            </span>
+                            <span className="inline-flex items-center gap-1 font-semibold text-zinc-800">
+                              <ThumbsUp className="w-3.5 h-3.5 text-zinc-500" />
+                              {video.likeCount.toLocaleString()} likes
+                            </span>
+                            <span className="inline-flex items-center gap-1 font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                              <MessageSquare className="w-3.5 h-3.5 text-red-600" />
+                              {video.commentCount.toLocaleString()} comments
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    ))
-                )}
+
+                      {/* Video Actions */}
+                      <div className="flex items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0 shrink-0">
+                        <button
+                          onClick={() => {
+                            setCampaignScope("single");
+                            setSelectedVideoForRule(video.id);
+                            setRuleName(`${video.title.slice(0, 32)} Campaign`);
+                            setRuleTemplates(
+                              "{Hey|Hi|Hello} {{first_name}}! {Here is the exact link mentioned in the video|Check out the product details here}: {{cta_url}}"
+                            );
+                            setRuleKeywords("link, where to buy, buy, price, cost");
+                            setRuleCtaUrl("https://tubeflow.in/product-deal");
+                            setActiveTab("automations");
+                            setIsRuleModalOpen(true);
+                          }}
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs transition-all shadow-xs"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Create Campaign</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setSearchQuery(video.title.slice(0, 20));
+                            setActiveTab("inbox");
+                          }}
+                          className="px-3 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-semibold text-xs transition-all"
+                        >
+                          View Comments
+                        </button>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           )}
@@ -2081,7 +1847,7 @@ export default function DashboardPage() {
                         "{Hey|Hi|Hello} {{first_name}}! {Grab it here directly with 20% discount|You can buy the genuine product here|Here is the direct product link}: {{cta_url}}\n" +
                         "{Hello|Hey} {{first_name}}! {Check out the product details and fast delivery options here|Here is where you can get it}: {{cta_url}}"
                       );
-                      setRuleCtaUrl("https://BigRedHub.in/shop/deal");
+                      setRuleCtaUrl("https://tubeflow.in/shop/deal");
                       setRuleIntentCategory("ALL");
                       setRuleDelay(5);
                       setSpintaxPreviewSamples([]);
@@ -2113,9 +1879,10 @@ export default function DashboardPage() {
                     const matchedComments = comments.filter(
                       (c) => c.matched_rule_id === rule.id || c.reply_text?.includes(rule.name)
                     );
-                    const repliesCount = matchedComments.length || Math.floor(Math.random() * 15 + 8);
-                    const clicksCount = Math.floor(repliesCount * 1.8);
-                    const ctrRate = repliesCount > 0 ? Math.round((clicksCount / repliesCount) * 45) : 62;
+                    const repliesCount = matchedComments.length;
+                    const ruleLinks = trackedLinks.filter((link) => link.rule_id === rule.id);
+                    const clicksCount = ruleLinks.reduce((total, link) => total + (link.clicks_count || 0), 0);
+                    const ctrRate = repliesCount > 0 ? Math.round((clicksCount / repliesCount) * 100) : 0;
 
                     return (
                       <div
@@ -2189,11 +1956,11 @@ export default function DashboardPage() {
                                 setRuleMatchType(rule.match_type || "contains");
                                 setRuleOperator(rule.keyword_match_operator || "ANY");
                                 setCampaignScope(
-                                  (rule.target_mode as any) === "shorts_only"
+                                  rule.target_mode === "shorts_only"
                                     ? "shorts"
-                                    : (rule.target_mode as any) === "specific_videos"
+                                    : rule.target_mode === "specific_videos"
                                     ? "single"
-                                    : (rule.target_mode as any) || "all"
+                                    : "all"
                                 );
                                 setSelectedVideoForRule(rule.target_video_ids?.[0] || "");
                                 setRuleTemplates((rule.reply_templates || []).join("\n"));
@@ -2346,383 +2113,52 @@ export default function DashboardPage() {
 
               {/* Connected Channels List */}
               <div className="p-6 rounded-2xl border border-zinc-200 bg-white space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="font-heading font-bold text-base text-zinc-950">
-                      Authorized YouTube Channels
-                    </h2>
-                    <p className="text-xs text-zinc-500">
-                      Channels connected to BigRedHub for automated comment monitoring and link delivery.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setIsHandleModalOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-800 text-xs font-semibold transition-all"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-zinc-600" />
-                      <span>Connect by Handle / ID</span>
-                    </button>
-                    <a
-                      href="/api/auth/google?mode=channel"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-all shadow-xs"
-                    >
-                      <Video className="w-3.5 h-3.5 fill-white" />
-                      <span>Connect via Google OAuth</span>
-                    </a>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <h2 className="font-heading font-bold text-base text-zinc-950">
+                    Authorized YouTube Channels
+                  </h2>
+                  <a
+                    href="/api/auth/google?mode=channel"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Connect New YouTube Channel</span>
+                  </a>
                 </div>
 
                 <div className="space-y-3 pt-2">
                   {channels.length === 0 ? (
-                    <div className="p-8 text-center bg-zinc-50 rounded-2xl border border-zinc-200 text-xs text-zinc-600 space-y-2">
-                      <Video className="w-8 h-8 text-zinc-300 mx-auto" />
-                      <p className="font-semibold text-zinc-800">No YouTube channels connected yet</p>
-                      <p className="text-zinc-500 max-w-sm mx-auto">
-                        Connect your YouTube channel using Google OAuth or directly via your channel handle to start detecting buyer intent.
-                      </p>
-                      <div className="pt-2 flex justify-center gap-2">
-                        <button
-                          onClick={() => setIsHandleModalOpen(true)}
-                          className="px-3 py-1.5 rounded-xl border border-zinc-300 text-xs font-semibold text-zinc-700 hover:bg-white"
-                        >
-                          Connect by Handle (@handle)
-                        </button>
-                        <a
-                          href="/api/auth/google?mode=channel"
-                          className="px-3.5 py-1.5 rounded-xl bg-red-600 text-white text-xs font-semibold hover:bg-red-700"
-                        >
-                          Connect via Google
-                        </a>
-                      </div>
+                    <div className="p-6 text-center bg-zinc-50 rounded-xl border border-zinc-200 text-xs text-zinc-600">
+                      No channels connected yet. Click &quot;Connect New YouTube Channel&quot; to authorize via Google.
                     </div>
                   ) : (
                     channels.map((ch) => (
                       <div
                         key={ch.id}
-                        className="p-4 sm:p-5 rounded-2xl border border-zinc-200 bg-white hover:border-zinc-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        className="p-4 rounded-xl border border-zinc-200 bg-zinc-50 flex items-center justify-between"
                       >
-                        <div className="flex items-center gap-3.5">
-                          {ch.thumbnail_url ? (
-                            <img
-                              src={ch.thumbnail_url}
-                              alt={ch.channel_title}
-                              className="w-12 h-12 rounded-full object-cover border border-zinc-200"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
-                              <Video className="w-6 h-6 fill-white" />
-                            </div>
-                          )}
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">
+                            <Video className="w-5 h-5 fill-white" />
+                          </div>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-heading font-bold text-sm text-zinc-950">
-                                {ch.channel_title}
-                              </h3>
-                              <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                {ch.access_token && ch.access_token !== "demo" ? "OAuth Verified" : "Public Synced"}
-                              </span>
-                            </div>
-                            <p className="text-xs text-zinc-500 mt-0.5">
-                              {ch.custom_url || `@${ch.channel_title.toLowerCase().replace(/\s+/g, "")}`} • ID: {ch.channel_id}
+                            <p className="font-bold text-sm text-zinc-950">
+                              {ch.channel_title}
                             </p>
-                            <div className="flex items-center gap-3 mt-1.5 text-[11px] text-zinc-600">
-                              <span>
-                                👥 <strong className="text-zinc-900">{(ch.subscriber_count ?? 0).toLocaleString()}</strong> subs
-                              </span>
-                              <span>
-                                🎥 <strong className="text-zinc-900">{(ch.video_count ?? 0).toLocaleString()}</strong> videos
-                              </span>
-                              <span>
-                                👁️ <strong className="text-zinc-900">{(ch.view_count ?? 0).toLocaleString()}</strong> views
-                              </span>
-                            </div>
+                            <p className="text-[11px] text-zinc-500">
+                              Channel ID: {ch.channel_id}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0">
-                          <button
-                            onClick={() => handleSyncMetrics(ch.id)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-xs font-semibold transition-all"
-                            title="Refresh subscriber count and views from YouTube"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5 text-zinc-500" />
-                            <span>Sync Metrics</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleDisconnectChannel(ch.id)}
-                            className="px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition-all"
-                          >
-                            Disconnect
-                          </button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-semibold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md">
+                            Connected & Authorized
+                          </span>
                         </div>
                       </div>
                     ))
                   )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 6: SUBSCRIPTION PLANS & BILLING */}
-          {activeTab === "billing" && (
-            <div className="flex-1 overflow-y-auto p-6 max-w-5xl mx-auto w-full space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h1 className="font-heading font-bold text-2xl text-zinc-950">
-                    Creator Subscription & Plans
-                  </h1>
-                  <p className="text-xs text-zinc-600 mt-0.5">
-                    Upgrade your automation capacity, AI intent classification, and multi-channel reach.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-red-50 text-red-700 border border-red-200">
-                    Active Plan: <strong className="uppercase">{currentPlan}</strong>
-                  </span>
-                </div>
-              </div>
-
-              {/* Current Usage Banner */}
-              <div className="p-5 rounded-2xl border border-zinc-200 bg-zinc-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
-                    Workspace Plan Status
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-heading font-bold text-base text-zinc-950">
-                      {PLAN_CONFIGS[currentPlan]?.name || "Starter Free"}
-                    </h2>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                      Active
-                    </span>
-                  </div>
-                  <p className="text-xs text-zinc-600">
-                    {currentPlan === "free"
-                      ? "Free tier with 1 channel and 50 automated replies per month."
-                      : currentPlan === "growth"
-                      ? "Pro tier with 3 channels, unlimited replies, and AI Buyer-Intent detection."
-                      : "Agency tier with 10 channels, dedicated high-speed polling, and priority SLA."}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-6 border-t sm:border-t-0 pt-3 sm:pt-0 shrink-0">
-                  <div>
-                    <span className="text-[10px] text-zinc-500 font-semibold block">Channels Connected</span>
-                    <span className="text-sm font-bold text-zinc-950">
-                      {channels.length} / {PLAN_CONFIGS[currentPlan]?.channelLimit || 1}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-500 font-semibold block">Replies This Month</span>
-                    <span className="text-sm font-bold text-zinc-950">
-                      {stats.repliesDelivered} / {currentPlan === "free" ? "50" : "Unlimited"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3 Pricing Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
-                {/* 1. Starter Free */}
-                <div
-                  className={`p-6 rounded-3xl border transition-all flex flex-col justify-between ${
-                    currentPlan === "free"
-                      ? "border-zinc-900 bg-white ring-2 ring-zinc-900/10 shadow-lg"
-                      : "border-zinc-200 bg-white hover:border-zinc-300"
-                  }`}
-                >
-                  <div className="space-y-4">
-                    <div>
-                      <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Starter</span>
-                      <h3 className="font-heading font-bold text-xl text-zinc-950 mt-1">Free Tier</h3>
-                      <p className="text-xs text-zinc-500 mt-1">For new creators testing comment link delivery.</p>
-                    </div>
-
-                    <div className="pt-2">
-                      <span className="text-3xl font-heading font-bold text-zinc-950">₹0</span>
-                      <span className="text-xs text-zinc-500 font-medium"> / forever</span>
-                    </div>
-
-                    <ul className="space-y-2.5 text-xs text-zinc-600 pt-2 border-t border-zinc-100">
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>1 YouTube Channel connection</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>50 automated replies / month</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Basic keyword trigger rules</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Standard comment polling</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="pt-6">
-                    {currentPlan === "free" ? (
-                      <button
-                        disabled
-                        className="w-full py-2.5 rounded-xl border border-zinc-200 bg-zinc-100 text-zinc-500 text-xs font-semibold cursor-default"
-                      >
-                        Current Active Plan
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleUpgradePlan("free")}
-                        disabled={upgradingPlan === "free"}
-                        className="w-full py-2.5 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-800 text-xs font-semibold transition-all"
-                      >
-                        {upgradingPlan === "free" ? "Switching..." : "Switch to Free"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* 2. Pro Growth (Popular) */}
-                <div
-                  className={`p-6 rounded-3xl border relative transition-all flex flex-col justify-between ${
-                    currentPlan === "growth"
-                      ? "border-red-600 bg-white ring-2 ring-red-600/20 shadow-xl"
-                      : "border-red-300 bg-red-50/20 hover:border-red-400 shadow-md"
-                  }`}
-                >
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider shadow-xs">
-                    Most Popular
-                  </span>
-
-                  <div className="space-y-4">
-                    <div>
-                      <span className="text-xs font-bold text-red-600 uppercase tracking-wider">Growth</span>
-                      <h3 className="font-heading font-bold text-xl text-zinc-950 mt-1">Pro Growth</h3>
-                      <p className="text-xs text-zinc-500 mt-1">For active YouTubers scaling product sales & affiliates.</p>
-                    </div>
-
-                    <div className="pt-2">
-                      <span className="text-3xl font-heading font-bold text-zinc-950">₹1,499</span>
-                      <span className="text-xs text-zinc-500 font-medium"> / month ($19 USD)</span>
-                    </div>
-
-                    <ul className="space-y-2.5 text-xs text-zinc-700 pt-2 border-t border-red-100">
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-red-600 shrink-0" />
-                        <span className="font-semibold text-zinc-900">Up to 3 YouTube Channels</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-red-600 shrink-0" />
-                        <span className="font-semibold text-zinc-900">Unlimited automated replies</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-red-600 shrink-0" />
-                        <span>AI Buyer-Intent Classification</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-red-600 shrink-0" />
-                        <span>Anti-Spam Spintax natural variations</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-red-600 shrink-0" />
-                        <span>Tracked Shortlinks & Attribution</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-red-600 shrink-0" />
-                        <span>Human-safe reply pacing delays</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="pt-6">
-                    {currentPlan === "growth" ? (
-                      <button
-                        disabled
-                        className="w-full py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold cursor-default"
-                      >
-                        Current Active Plan
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleUpgradePlan("growth")}
-                        disabled={upgradingPlan === "growth"}
-                        className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-xs transition-all disabled:opacity-50"
-                      >
-                        {upgradingPlan === "growth" ? "Activating..." : "Upgrade to Pro Growth"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* 3. Agency Scale */}
-                <div
-                  className={`p-6 rounded-3xl border transition-all flex flex-col justify-between ${
-                    currentPlan === "scale"
-                      ? "border-zinc-900 bg-white ring-2 ring-zinc-900/10 shadow-lg"
-                      : "border-zinc-200 bg-white hover:border-zinc-300"
-                  }`}
-                >
-                  <div className="space-y-4">
-                    <div>
-                      <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Agency</span>
-                      <h3 className="font-heading font-bold text-xl text-zinc-950 mt-1">Agency Scale</h3>
-                      <p className="text-xs text-zinc-500 mt-1">For agencies, media networks, and multi-channel creators.</p>
-                    </div>
-
-                    <div className="pt-2">
-                      <span className="text-3xl font-heading font-bold text-zinc-950">₹3,999</span>
-                      <span className="text-xs text-zinc-500 font-medium"> / month ($49 USD)</span>
-                    </div>
-
-                    <ul className="space-y-2.5 text-xs text-zinc-600 pt-2 border-t border-zinc-100">
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span className="font-semibold text-zinc-900">Up to 10 YouTube Channels</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>Everything in Pro Growth</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>Custom branded shortlink domain</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>High-frequency polling cycle</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>Direct webhook & API access</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>24/7 Priority SLA Support</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="pt-6">
-                    {currentPlan === "scale" ? (
-                      <button
-                        disabled
-                        className="w-full py-2.5 rounded-xl border border-zinc-200 bg-zinc-100 text-zinc-500 text-xs font-semibold cursor-default"
-                      >
-                        Current Active Plan
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleUpgradePlan("scale")}
-                        disabled={upgradingPlan === "scale"}
-                        className="w-full py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold transition-all disabled:opacity-50"
-                      >
-                        {upgradingPlan === "scale" ? "Activating..." : "Upgrade to Agency Scale"}
-                      </button>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>
@@ -3015,7 +2451,7 @@ export default function DashboardPage() {
                   </label>
                   <input
                     type="url"
-                    placeholder="https://BigRedHub.in/gear-setup"
+                    placeholder="https://tubeflow.in/gear-setup"
                     value={ruleCtaUrl}
                     onChange={(e) => setRuleCtaUrl(e.target.value)}
                     className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:outline-none"
@@ -3124,19 +2560,19 @@ export default function DashboardPage() {
 
                     <div className="p-2.5 rounded-xl bg-red-50/50 border border-red-200/60">
                       <span className="text-[10px] font-bold text-red-800 uppercase tracking-wider block mb-0.5">
-                        BigRedHub Auto-Reply:
+                        TubeFlow Auto-Reply:
                       </span>
                       <p className="text-zinc-900">
                         {comm.reply_text ||
                           `Hey ${comm.author_name.split(" ")[0]}! Grab the exact link here: ${
-                            campaignRepliesModalRule.cta_url || "https://BigRedHub.in"
+                            campaignRepliesModalRule.cta_url || "https://tubeflow.in"
                           }`}
                       </p>
                       <div className="flex items-center gap-4 mt-2 pt-2 border-t border-red-100 text-[11px] text-zinc-500">
                         <span>
                           🔗 Destination:{" "}
                           <span className="font-mono text-zinc-800">
-                            {campaignRepliesModalRule.cta_url || "https://BigRedHub.in"}
+                            {campaignRepliesModalRule.cta_url || "https://tubeflow.in"}
                           </span>
                         </span>
                         <span className="text-emerald-700 font-bold ml-auto">
@@ -3368,65 +2804,6 @@ export default function DashboardPage() {
                 {confirmDialog.confirmText}
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* DIRECT HANDLE / CHANNEL ID CONNECT MODAL */}
-      {isHandleModalOpen && (
-        <div className="fixed inset-0 z-50 bg-zinc-950/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-3xl border border-zinc-200 shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-              <div className="flex items-center gap-2">
-                <Video className="w-4 h-4 text-red-600" />
-                <h2 className="font-heading font-bold text-sm text-zinc-950">
-                  Connect YouTube Channel
-                </h2>
-              </div>
-              <button
-                onClick={() => setIsHandleModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleConnectByHandle} className="space-y-3.5 text-xs">
-              <p className="text-zinc-600 leading-relaxed">
-                Enter your YouTube Channel handle (e.g. <strong className="text-zinc-900 font-mono">@teepulcurtain</strong> or <strong className="text-zinc-900 font-mono">@MrBeast</strong>) or full Channel ID (<strong className="text-zinc-900 font-mono">UC...</strong>). BigRedHub will pull live subscriber counts and channel metadata.
-              </p>
-
-              <div>
-                <label className="font-bold text-zinc-800 block mb-1">
-                  YouTube Channel Handle or ID
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="@yourchannelname or UC..."
-                  value={handleInput}
-                  onChange={(e) => setHandleInput(e.target.value)}
-                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-red-600 focus:bg-white"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100">
-                <button
-                  type="button"
-                  onClick={() => setIsHandleModalOpen(false)}
-                  className="px-3 py-1.5 rounded-xl border border-zinc-200 text-zinc-700 font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={handleConnecting || !handleInput.trim()}
-                  className="px-4 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all shadow-xs disabled:opacity-50"
-                >
-                  {handleConnecting ? "Connecting..." : "Fetch & Connect"}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

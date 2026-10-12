@@ -1,14 +1,27 @@
-export const ADMIN_EMAILS: string[] = [
-  "varuoog755@gmail.com",
-  "govinda755rock755@gmail.com",
-];
+// Administrators are configured through the environment, never in source.
+// Previously this file hardcoded two email addresses. Because the repository is
+// public, those addresses were readable by anyone, which turned `isAdmin` into
+// a role that anyone who knew the repo could obtain.
+//
+// Configure with either:
+//   ADMIN_EMAIL=you@example.com            (single admin, preferred)
+//   ADMIN_EMAILS=you@example.com,other@x.com (comma separated, multiple)
+//
+// If neither is set, `isAdmin` always returns false and the admin surface is
+// closed rather than falling open.
+function getAdminEmails(): string[] {
+  const single = process.env.ADMIN_EMAIL?.trim();
+  const multiple = process.env.ADMIN_EMAILS?.split(",");
+  const list = [single, ...(multiple || [])]
+    .map((value) => value?.trim().toLowerCase())
+    .filter((value): value is string => Boolean(value));
+  return [...new Set(list)];
+}
 
 export function isAdmin(email?: string | null): boolean {
   if (!email) return false;
   const cleanEmail = email.toLowerCase().trim();
-  const envAdmin = process.env.ADMIN_EMAIL?.toLowerCase().trim();
-  if (envAdmin && cleanEmail === envAdmin) return true;
-  return ADMIN_EMAILS.includes(cleanEmail);
+  return getAdminEmails().includes(cleanEmail);
 }
 
 export interface PlanConfig {

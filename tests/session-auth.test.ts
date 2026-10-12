@@ -1,4 +1,4 @@
-process.env.SESSION_SECRET = process.env.SESSION_SECRET || "test_jwt_session_secret_for_test_runner_at_least_32_bytes!";
+process.env.SESSION_SECRET = "unit-test-session-secret-not-for-production-000000000000";
 
 import test from "node:test";
 import assert from "node:assert/strict";

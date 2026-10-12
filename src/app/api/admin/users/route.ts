@@ -20,7 +20,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "userId is required" }, { status: 400 });
     }
 
-    const updates: Record<string, any> = {
+    const updates: Record<string, string> = {
       updated_at: new Date().toISOString(),
     };
 

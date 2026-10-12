@@ -11,108 +11,32 @@ import { detectIntent } from "@/lib/intent";
 
 export const dynamic = "force-dynamic";
 
-function isValidUuid(id: unknown): id is string {
-  return (
-    typeof id === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
-  );
-}
-
 // Helper: resolve user profile and workspace
-async function getAuthenticatedUser(request?: NextRequest) {
-  const session = await getSession(request);
-  if (!session?.email) return null;
-  const email = session.email.toLowerCase().trim();
+async function getAuthenticatedUser(request: NextRequest) {
+  const session = await getSession();
+  const email = session?.email;
+  if (!email) return null;
 
-  // 1. Try finding profile by ID first, then by email
-  let profile: { id: string; email: string; full_name?: string | null } | null = null;
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("id, email, full_name")
+    .eq("email", email)
+    .maybeSingle();
 
-  if (isValidUuid(session.userId)) {
-    const { data: pById } = await supabaseAdmin
-      .from("profiles")
-      .select("id, email, full_name")
-      .eq("id", session.userId)
-      .maybeSingle();
-    profile = pById;
-  }
+  if (!profile) return null;
 
-  if (!profile) {
-    const { data: pByEmail } = await supabaseAdmin
-      .from("profiles")
-      .select("id, email, full_name")
-      .ilike("email", email)
-      .maybeSingle();
-    profile = pByEmail;
-  }
+  const { data: workspace } = await supabaseAdmin
+    .from("workspaces")
+    .select("id, owner_id")
+    .eq("owner_id", profile.id)
+    .maybeSingle();
 
-  // Auto-upsert profile if not yet in database
-  if (!profile) {
-    const userId = isValidUuid(session.userId) ? session.userId : crypto.randomUUID();
-    const fullName = session.fullName || (email.includes("@") ? email.split("@")[0] : "Creator");
-    const { data: createdProfile } = await supabaseAdmin
-      .from("profiles")
-      .upsert({
-        id: userId,
-        email,
-        full_name: fullName,
-        updated_at: new Date().toISOString(),
-      })
-      .select("id, email, full_name")
-      .maybeSingle();
-
-    profile = createdProfile || {
-      id: userId,
-      email,
-      full_name: fullName,
-    };
-  }
-
-  // 2. Ensure workspace is resolved
-  let workspace: { id: string; owner_id: string } | null = null;
-  if (profile?.id) {
-    const { data: wsByOwner } = await supabaseAdmin
-      .from("workspaces")
-      .select("id, owner_id")
-      .eq("owner_id", profile.id)
-      .maybeSingle();
-    workspace = wsByOwner;
-  }
-
-  if (!workspace && isValidUuid(session.workspaceId)) {
-    const { data: wsById } = await supabaseAdmin
-      .from("workspaces")
-      .select("id, owner_id")
-      .eq("id", session.workspaceId)
-      .maybeSingle();
-    workspace = wsById;
-  }
-
-  if (!workspace && profile?.id) {
-    const wsId = isValidUuid(session.workspaceId) ? session.workspaceId : crypto.randomUUID();
-    const slug = `${email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const { data: newWs } = await supabaseAdmin
-      .from("workspaces")
-      .insert({
-        id: wsId,
-        name: `${profile.full_name || "Creator"}'s Workspace`,
-        slug,
-        owner_id: profile.id,
-        plan: "free",
-        plan_status: "active",
-      })
-      .select("id, owner_id")
-      .maybeSingle();
-
-    workspace = newWs || { id: wsId, owner_id: profile.id };
-  }
-
-  // 3. Resolve channels
   const { data: channels } = await supabaseAdmin
     .from("youtube_channels")
     .select("id, channel_id, channel_title")
     .eq("user_id", profile.id);
 
-  const channelIds = (channels || []).map((c) => c.id).filter(isValidUuid);
+  const channelIds = (channels || []).map((c) => c.id);
 
   return {
     profile,
@@ -134,11 +58,16 @@ export async function GET(request: NextRequest) {
 
     if (ruleId) {
       // Fetch single rule + execution history
-      const { data: rule } = await supabaseAdmin
+      let ruleQuery = supabaseAdmin
         .from("trigger_rules")
         .select("*, youtube_channels(channel_title)")
-        .eq("id", ruleId)
-        .maybeSingle();
+        .eq("id", ruleId);
+      if (auth.workspace?.id) {
+        ruleQuery = ruleQuery.or(`workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`);
+      } else {
+        ruleQuery = ruleQuery.in("channel_id", auth.channelIds.length ? auth.channelIds : ["00000000-0000-0000-0000-000000000000"]);
+      }
+      const { data: rule } = await ruleQuery.maybeSingle();
 
       if (!rule) {
         return NextResponse.json({ error: "Rule not found" }, { status: 404 });
@@ -148,6 +77,7 @@ export async function GET(request: NextRequest) {
         .from("processed_comments")
         .select("*")
         .eq("matched_rule_id", ruleId)
+        .in("channel_id", auth.channelIds.length ? auth.channelIds : ["00000000-0000-0000-0000-000000000000"])
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -160,12 +90,8 @@ export async function GET(request: NextRequest) {
       .select("*, youtube_channels(channel_title)")
       .order("created_at", { ascending: false });
 
-    if (auth.workspace?.id && auth.channelIds.length > 0) {
-      query = query.or(
-        `workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.join(",")})`
-      );
-    } else if (auth.workspace?.id) {
-      query = query.eq("workspace_id", auth.workspace.id);
+    if (auth.workspace?.id) {
+      query = query.or(`workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length > 0 ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`);
     } else if (auth.channelIds.length > 0) {
       query = query.in("channel_id", auth.channelIds);
     }
@@ -173,8 +99,8 @@ export async function GET(request: NextRequest) {
     const { data: rules, error } = await query;
 
     if (error) {
-      console.warn("Rules fetch query notice:", error);
-      return NextResponse.json({ rules: [] });
+      console.error("Rules fetch query error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ rules: rules || [] });
@@ -195,25 +121,27 @@ export async function POST(request: NextRequest) {
     const { action } = body;
 
     // ACTION: DRY-RUN TEST
-    if (action === "test_dry_run" || action === "dry_run") {
-      const commentText = body.comment_text || body.testCommentText;
-      const authorName = body.author_name || body.testAuthorName || "TestViewer";
-      const keywords = body.keywords;
-      const negativeKeywords = body.negative_keywords || body.negativeKeywords;
-      const matchType = body.match_type || body.matchType || "contains";
-      const keywordMatchOperator = body.keyword_match_operator || body.keywordMatchOperator || "ANY";
-      const intentCategory = body.intent_category || body.intentCategory || "ALL";
-      const replyTemplate = body.reply_template || body.replyTemplate;
-      const ctaUrl = body.cta_url || body.ctaUrl;
+    if (action === "test_dry_run") {
+      const {
+        testCommentText,
+        testAuthorName,
+        keywords,
+        negativeKeywords,
+        matchType,
+        keywordMatchOperator,
+        intentCategory,
+        replyTemplate,
+        ctaUrl,
+      } = body;
 
-      if (!commentText) {
+      if (!testCommentText) {
         return NextResponse.json(
-          { error: "Comment text is required for dry-run simulation" },
+          { error: "Test comment text is required for dry-run simulation" },
           { status: 400 }
         );
       }
 
-      const detected = detectIntent(commentText);
+      const detected = detectIntent(testCommentText);
       const evalResult = evaluateRuleMatch(
         {
           keywords: Array.isArray(keywords)
@@ -226,14 +154,14 @@ export async function POST(request: NextRequest) {
           keywordMatchOperator: keywordMatchOperator || "ANY",
           intentCategory: intentCategory || "ALL",
         },
-        commentText,
+        testCommentText,
         detected.category
       );
 
       let renderedPreview = null;
       if (evalResult.matched && replyTemplate) {
         renderedPreview = renderReply(replyTemplate, {
-          authorName: authorName,
+          authorName: testAuthorName || "TestViewer",
           channelTitle: auth.channels[0]?.channel_title || "My YouTube Channel",
           ctaUrl: ctaUrl || "https://tubeflow.in/preview",
         });
@@ -241,12 +169,9 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        matched: evalResult.matched,
-        reason: evalResult.reason,
-        rendered_reply: renderedPreview,
-        renderedPreview,
         evaluation: evalResult,
         detectedIntent: detected,
+        renderedPreview,
       });
     }
 
@@ -262,6 +187,14 @@ export async function POST(request: NextRequest) {
         .select("*")
         .eq("id", ruleId)
         .maybeSingle();
+
+      if (
+        original &&
+        original.workspace_id !== auth.workspace?.id &&
+        !auth.channelIds.includes(original.channel_id)
+      ) {
+        return NextResponse.json({ error: "Original rule not found" }, { status: 404 });
+      }
 
       if (!original) {
         return NextResponse.json({ error: "Original rule not found" }, { status: 404 });
@@ -288,20 +221,22 @@ export async function POST(request: NextRequest) {
     }
 
     // ACTION: CREATE RULE
-    const name = body.name;
-    const keywords = body.keywords;
-    const negativeKeywords = body.negative_keywords ?? body.negativeKeywords;
-    const matchType = body.match_type ?? body.matchType;
-    const keywordMatchOperator = body.keyword_match_operator ?? body.keywordMatchOperator;
-    const targetMode = body.target_mode ?? body.targetMode;
-    const targetVideoIds = body.target_video_ids ?? body.targetVideoIds;
-    const targetVideoId = body.target_video_id ?? body.targetVideoId;
-    const campaignType = body.campaign_type ?? body.campaignType;
-    const replyTemplates = body.reply_templates ?? body.replyTemplates;
-    const ctaUrl = body.cta_url ?? body.ctaUrl;
-    const intentCategory = body.intent_category ?? body.intentCategory;
-    const delaySeconds = body.delay_seconds ?? body.delaySeconds;
-    const channelId = body.channel_id ?? body.channelId;
+    const {
+      name,
+      keywords,
+      negativeKeywords,
+      matchType,
+      keywordMatchOperator,
+      targetMode,
+      targetVideoIds,
+      targetVideoId,
+      campaignType,
+      replyTemplates,
+      ctaUrl,
+      intentCategory,
+      delaySeconds,
+      channelId,
+    } = body;
 
     if (!name || !keywords || !replyTemplates || replyTemplates.length === 0) {
       return NextResponse.json(
@@ -342,15 +277,14 @@ export async function POST(request: NextRequest) {
       ? [targetVideoId]
       : [];
 
-    // Selected channel or fallback to user's first channel (must be valid UUID or null)
-    const targetChannelId = isValidUuid(channelId)
-      ? channelId
-      : isValidUuid(auth.channels[0]?.id)
-      ? auth.channels[0].id
-      : null;
+    // Selected channel or fallback to user's first channel
+    if (channelId && !auth.channelIds.includes(channelId)) {
+      return NextResponse.json({ error: "Channel not found for this workspace" }, { status: 404 });
+    }
+    const targetChannelId = channelId || auth.channels[0]?.id || null;
 
     const insertPayload: Record<string, unknown> = {
-      workspace_id: isValidUuid(auth.workspace?.id) ? auth.workspace.id : null,
+      workspace_id: auth.workspace?.id || null,
       channel_id: targetChannelId,
       name: name.trim(),
       keywords: keywordList,
@@ -414,25 +348,31 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const id = body.id;
-    const name = body.name;
-    const keywords = body.keywords;
-    const negativeKeywords = body.negative_keywords ?? body.negativeKeywords;
-    const matchType = body.match_type ?? body.matchType;
-    const keywordMatchOperator = body.keyword_match_operator ?? body.keywordMatchOperator;
-    const targetMode = body.target_mode ?? body.targetMode;
-    const targetVideoIds = body.target_video_ids ?? body.targetVideoIds;
-    const targetVideoId = body.target_video_id ?? body.targetVideoId;
-    const campaignType = body.campaign_type ?? body.campaignType;
-    const replyTemplates = body.reply_templates ?? body.replyTemplates;
-    const ctaUrl = body.cta_url ?? body.ctaUrl;
-    const intentCategory = body.intent_category ?? body.intentCategory;
-    const delaySeconds = body.delay_seconds ?? body.delaySeconds;
-    const channelId = body.channel_id ?? body.channelId;
-    const is_active = body.is_active ?? body.isActive;
+    const {
+      id,
+      name,
+      keywords,
+      negativeKeywords,
+      matchType,
+      keywordMatchOperator,
+      targetMode,
+      targetVideoIds,
+      targetVideoId,
+      campaignType,
+      replyTemplates,
+      ctaUrl,
+      intentCategory,
+      delaySeconds,
+      channelId,
+      is_active,
+    } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Rule ID is required" }, { status: 400 });
+    }
+
+    if (channelId && !auth.channelIds.includes(channelId)) {
+      return NextResponse.json({ error: "Channel not found for this workspace" }, { status: 404 });
     }
 
     // Validate CTA URL if provided
@@ -486,15 +426,14 @@ export async function PUT(request: NextRequest) {
     if (ctaUrl !== undefined) updatePayload.cta_url = ctaUrl ? ctaUrl.trim() : null;
     if (intentCategory !== undefined) updatePayload.intent_category = intentCategory;
     if (delaySeconds !== undefined) updatePayload.delay_seconds = parseInt(delaySeconds, 10);
-    if (channelId !== undefined) {
-      updatePayload.channel_id = isValidUuid(channelId) ? channelId : null;
-    }
+    if (channelId !== undefined) updatePayload.channel_id = channelId;
     if (is_active !== undefined) updatePayload.is_active = is_active;
 
     let { data: updated, error } = await supabaseAdmin
       .from("trigger_rules")
       .update(updatePayload)
       .eq("id", id)
+      .or(auth.workspace?.id ? `workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})` : `channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`)
       .select("*")
       .single();
 
@@ -504,6 +443,7 @@ export async function PUT(request: NextRequest) {
         .from("trigger_rules")
         .update(updatePayload)
         .eq("id", id)
+        .or(auth.workspace?.id ? `workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})` : `channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`)
         .select("*")
         .single();
       updated = retry.data;
@@ -516,6 +456,7 @@ export async function PUT(request: NextRequest) {
         .from("trigger_rules")
         .update(updatePayload)
         .eq("id", id)
+        .or(auth.workspace?.id ? `workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})` : `channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`)
         .select("*")
         .single();
       updated = retry.data;
@@ -551,6 +492,7 @@ export async function PATCH(request: NextRequest) {
       .from("trigger_rules")
       .update({ is_active, updated_at: new Date().toISOString() })
       .eq("id", id)
+      .or(auth.workspace?.id ? `workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})` : `channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`)
       .select("*")
       .single();
 
@@ -579,7 +521,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Rule ID required" }, { status: 400 });
     }
 
-    await supabaseAdmin.from("trigger_rules").delete().eq("id", id);
+    await supabaseAdmin.from("trigger_rules").delete().eq("id", id)
+      .or(auth.workspace?.id ? `workspace_id.eq.${auth.workspace.id},channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})` : `channel_id.in.(${auth.channelIds.length ? auth.channelIds.join(",") : "00000000-0000-0000-0000-000000000000"})`);
     return NextResponse.json({ success: true, message: "Rule deleted successfully" });
   } catch (error: unknown) {
     console.error("Delete rule error:", error);
