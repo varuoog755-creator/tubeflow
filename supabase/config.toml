@@ -1,0 +1,5 @@
+# Supabase CLI configuration.
+# project_id is the dashboard reference (Settings -> General -> Reference ID).
+# Do NOT put the database password or access token here - both are supplied as
+# CI secrets at runtime.
+project_id = "tusyzwhocjikonvqwgsq"

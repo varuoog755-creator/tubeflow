@@ -24,12 +24,13 @@ CREATE TABLE IF NOT EXISTS public.workspace_members (
 );
 
 -- 3. Enhance YouTube Channels Table
+-- NOTE: public.trigger_rules must be created before any ALTER against it, so its
+-- columns are declared inline in the CREATE TABLE below rather than here.
 ALTER TABLE public.youtube_channels ADD COLUMN IF NOT EXISTS workspace_id UUID REFERENCES public.workspaces(id) ON DELETE SET NULL;
 ALTER TABLE public.youtube_channels ADD COLUMN IF NOT EXISTS subscriber_count BIGINT DEFAULT 0;
 ALTER TABLE public.youtube_channels ADD COLUMN IF NOT EXISTS video_count BIGINT DEFAULT 0;
 ALTER TABLE public.youtube_channels ADD COLUMN IF NOT EXISTS view_count BIGINT DEFAULT 0;
 ALTER TABLE public.youtube_channels ADD COLUMN IF NOT EXISTS custom_url TEXT;
-ALTER TABLE public.trigger_rules ADD COLUMN IF NOT EXISTS keyword_match_operator TEXT DEFAULT 'ANY';
 
 -- 4. Trigger Rules (Upgraded Campaigns)
 CREATE TABLE IF NOT EXISTS public.trigger_rules (
