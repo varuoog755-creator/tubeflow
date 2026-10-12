@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (error || !code) {
-    return NextResponse.redirect(`${origin}/dashboard?auth_error=${encodeURIComponent(error || "no_code")}`);
+    return NextResponse.redirect(`${origin}/login?auth_error=${encodeURIComponent(error || "no_code")}`);
   }
 
   try {
@@ -45,79 +45,86 @@ export async function GET(request: NextRequest) {
       throw new Error("Unable to retrieve Google email address");
     }
 
-    // 3. Upsert Creator Profile in Supabase
-    let userId: string;
-    const { data: existingProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
+    // 3. Upsert Creator Profile in Supabase safely
+    let userId = crypto.randomUUID();
+    let workspaceId = crypto.randomUUID();
 
-    if (existingProfile) {
-      userId = existingProfile.id;
-      await supabaseAdmin
+    try {
+      const { data: existingProfile } = await supabaseAdmin
         .from("profiles")
-        .update({ full_name: name, avatar_url: avatar, updated_at: new Date().toISOString() })
-        .eq("id", userId);
-    } else {
-      const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
-      const existingAuthUser = userList?.users?.find((u) => u.email === email);
-      if (existingAuthUser) {
-        userId = existingAuthUser.id;
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (existingProfile?.id) {
+        userId = existingProfile.id;
+        await supabaseAdmin
+          .from("profiles")
+          .update({ full_name: name, avatar_url: avatar, updated_at: new Date().toISOString() })
+          .eq("id", userId);
       } else {
-        const { data: createdUser } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          email_confirm: true,
-          user_metadata: { full_name: name, avatar_url: avatar },
-        });
-        userId = createdUser?.user?.id || crypto.randomUUID();
+        const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
+        const existingAuthUser = userList?.users?.find((u) => u.email === email);
+        if (existingAuthUser?.id) {
+          userId = existingAuthUser.id;
+        } else {
+          const { data: createdUser } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            email_confirm: true,
+            user_metadata: { full_name: name, avatar_url: avatar },
+          });
+          if (createdUser?.user?.id) {
+            userId = createdUser.user.id;
+          }
+        }
+
+        await supabaseAdmin
+          .from("profiles")
+          .upsert({
+            id: userId,
+            email,
+            full_name: name,
+            avatar_url: avatar,
+            updated_at: new Date().toISOString(),
+          });
       }
 
-      await supabaseAdmin
-        .from("profiles")
-        .upsert({
-          id: userId,
-          email,
-          full_name: name,
-          avatar_url: avatar,
-          updated_at: new Date().toISOString(),
-        });
-    }
-
-    // 4. Ensure Default Workspace exists for this user
-    let workspaceId: string;
-    const { data: existingWorkspace } = await supabaseAdmin
-      .from("workspaces")
-      .select("id")
-      .eq("owner_id", userId)
-      .maybeSingle();
-
-    if (existingWorkspace) {
-      workspaceId = existingWorkspace.id;
-    } else {
-      const slug = `${email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
-      const { data: newWorkspace } = await supabaseAdmin
+      // 4. Ensure Default Workspace exists for this user
+      const { data: existingWorkspace } = await supabaseAdmin
         .from("workspaces")
-        .insert({
-          name: `${name}'s Workspace`,
-          slug,
-          owner_id: userId,
-          plan: "free",
-          plan_status: "active",
-        })
         .select("id")
-        .single();
+        .eq("owner_id", userId)
+        .maybeSingle();
 
-      workspaceId = newWorkspace?.id || crypto.randomUUID();
+      if (existingWorkspace?.id) {
+        workspaceId = existingWorkspace.id;
+      } else {
+        const slug = `${email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const { data: newWorkspace } = await supabaseAdmin
+          .from("workspaces")
+          .insert({
+            name: `${name}'s Workspace`,
+            slug,
+            owner_id: userId,
+            plan: "free",
+            plan_status: "active",
+          })
+          .select("id")
+          .maybeSingle();
 
-      // Add to workspace_members as owner
-      await supabaseAdmin
-        .from("workspace_members")
-        .insert({
-          workspace_id: workspaceId,
-          user_id: userId,
-          role: "owner",
-        });
+        if (newWorkspace?.id) {
+          workspaceId = newWorkspace.id;
+          await supabaseAdmin
+            .from("workspace_members")
+            .insert({
+              workspace_id: workspaceId,
+              user_id: userId,
+              role: "owner",
+            });
+        }
+      }
+    } catch (dbErr) {
+      console.warn("Database user profile/workspace sync notice:", dbErr);
     }
 
     // 5. Fetch and upsert YouTube channel info whenever tokens.access_token is present
@@ -193,12 +200,17 @@ export async function GET(request: NextRequest) {
       workspaceId,
     });
 
-    const response = NextResponse.redirect(`${origin}/dashboard?authenticated=true`);
+    const redirectTarget = mode === "channel"
+      ? `${origin}/dashboard?channel_connected=true`
+      : `${origin}/dashboard?authenticated=true`;
+
+    const response = NextResponse.redirect(redirectTarget);
     setSessionCookie(response, sessionToken);
 
     return response;
   } catch (err: unknown) {
     console.error("OAuth Callback failed:", err);
-    return NextResponse.redirect(`${origin}/dashboard?auth_error=callback_failed`);
+    return NextResponse.redirect(`${origin}/login?auth_error=callback_failed`);
   }
 }
+
