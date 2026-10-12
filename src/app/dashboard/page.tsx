@@ -1131,7 +1131,9 @@ export default function DashboardPage() {
                       <span>Sort:</span>
                       <select
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
+                        onChange={(e) =>
+                          setSortBy(e.target.value as "newest" | "intent" | "oldest")
+                        }
                         className="bg-transparent font-medium text-zinc-800 focus:outline-none cursor-pointer"
                       >
                         <option value="newest">Newest</option>
@@ -1958,7 +1960,7 @@ export default function DashboardPage() {
                                     ? "shorts"
                                     : rule.target_mode === "specific_videos"
                                     ? "single"
-                                    : rule.target_mode || "all"
+                                    : "all"
                                 );
                                 setSelectedVideoForRule(rule.target_video_ids?.[0] || "");
                                 setRuleTemplates((rule.reply_templates || []).join("\n"));
