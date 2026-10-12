@@ -310,41 +310,39 @@ export default function DashboardPage() {
         revenue: data.stats?.revenue ?? 0,
       });
 
-      // Load Tracked Links
-      try {
-        const linkRes = await fetch("/api/conversions");
-        if (linkRes.ok) {
-          const linkData = await linkRes.json();
-          setTrackedLinks(linkData.links || []);
-        }
-      } catch (err) {
-        // Non-blocking
-      }
+      // Render dashboard immediately with primary data
+      setLoading(false);
+      setIsRefreshing(false);
 
-      // Load Channel Videos and Per-Video Metrics
-      try {
-        setLoadingVideos(true);
-        const vidRes = await fetch("/api/channels/videos");
-        if (vidRes.ok) {
-          const vidData = await vidRes.json();
-          if (vidData.videos) {
-            setChannelVideos(vidData.videos);
-          } else {
-            setChannelVideos([]);
+      // Load Tracked Links non-blockingly
+      fetch("/api/conversions")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((linkData) => {
+          if (linkData?.links) {
+            setTrackedLinks(linkData.links);
           }
-          if (vidData.totals) {
+        })
+        .catch(() => {});
+
+      // Load Channel Videos and Per-Video Metrics non-blockingly
+      setLoadingVideos(true);
+      fetch("/api/channels/videos")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((vidData) => {
+          if (vidData?.videos) {
+            setChannelVideos(vidData.videos);
+          }
+          if (vidData?.totals) {
             setVideoStatsSummary(vidData.totals);
           }
-        }
-      } catch (vidErr) {
-        // Non-blocking
-      } finally {
-        setLoadingVideos(false);
-      }
+        })
+        .catch(() => {})
+        .finally(() => {
+          setLoadingVideos(false);
+        });
     } catch (err: unknown) {
       console.error("Dashboard fetch error:", err);
       showNotification("error", "Could not sync dashboard data. Check connection.");
-    } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
