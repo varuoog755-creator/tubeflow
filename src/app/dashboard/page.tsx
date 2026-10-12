@@ -793,6 +793,7 @@ export default function DashboardPage() {
         );
         setIsRuleModalOpen(false);
         setEditingRule(null);
+        setRuleName("");
         fetchDashboardData();
       } else {
         const data = await res.json();

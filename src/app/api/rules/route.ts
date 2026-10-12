@@ -11,32 +11,108 @@ import { detectIntent } from "@/lib/intent";
 
 export const dynamic = "force-dynamic";
 
+function isValidUuid(id: unknown): id is string {
+  return (
+    typeof id === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+  );
+}
+
 // Helper: resolve user profile and workspace
-async function getAuthenticatedUser(_request: NextRequest) {
-  const session = await getSession();
+async function getAuthenticatedUser(request?: NextRequest) {
+  const session = await getSession(request);
   if (!session?.email) return null;
-  const email = session.email;
+  const email = session.email.toLowerCase().trim();
 
-  const { data: profile } = await supabaseAdmin
-    .from("profiles")
-    .select("id, email, full_name")
-    .eq("email", email)
-    .maybeSingle();
+  // 1. Try finding profile by ID first, then by email
+  let profile: { id: string; email: string; full_name?: string | null } | null = null;
 
-  if (!profile) return null;
+  if (isValidUuid(session.userId)) {
+    const { data: pById } = await supabaseAdmin
+      .from("profiles")
+      .select("id, email, full_name")
+      .eq("id", session.userId)
+      .maybeSingle();
+    profile = pById;
+  }
 
-  const { data: workspace } = await supabaseAdmin
-    .from("workspaces")
-    .select("id, owner_id")
-    .eq("owner_id", profile.id)
-    .maybeSingle();
+  if (!profile) {
+    const { data: pByEmail } = await supabaseAdmin
+      .from("profiles")
+      .select("id, email, full_name")
+      .ilike("email", email)
+      .maybeSingle();
+    profile = pByEmail;
+  }
 
+  // Auto-upsert profile if not yet in database
+  if (!profile) {
+    const userId = isValidUuid(session.userId) ? session.userId : crypto.randomUUID();
+    const fullName = session.fullName || (email.includes("@") ? email.split("@")[0] : "Creator");
+    const { data: createdProfile } = await supabaseAdmin
+      .from("profiles")
+      .upsert({
+        id: userId,
+        email,
+        full_name: fullName,
+        updated_at: new Date().toISOString(),
+      })
+      .select("id, email, full_name")
+      .maybeSingle();
+
+    profile = createdProfile || {
+      id: userId,
+      email,
+      full_name: fullName,
+    };
+  }
+
+  // 2. Ensure workspace is resolved
+  let workspace: { id: string; owner_id: string } | null = null;
+  if (profile?.id) {
+    const { data: wsByOwner } = await supabaseAdmin
+      .from("workspaces")
+      .select("id, owner_id")
+      .eq("owner_id", profile.id)
+      .maybeSingle();
+    workspace = wsByOwner;
+  }
+
+  if (!workspace && isValidUuid(session.workspaceId)) {
+    const { data: wsById } = await supabaseAdmin
+      .from("workspaces")
+      .select("id, owner_id")
+      .eq("id", session.workspaceId)
+      .maybeSingle();
+    workspace = wsById;
+  }
+
+  if (!workspace && profile?.id) {
+    const wsId = isValidUuid(session.workspaceId) ? session.workspaceId : crypto.randomUUID();
+    const slug = `${email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const { data: newWs } = await supabaseAdmin
+      .from("workspaces")
+      .insert({
+        id: wsId,
+        name: `${profile.full_name || "Creator"}'s Workspace`,
+        slug,
+        owner_id: profile.id,
+        plan: "free",
+        plan_status: "active",
+      })
+      .select("id, owner_id")
+      .maybeSingle();
+
+    workspace = newWs || { id: wsId, owner_id: profile.id };
+  }
+
+  // 3. Resolve channels
   const { data: channels } = await supabaseAdmin
     .from("youtube_channels")
     .select("id, channel_id, channel_title")
     .eq("user_id", profile.id);
 
-  const channelIds = (channels || []).map((c) => c.id);
+  const channelIds = (channels || []).map((c) => c.id).filter(isValidUuid);
 
   return {
     profile,
@@ -262,11 +338,15 @@ export async function POST(request: NextRequest) {
       ? [targetVideoId]
       : [];
 
-    // Selected channel or fallback to user's first channel
-    const targetChannelId = channelId || auth.channels[0]?.id || null;
+    // Selected channel or fallback to user's first channel (must be valid UUID or null)
+    const targetChannelId = isValidUuid(channelId)
+      ? channelId
+      : isValidUuid(auth.channels[0]?.id)
+      ? auth.channels[0].id
+      : null;
 
     const insertPayload: Record<string, unknown> = {
-      workspace_id: auth.workspace?.id || null,
+      workspace_id: isValidUuid(auth.workspace?.id) ? auth.workspace.id : null,
       channel_id: targetChannelId,
       name: name.trim(),
       keywords: keywordList,
@@ -402,7 +482,9 @@ export async function PUT(request: NextRequest) {
     if (ctaUrl !== undefined) updatePayload.cta_url = ctaUrl ? ctaUrl.trim() : null;
     if (intentCategory !== undefined) updatePayload.intent_category = intentCategory;
     if (delaySeconds !== undefined) updatePayload.delay_seconds = parseInt(delaySeconds, 10);
-    if (channelId !== undefined) updatePayload.channel_id = channelId;
+    if (channelId !== undefined) {
+      updatePayload.channel_id = isValidUuid(channelId) ? channelId : null;
+    }
     if (is_active !== undefined) updatePayload.is_active = is_active;
 
     let { data: updated, error } = await supabaseAdmin
