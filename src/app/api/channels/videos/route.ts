@@ -5,6 +5,20 @@ import { getValidYoutubeClient } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Strips OAuth credentials before a channel row is serialised to the browser.
+ * The route used to `return { channel }` with the whole database row, which
+ * published `access_token` and `refresh_token` to any signed-in user. The
+ * refresh token is long lived, so that is account-takeover grade, not cosmetic.
+ */
+function publicChannel<T extends Record<string, unknown>>(channel: T): Omit<T, "access_token" | "refresh_token"> {
+  if (!channel) return channel;
+  const safe: Record<string, unknown> = { ...channel };
+  delete safe.access_token;
+  delete safe.refresh_token;
+  return safe as Omit<T, "access_token" | "refresh_token">;
+}
+
 export interface ChannelVideoItem {
   id: string;
   title: string;
@@ -60,7 +74,7 @@ export async function GET(request: NextRequest) {
 
     if (!channel || !channel.access_token || channel.access_token === "demo") {
       return NextResponse.json({
-        channel: channel || null,
+        channel: publicChannel(channel || {}),
         videos: [],
         totals: { totalVideos: 0, totalViews: 0, totalLikes: 0, totalComments: 0 },
         notice: "Connect a real YouTube channel to load live video metrics.",
@@ -102,7 +116,7 @@ export async function GET(request: NextRequest) {
 
       if (videoIds.length === 0) {
         return NextResponse.json({
-          channel,
+          channel: publicChannel(channel),
           videos: [],
           totals: { totalVideos: 0, totalViews: 0, totalLikes: 0, totalComments: 0 },
         });
@@ -138,7 +152,7 @@ export async function GET(request: NextRequest) {
       });
 
       return NextResponse.json({
-        channel,
+        channel: publicChannel(channel),
         videos: liveVideos,
         totals: {
           totalVideos: liveVideos.length,
@@ -150,7 +164,7 @@ export async function GET(request: NextRequest) {
     } catch (apiError) {
       console.error("Live YouTube videos fetch failed:", apiError);
       return NextResponse.json({
-        channel,
+        channel: publicChannel(channel),
         videos: [],
         totals: { totalVideos: 0, totalViews: 0, totalLikes: 0, totalComments: 0 },
         error: "Live YouTube video metrics are temporarily unavailable. Reconnect the channel or retry shortly.",
