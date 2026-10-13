@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -45,8 +45,11 @@ export const metadata: Metadata = {
     url: "https://bigredhub.info",
     siteName: "BigRedHub",
     title: "BigRedHub — Turn YouTube Shorts Comments Into Instant Sales & Leads",
+    // No response-time figure here on purpose. The dashboard's "Avg Speed: 1.4s"
+    // was removed in #8 for having no data source, and a share card is the one
+    // place that text outlives the tab it was read in.
     description:
-      "Automated comment-to-link engine for creators and brands. Auto-reply in 1.4 seconds with trackable product links and AI buyer intent detection.",
+      "Automated comment-to-link engine for creators and brands. Detect buyer intent, reply automatically, and send every comment to a trackable product link.",
   },
   twitter: {
     card: "summary_large_image",
@@ -68,6 +71,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://bigredhub.info",
   },
+};
+
+// Deep red sampled from brand/bigredhub-mark-512.png so the mobile browser
+// chrome matches the icon rather than defaulting to black.
+export const viewport: Viewport = {
+  themeColor: "#CC213F",
 };
 
 const jsonLd = {
