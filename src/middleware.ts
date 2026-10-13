@@ -9,7 +9,7 @@ function getJwtSecret(): Uint8Array | null {
 
 export async function middleware(request: NextRequest) {
   const secret = getJwtSecret();
-  const token = request.cookies.get("tf_session_token")?.value;
+  const token = request.cookies.get("brh_session_token")?.value;
   let authenticated = false;
 
   if (secret && token) {
@@ -31,8 +31,8 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", request.nextUrl.pathname);
     const response = NextResponse.redirect(loginUrl);
-    response.cookies.delete("tf_session_token");
-    response.cookies.delete("tf_user_email");
+    response.cookies.delete("brh_session_token");
+    response.cookies.delete("brh_user_email");
     return response;
   }
 

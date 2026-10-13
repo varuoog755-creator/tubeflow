@@ -1,7 +1,10 @@
 import { SignJWT, jwtVerify } from "jose";
 import type { NextResponse } from "next/server";
 
-const SESSION_COOKIE_NAME = "tf_session_token";
+// Renamed from `tf_session_token` (TubeFlow initials) during the BigRedHub
+// rebrand. This is a deliberate break: the old name is cleared rather than
+// migrated, so anyone signed in before the rename has to sign in again once.
+const SESSION_COOKIE_NAME = "brh_session_token";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
 function getJwtSecret(): Uint8Array {
@@ -81,6 +84,9 @@ export function setSessionCookie(response: NextResponse, token: string): void {
 
 export function clearSessionCookie(response: NextResponse): void {
   response.cookies.delete(SESSION_COOKIE_NAME);
-  // Clear old compatibility identity cookie so it cannot be reused by older code.
-  response.cookies.delete("tf_user_email");
+  // Plain-text identity cookie read by /api/conversions and /api/logs to
+  // attribute server-side rows to a workspace when the signed session is
+  // unavailable. It carries no claims of its own, but it is still an identity
+  // handle, so it goes whenever the session does.
+  response.cookies.delete("brh_user_email");
 }
