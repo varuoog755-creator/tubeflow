@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { getOAuth2Client, getYoutubeClient } from "@/lib/youtube";
 import { supabaseAdmin } from "@/lib/supabase";
 import { createSessionToken, setSessionCookie } from "@/lib/session";
+import { canConnectChannel, queueNotice } from "@/lib/limits";
 import { google } from "googleapis";
 
 export const dynamic = "force-dynamic";
@@ -175,27 +176,59 @@ export async function GET(request: NextRequest) {
             }
           }
 
-          await supabaseAdmin
+          // A plan covers a fixed number of channels. Nothing checked this
+          // before, so the published channel limits were decorative.
+          //
+          // Re-running the callback for a channel this workspace already has is
+          // a token refresh, not a new connection, so it must not be counted -
+          // otherwise a routine re-auth would eventually lock the owner out of
+          // a channel they already paid to connect.
+          const { data: existingChannel } = await supabaseAdmin
             .from("youtube_channels")
-            .upsert(
-              {
-                user_id: userId,
-                workspace_id: workspaceId,
-                channel_id: channelId,
-                channel_title: channelTitle,
-                thumbnail_url: channelThumbnail,
-                custom_url: customUrl,
-                subscriber_count: subCount,
-                video_count: videoCount,
-                view_count: viewCount,
-                access_token: tokens.access_token,
-                refresh_token: refreshTokenToSave,
-                token_expiry: tokenExpiry,
-                is_active: true,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: "user_id,channel_id" }
+            .select("id")
+            .eq("user_id", userId)
+            .eq("channel_id", channelId)
+            .maybeSingle();
+
+          const allowance = await canConnectChannel(
+            workspaceId,
+            Boolean(existingChannel)
+          );
+
+          if (!allowance.allowed) {
+            await queueNotice(
+              userId,
+              workspaceId,
+              `Your ${allowance.plan.name} plan includes ${allowance.limit} channel${
+                allowance.limit === 1 ? "" : "s"
+              }. Disconnect a channel or upgrade to connect ${channelTitle}.`
             );
+            // The sign-in itself succeeded, so the session is still issued and
+            // the owner lands in a working dashboard - the channel is simply not
+            // attached, and the dashboard explains why.
+          } else {
+            await supabaseAdmin
+              .from("youtube_channels")
+              .upsert(
+                {
+                  user_id: userId,
+                  workspace_id: workspaceId,
+                  channel_id: channelId,
+                  channel_title: channelTitle,
+                  thumbnail_url: channelThumbnail,
+                  custom_url: customUrl,
+                  subscriber_count: subCount,
+                  video_count: videoCount,
+                  view_count: viewCount,
+                  access_token: tokens.access_token,
+                  refresh_token: refreshTokenToSave,
+                  token_expiry: tokenExpiry,
+                  is_active: true,
+                  updated_at: new Date().toISOString(),
+                },
+                { onConflict: "user_id,channel_id" }
+              );
+          }
         }
       } catch (ytError) {
         console.warn("YouTube channel fetch during login warning:", ytError);

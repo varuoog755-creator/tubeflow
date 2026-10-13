@@ -10,25 +10,14 @@ export async function GET(request: NextRequest) {
     const email = session?.email;
 
     if (!email) {
-      return NextResponse.json({
-        authenticated: false,
-        channel: null,
-        channels: [],
-        rules: [],
-        logs: [],
-        stats: {
-          connectedChannels: 0,
-          commentsMonitored: 0,
-          commentsMatched: 0,
-          repliesSent: 0,
-          failedReplies: 0,
-          spamBlocked: 0,
-          replySuccessRate: 0,
-          clicks: 0,
-          conversions: 0,
-          revenue: 0,
-        },
-      });
+      // Its sibling endpoints (/api/rules, /api/subscription) answer 401 when
+      // there is no session. This one answered 200 with a zeroed payload, so a
+      // caller could not tell "signed out" from "signed in with no data".
+      // Nothing leaked either way; the contract was just ambiguous.
+      return NextResponse.json(
+        { authenticated: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     // 1. Get or create Profile
@@ -181,6 +170,18 @@ const totalAttempts = repliesSent + failedReplies;
   const replySuccessRate =
     totalAttempts > 0 ? Math.round((repliesSent / totalAttempts) * 100) : 0;
 
+    // Notices the server raised for this workspace. The poll worker and the OAuth
+  // callback have been writing rows here since the table existed; nothing ever
+  // read them, so a quota warning or a refused channel reached the database and
+  // then nowhere else.
+  const { data: unreadNotices } = await supabaseAdmin
+    .from("notifications")
+    .select("id, type, title, message")
+    .eq("workspace_id", workspace?.id || "")
+    .eq("is_read", false)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
     return NextResponse.json({
       authenticated: true,
       profile,
@@ -189,6 +190,7 @@ const totalAttempts = repliesSent + failedReplies;
       channels: channels || [],
       rules,
       logs,
+      notices: unreadNotices || [],
       stats: {
         connectedChannels: channels?.length || 0,
         commentsMonitored,
@@ -205,5 +207,39 @@ const totalAttempts = repliesSent + failedReplies;
   } catch (error: unknown) {
     console.error("Dashboard metrics error:", error);
     return NextResponse.json({ error: "Failed to fetch dashboard data" }, { status: 500 });
+  }
+}
+
+// POST marks notices as read. Kept on this route because it is already the
+// dashboard's authenticated, workspace-scoped endpoint.
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session?.userId || !session.workspaceId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = (await request.json().catch(() => ({}))) as { noticeIds?: string[] };
+    const ids = Array.isArray(body.noticeIds) ? body.noticeIds.filter(Boolean) : [];
+    if (ids.length === 0) {
+      return NextResponse.json({ success: true, dismissed: 0 });
+    }
+
+    // Scoped by workspace as well as id, so a caller cannot dismiss another
+    // workspace's rows by guessing a UUID.
+    const { error } = await supabaseAdmin
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("workspace_id", session.workspaceId)
+      .in("id", ids);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, dismissed: ids.length });
+  } catch (error: unknown) {
+    console.error("Dismiss notices error:", error);
+    return NextResponse.json({ error: "Failed to dismiss notices" }, { status: 500 });
   }
 }

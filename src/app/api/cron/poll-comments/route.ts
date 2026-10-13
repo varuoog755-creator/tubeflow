@@ -4,6 +4,7 @@ import { getValidYoutubeClient, isYoutubeQuotaError, isYoutubeTokenRevoked } fro
 import { detectIntent } from "@/lib/intent";
 import { renderReply, evaluateRuleMatch } from "@/lib/reply-engine";
 import { getSession } from "@/lib/session";
+import { getReplyAllowance, recordUsage, checkRuleGuard } from "@/lib/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,10 @@ export async function GET(request: NextRequest) {
 
     let confirmedRepliesCount = 0;
     let commentsInspectedCount = 0;
+    let skippedByGuard = 0;
+    // Per-workspace reply tally, so usage_metering rows are attributed to the
+    // account that actually posted rather than to every account the run touched.
+    const repliesByWorkspace = new Map<string, number>();
     const executionResults = [];
 
     for (const channel of channels) {
@@ -157,6 +162,44 @@ export async function GET(request: NextRequest) {
           }
 
           if (matchedRule) {
+            // Plan reply allowance. Checked immediately before the insert, not
+            // once per run, so a single run cannot overshoot by posting every
+            // remaining thread after the last reply.
+            if (channel.workspace_id) {
+              const allowance = await getReplyAllowance(channel.workspace_id);
+              if (allowance.exhausted) {
+                executionResults.push({
+                  channel: channel.channel_title,
+                  status: "plan_limit_reached",
+                  limit: allowance.limit,
+                  used: allowance.used,
+                });
+                await supabaseAdmin.from("notifications").insert({
+                  user_id: channel.user_id,
+                  workspace_id: channel.workspace_id,
+                  type: "quota_warning",
+                  title: "Reply limit reached",
+                  message: `Your ${allowance.plan.name} plan includes ${allowance.limit} replies this period. All ${allowance.limit} are used, so no further replies will post until the period resets or you upgrade.`,
+                });
+                break; // stop this channel for this run
+              }
+            }
+
+            // The creator's own safety settings. These were editable in the rule editor
+            // and stored on the row, but the reply path never read them, so a
+            // "10 replies a day / 60 minute cooldown" rule behaved like an
+            // unlimited one. Checked per matched rule, not per run.
+            const guard = await checkRuleGuard(channel.id, {
+              id: matchedRule.id,
+              max_replies_per_day: matchedRule.max_replies_per_day,
+              cooldown_minutes: matchedRule.cooldown_minutes,
+            });
+
+            if (!guard.allowed) {
+              skippedByGuard++;
+              continue;
+            }
+
             const template =
               matchedRule.reply_templates?.[
                 Math.floor(Math.random() * matchedRule.reply_templates.length)
@@ -186,6 +229,12 @@ export async function GET(request: NextRequest) {
               youtubeReplyId = insertRes.data.id || null;
               if (youtubeReplyId) {
                 confirmedRepliesCount++;
+                if (channel.workspace_id) {
+                  repliesByWorkspace.set(
+                    channel.workspace_id,
+                    (repliesByWorkspace.get(channel.workspace_id) || 0) + 1
+                  );
+                }
               } else {
                 replyStatus = "error";
                 replyErrorMessage = "YouTube API returned empty comment ID";
@@ -249,10 +298,25 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // usage_metering has had a unique (workspace_id, period_start) constraint
+    // since the first migration and never had an insert. Recording it after the
+    // run keeps the period row present for billing without putting a write on
+    // the per-reply hot path.
+    //
+    // Counted per workspace (see the declaration near the top of this handler):
+    // one cron run sweeps every workspace, so attributing the run total to each
+    // of them would inflate every account but the one that posted last.
+    await Promise.all(
+      Array.from(repliesByWorkspace.entries()).map(([workspaceId, replies]) =>
+        recordUsage(workspaceId, { replies, apiCalls: 1 })
+      )
+    );
+
     return NextResponse.json({
       success: true,
       confirmedRepliesCount,
       commentsInspectedCount,
+      skippedByGuard,
       results: executionResults,
       timestamp: new Date().toISOString(),
     });
