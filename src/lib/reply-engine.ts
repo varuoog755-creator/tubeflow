@@ -66,23 +66,75 @@ export function validateReplyTemplate(template: string): { valid: boolean; error
     return { valid: false, error: "Unclosed Spintax opening brace '{' found in template" };
   }
 
+  // Catch the known-variable typo that produces literal placeholder text in
+  // public comments: `{cta_url}` instead of `{{cta_url}}`. Brace balance alone
+  // cannot see the difference, so it used to pass validation and post as-is.
+  for (const name of KNOWN_VARIABLE_NAMES) {
+    // Lookarounds keep the check off the inner braces of a correct {{name}}.
+    const singleBrace = new RegExp(`(?<!\\{)\\{\\s*${name}\\s*\\}(?!\\})`, "i");
+    if (singleBrace.test(template)) {
+      return {
+        valid: false,
+        error: `"${name}" must be written as {{${name}}} with double braces. The single-brace form {${name}} is not substituted and would be published literally.`,
+      };
+    }
+  }
+
   return { valid: true };
 }
 
+// Every placeholder the renderer knows how to fill. Anything else is left
+// untouched so a typo stays visible in the preview instead of silently
+// becoming an empty string.
+const KNOWN_VARIABLE_NAMES = [
+  "first_name",
+  "channel_name",
+  "video_title",
+  "cta_url",
+  "discount_code",
+] as const;
+
+export type VariableName = (typeof KNOWN_VARIABLE_NAMES)[number];
+
+// Matches {{name}} and {name}. Whitespace inside the braces is tolerated.
+const VARIABLE_PATTERN = /\{\{\s*([a-z0-9_]+)\s*\}\}|\{\s*([a-z0-9_]+)\s*\}/gi;
+
 export function parseSpintax(text: string): string {
   // Replace spintax {option1|option2} requiring a pipe symbol '|' so {{variable}} is preserved
-  const spintaxRegex = /\{([^{}|]+\|[^{}]+)\}/g;
   let result = text;
   let iteration = 0;
-  // Handle nested or multiple Spintax blocks up to 5 passes
-  while (spintaxRegex.test(result) && iteration < 5) {
-    result = result.replace(spintaxRegex, (match, contents) => {
+  // Handle nested or multiple Spintax blocks up to 5 passes.
+  // The regex is rebuilt each pass: a /g regex carries `lastIndex` between
+  // `.test()` calls, which makes the loop condition depend on how far the
+  // previous probe advanced instead of on the text.
+  while (iteration < 5) {
+    const probe = /\{([^{}|]+\|[^{}]+)\}/.exec(result);
+    if (!probe) break;
+    result = result.replace(/\{([^{}|]+\|[^{}]+)\}/g, (_match, contents: string) => {
       const choices = contents.split("|");
       return choices[Math.floor(Math.random() * choices.length)];
     });
     iteration++;
   }
   return result;
+}
+
+/**
+ * Returns any placeholder-looking token still present in a rendered reply.
+ *
+ * A template written as `{first_name}` rather than `{{first_name}}` passes the
+ * brace-balance check but is never substituted, so the literal text used to be
+ * posted to a real viewer's public comment. Callers use this to refuse to
+ * publish instead.
+ */
+export function findUnresolvedPlaceholders(text: string): string[] {
+  const found = new Set<string>();
+  const re = new RegExp(VARIABLE_PATTERN.source, VARIABLE_PATTERN.flags);
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    found.add((match[1] || match[2] || "").toLowerCase());
+  }
+  return Array.from(found);
 }
 
 export function renderReply(template: string, context: ReplyContext): string {
@@ -92,11 +144,24 @@ export function renderReply(template: string, context: ReplyContext): string {
   const rawAuthor = (context.authorName || "").trim();
   const firstName = rawAuthor.split(/[\s_.]+/)[0] || "Friend";
 
-  reply = reply.replace(/{{first_name}}/gi, firstName);
-  reply = reply.replace(/{{channel_name}}/gi, context.channelTitle || "our channel");
-  reply = reply.replace(/{{video_title}}/gi, context.videoTitle || "this video");
-  reply = reply.replace(/{{cta_url}}/gi, context.ctaUrl || "");
-  reply = reply.replace(/{{discount_code}}/gi, context.discountCode || "VIP20");
+  // Both {{name}} and {name} are accepted. Single-brace templates were the
+  // original documented style and already exist in saved rules, so they keep
+  // rendering rather than leaking into public comments.
+  const values: Record<string, string> = {
+    first_name: firstName,
+    channel_name: context.channelTitle || "our channel",
+    video_title: context.videoTitle || "this video",
+    cta_url: context.ctaUrl || "",
+    discount_code: context.discountCode || "VIP20",
+  };
+
+  reply = reply.replace(
+    new RegExp(VARIABLE_PATTERN.source, VARIABLE_PATTERN.flags),
+    (token, doubled: string | undefined, single: string | undefined) => {
+      const key = (doubled || single || "").toLowerCase();
+      return Object.prototype.hasOwnProperty.call(values, key) ? values[key] : token;
+    }
+  );
 
   // Clean extra spaces if cta_url or video_title was omitted
   return reply.replace(/[ \t]+/g, " ").trim();

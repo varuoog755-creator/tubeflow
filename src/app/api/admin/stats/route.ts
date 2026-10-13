@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // 3. All Channels
     const { data: channels } = await supabaseAdmin
       .from("youtube_channels")
-      .select("id, user_id, channel_id, channel_title, custom_url, thumbnail_url, subscriber_count, video_count, view_count, is_active, access_token, created_at")
+      .select("id, user_id, channel_id, channel_title, custom_url, thumbnail_url, subscriber_count, video_count, view_count, is_active, created_at")
       .order("created_at", { ascending: false });
 
     // 4. All Processed Comments & Replies

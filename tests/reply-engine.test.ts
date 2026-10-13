@@ -6,6 +6,7 @@ import {
   validateCtaUrl,
   validateReplyTemplate,
   parseSpintax,
+  findUnresolvedPlaceholders,
 } from "../src/lib/reply-engine.ts";
 
 test("Rule Evaluation: Negative keyword has absolute precedence", () => {
@@ -129,4 +130,61 @@ test("Reply Renderer: safely substitutes Spintax and context variables", () => {
   });
 
   assert.match(reply, /^(Hey|Hi) Aman! Here is Best Laptops 2026 link: https:\/\/tubeflow\.in\/deals$/);
+});
+
+// Regression: on 2026-10-08 a rule stored as `{first_name}` / `{cta_url}` passed
+// the brace-balance check, was never substituted, and the literal text
+// "Hey {first_name}! Here is the official link: {cta_url}" was published as a
+// public reply on a real channel.
+test("Template Validation: rejects single-brace known variables", () => {
+  const bad = validateReplyTemplate("Hey {first_name}! Grab: {cta_url}");
+  assert.equal(bad.valid, false);
+  assert.match(String(bad.error), /double braces/i);
+
+  assert.equal(validateReplyTemplate("Hey {{first_name}}! Grab: {{cta_url}}").valid, true);
+});
+
+test("Reply Renderer: substitutes single-brace variables instead of leaking them", () => {
+  const reply = renderReply("Hey {first_name}! Here is the official link: {cta_url}", {
+    authorName: "@bhartiiiii2",
+    channelTitle: "dream aura",
+    ctaUrl: "https://bigredhub.info",
+  });
+
+  assert.equal(reply, "Hey @bhartiiiii2! Here is the official link: https://bigredhub.info");
+  assert.deepEqual(findUnresolvedPlaceholders(reply), []);
+});
+
+test("Placeholder guard: flags whatever the renderer could not fill", () => {
+  assert.deepEqual(findUnresolvedPlaceholders("Grab it: https://bigredhub.info"), []);
+
+  // Unknown variable, double brace: still unfilled, so the poll must refuse it.
+  assert.deepEqual(findUnresolvedPlaceholders("Hi {{nope}}"), ["nope"]);
+  // Single-brace unknown variable.
+  assert.deepEqual(findUnresolvedPlaceholders("Hi {nope}"), ["nope"]);
+  // Mixed case and padding are both recognised.
+  assert.deepEqual(findUnresolvedPlaceholders("Hi {{ CTA_URL }} and {{first_name}}"), [
+    "cta_url",
+    "first_name",
+  ]);
+});
+
+test("Placeholder guard: a well formed template produces nothing to block", () => {
+  const reply = renderReply("{Welcome|Hey} {{first_name}}! Use {{discount_code}}: {{cta_url}}", {
+    authorName: "Rohit Sharma",
+    channelTitle: "dream aura",
+    ctaUrl: "https://bigredhub.info",
+  });
+
+  assert.match(reply, /^(Welcome|Hey) Rohit! Use VIP20: https:\/\/bigredhub\.info$/);
+  assert.deepEqual(findUnresolvedPlaceholders(reply), []);
+});
+
+test("Spintax: resolves every block and leaves variables for the renderer", () => {
+  // The regression here is the /g lastIndex drift that could stop after one pass.
+  const out = parseSpintax("{a|b} and {c|d} and {e|f} and {g|h}");
+  assert.equal(out.includes("{"), false);
+  assert.equal(out.split(" and ").length, 4);
+
+  assert.equal(parseSpintax("Hello {{first_name}} {{cta_url}}"), "Hello {{first_name}} {{cta_url}}");
 });

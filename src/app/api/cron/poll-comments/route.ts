@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getValidYoutubeClient, isYoutubeQuotaError, isYoutubeTokenRevoked } from "@/lib/youtube";
 import { detectIntent } from "@/lib/intent";
-import { renderReply, evaluateRuleMatch } from "@/lib/reply-engine";
+import { renderReply, evaluateRuleMatch, findUnresolvedPlaceholders } from "@/lib/reply-engine";
 import { getSession } from "@/lib/session";
 import { getReplyAllowance, recordUsage, checkRuleGuard } from "@/lib/limits";
 
@@ -216,49 +216,65 @@ export async function GET(request: NextRequest) {
             let replyStatus: "replied" | "error" = "replied";
             let replyErrorMessage: string | null = null;
 
-            try {
-              const insertRes = await youtube.comments.insert({
-                part: ["snippet"],
-                requestBody: {
-                  snippet: {
-                    parentId: commentId,
-                    textOriginal: replyText,
-                  },
-                },
-              });
-              youtubeReplyId = insertRes.data.id || null;
-              if (youtubeReplyId) {
-                confirmedRepliesCount++;
-                if (channel.workspace_id) {
-                  repliesByWorkspace.set(
-                    channel.workspace_id,
-                    (repliesByWorkspace.get(channel.workspace_id) || 0) + 1
-                  );
-                }
-              } else {
-                replyStatus = "error";
-                replyErrorMessage = "YouTube API returned empty comment ID";
-              }
-            } catch (replyError: unknown) {
+            // Last line of defence before a public write. A template that still
+            // contains a placeholder after rendering means the rule is
+            // malformed, and posting it would show the viewer literal
+            // "{{cta_url}}" text. Record the failure instead and post nothing.
+            const unresolved = findUnresolvedPlaceholders(replyText);
+            if (unresolved.length > 0) {
               replyStatus = "error";
-              replyErrorMessage =
-                replyError instanceof Error ? replyError.message : String(replyError);
+              replyErrorMessage = `Reply not sent: template left ${unresolved
+                .map((p) => `{{${p}}}`)
+                .join(", ")} unsubstituted. Fix the reply template for rule "${matchedRule.name}".`;
               console.warn(
-                `YouTube API comment insert failure on channel ${channel.channel_title}:`,
+                `Blocked a malformed reply on channel ${channel.channel_title}:`,
                 replyErrorMessage
               );
-
-              if (isYoutubeQuotaError(replyError)) {
-                // Log notification about quota exhaustion
-                await supabaseAdmin.from("notifications").insert({
-                  user_id: channel.user_id,
-                  workspace_id: channel.workspace_id,
-                  type: "quota_warning",
-                  title: "YouTube API Quota Reached",
-                  message:
-                    "Daily YouTube API quota limit reached. Automated replies will resume on quota reset.",
+            } else {
+              try {
+                const insertRes = await youtube.comments.insert({
+                  part: ["snippet"],
+                  requestBody: {
+                    snippet: {
+                      parentId: commentId,
+                      textOriginal: replyText,
+                    },
+                  },
                 });
-                break; // Stop further requests for this channel in this run
+                youtubeReplyId = insertRes.data.id || null;
+                if (youtubeReplyId) {
+                  confirmedRepliesCount++;
+                  if (channel.workspace_id) {
+                    repliesByWorkspace.set(
+                      channel.workspace_id,
+                      (repliesByWorkspace.get(channel.workspace_id) || 0) + 1
+                    );
+                  }
+                } else {
+                  replyStatus = "error";
+                  replyErrorMessage = "YouTube API returned empty comment ID";
+                }
+              } catch (replyError: unknown) {
+                replyStatus = "error";
+                replyErrorMessage =
+                  replyError instanceof Error ? replyError.message : String(replyError);
+                console.warn(
+                  `YouTube API comment insert failure on channel ${channel.channel_title}:`,
+                  replyErrorMessage
+                );
+
+                if (isYoutubeQuotaError(replyError)) {
+                  // Log notification about quota exhaustion
+                  await supabaseAdmin.from("notifications").insert({
+                    user_id: channel.user_id,
+                    workspace_id: channel.workspace_id,
+                    type: "quota_warning",
+                    title: "YouTube API Quota Reached",
+                    message:
+                      "Daily YouTube API quota limit reached. Automated replies will resume on quota reset.",
+                  });
+                  break; // Stop further requests for this channel in this run
+                }
               }
             }
 
