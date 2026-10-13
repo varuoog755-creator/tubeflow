@@ -548,9 +548,9 @@ export default function AdminPage() {
                                 onChange={(e) => handleUpdateUserPlan(user.id, e.target.value)}
                                 className="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer disabled:opacity-50"
                               >
-                                <option value="free">Starter Free</option>
-                                <option value="growth">Pro Growth</option>
-                                <option value="scale">Agency Scale</option>
+                                <option value="free">Free</option>
+                                <option value="growth">Pro</option>
+                                <option value="scale">Business</option>
                               </select>
                               {updatingUserId === user.id && (
                                 <RefreshCw className="w-3 h-3 text-red-400 animate-spin" />

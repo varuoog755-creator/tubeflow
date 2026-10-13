@@ -135,9 +135,14 @@ export default function PrivacyPage() {
           </p>
           <p>
             <strong className="text-white">Visitor telemetry on your tracked
-            links.</strong> Device type, country, HTTP referrer, a salted hash of the
-            visitor&rsquo;s IP address, and browser user-agent string. The IP hash is
-            one-way and is not reversible back into an address.
+            links.</strong> When somebody clicks one of your tracked links we
+            record the browser user-agent string, the HTTP referrer it arrived
+            with, and whether it looked like a desktop or a mobile device. We do
+            not store the visitor&rsquo;s IP address, and we do not geolocate it.
+            The <code className="text-white font-mono">country</code> and{" "}
+            <code className="text-white font-mono">ip_hash</code> columns on that
+            table exist in the schema but are never written to, so in practice
+            nothing derived from an IP address reaches this system.
           </p>
           <p>
             <strong className="text-white">Usage data.</strong> Number of channels

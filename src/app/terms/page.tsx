@@ -235,15 +235,18 @@ export default function TermsPage() {
 
         <Section id="plans" heading="8. Plans, Limits and Billing">
           <p>
-            The Service is offered in plans described on our pricing page. Each plan
-            carries a limit on the number of YouTube channels you may connect and on
-            the number of automated replies you may post per billing period. Those
-            limits are shown on the pricing page and in your dashboard.
+            The Service is offered in three plans &mdash; Free, Pro and Business
+            &mdash; described on our pricing page. A plan sets a limit on the
+            number of YouTube channels you may connect and on the number of
+            automated replies BigRedHub may post for your account in a billing
+            period. Those limits are on the pricing page, and they count replies
+            BigRedHub posts, not comments it merely sees.
           </p>
           <p>
-            We may change plan limits and pricing by updating the pricing page. If a
-            change reduces a limit you are already using, we will give you reasonable
-            notice before it takes effect and will not apply it mid-cycle.
+            We may change plan limits and pricing by updating the pricing page. If
+            a change reduces a limit you are already using, we will give you
+            reasonable notice before it takes effect and will not apply it
+            mid-cycle.
           </p>
           <p>
             Where a plan is paid, fees are billed in advance each cycle. You can

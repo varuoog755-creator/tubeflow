@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
         createdAt: p.created_at,
         workspaceId: ws?.id,
         plan: planId,
-        planName: PLAN_CONFIGS[planId]?.name || "Starter Free",
+        planName: PLAN_CONFIGS[planId]?.name || "Free",
         planStatus: ws?.plan_status || "active",
         channelCount: channelMap.get(p.id) || 0,
       };
