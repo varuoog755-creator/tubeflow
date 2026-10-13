@@ -174,9 +174,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const totalAttempts = repliesSent + failedReplies;
-    const replySuccessRate =
-      totalAttempts > 0 ? Math.round((repliesSent / totalAttempts) * 100) : 100;
+const totalAttempts = repliesSent + failedReplies;
+  // With no attempts there is no success rate. Returning 100 here made every
+  // fresh workspace advertise a perfect delivery record before a single reply
+  // had been sent.
+  const replySuccessRate =
+    totalAttempts > 0 ? Math.round((repliesSent / totalAttempts) * 100) : 0;
 
     return NextResponse.json({
       authenticated: true,

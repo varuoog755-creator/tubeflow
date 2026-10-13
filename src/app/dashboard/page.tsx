@@ -48,6 +48,15 @@ import {
   Layers,
 } from "lucide-react";
 
+// Single source of truth for links we hand to customers. Previously the
+// shortlink base was hardcoded to the old preview domain
+// (tubeflow-nine.vercel.app), so every tracked link pasted into a reply pointed
+// visitors at the wrong site. NEXT_PUBLIC_APP_URL is already the configured
+// production origin, so short links follow it wherever the app is deployed.
+const APP_URL = (
+  process.env.NEXT_PUBLIC_APP_URL || "https://bigredhub.info"
+).replace(/\/+$/, "");
+
 // Types
 interface Channel {
   id: string;
@@ -165,7 +174,10 @@ export default function DashboardPage() {
     repliesDelivered: 0,
     failedReplies: 0,
     spamBlocked: 0,
-    replySuccessRate: 100,
+    // Must not start at 100. Before this it was a hardcoded 100, so the
+    // dashboard showed "Reply Success: 100%" during load and for any workspace
+    // with no replies yet - a success rate with a zero denominator.
+    replySuccessRate: 0,
     clicks: 0,
     conversions: 0,
     revenue: 0,
@@ -581,7 +593,7 @@ export default function DashboardPage() {
         "{Hey|Hi|Hello} {{first_name}}! {Grab it here directly with 20% discount|You can buy the genuine product here|Here is the direct product link}: {{cta_url}}\n" +
         "{Hello|Hey} {{first_name}}! {Check out the product details and fast delivery options here|Here is where you can get it}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://tubeflow.in/shop/deal");
+      setRuleCtaUrl("");
       setRuleIntentCategory("BUYING_INTENT");
     } else if (preset === "affiliate") {
       setRuleKeywords("gear, setup, mic, camera, software, tool, recommend, which one");
@@ -589,7 +601,7 @@ export default function DashboardPage() {
         "{Hey|Hi} {{first_name}}! {Here is the exact setup I use (affiliate link)|Check out my official equipment list here}: {{cta_url}}\n" +
         "{Hey|Hello} {{first_name}}! {I got mine from this verified store|You can grab the exact model here}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://tubeflow.in/affiliate/setup-gear");
+      setRuleCtaUrl("");
       setRuleIntentCategory("LINK_REQUEST");
     } else if (preset === "course") {
       setRuleKeywords("course, syllabus, learn, fee, enrollment, class, batch, mentorship");
@@ -597,7 +609,7 @@ export default function DashboardPage() {
         "{Hey|Hello} {{first_name}}! {Here is the complete course curriculum & syllabus|You can view the full batch details and enroll here}: {{cta_url}}\n" +
         "{Hi|Hey} {{first_name}}! {Check out free preview lessons and registration here|Here is the curriculum link}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://tubeflow.in/course/enroll");
+      setRuleCtaUrl("");
       setRuleIntentCategory("LINK_REQUEST");
     } else if (preset === "landing_page") {
       setRuleKeywords("checklist, guide, download, free, pdf, webinar, funnel, link");
@@ -605,7 +617,7 @@ export default function DashboardPage() {
         "{Hey|Hi|Hello} {{first_name}}! {Download the free guide and cheatsheet here|Grab your free template directly here}: {{cta_url}}\n" +
         "{Hi|Hey} {{first_name}}! {Here is the landing page to access the resources|You can claim the free resource here}: {{cta_url}}"
       );
-      setRuleCtaUrl("https://tubeflow.in/free-guide");
+      setRuleCtaUrl("");
       setRuleIntentCategory("ALL");
     }
     showNotification("info", `Applied ${preset.replace("_", " ")} presets with anti-spam Spintax variations.`);
@@ -633,7 +645,7 @@ export default function DashboardPage() {
       }
       const sample = t
         .replace(/{{first_name}}|{first_name}/gi, names[i % names.length])
-        .replace(/{{cta_url}}|{cta_url}/gi, ruleCtaUrl || "https://tubeflow.in/link");
+        .replace(/{{cta_url}}|{cta_url}/gi, ruleCtaUrl || "");
       samples.push(sample);
     }
     setSpintaxPreviewSamples(samples);
@@ -725,7 +737,7 @@ export default function DashboardPage() {
   // Insert Tracked Link into reply
   const handleInsertTrackedLink = (slug: string) => {
     if (!slug) return;
-    const url = `https://tubeflow-nine.vercel.app/r/${slug}`;
+    const url = `${APP_URL}/r/${slug}`;
     setDraftReplyText((prev) => `${prev} ${url}`);
     setSelectedLinkSlug("");
     showNotification("info", `Inserted short link: /r/${slug}`);
@@ -764,7 +776,7 @@ export default function DashboardPage() {
             <RefreshCw className="w-4 h-4" />
           </div>
           <p className="text-xs font-semibold text-zinc-600 tracking-wide">
-            Loading TubeFlow Workspace...
+            Loading BigRedHub workspace...
           </p>
         </div>
       </div>
@@ -968,7 +980,7 @@ export default function DashboardPage() {
             <p className="font-semibold text-zinc-800 truncate">
               {profile?.email || "Account"}
             </p>
-            <p className="text-[10px] text-zinc-600">TubeFlow v0.2.0 • Production</p>
+            <p className="text-[10px] text-zinc-600">BigRedHub v0.2.0 • Production</p>
           </div>
         </aside>
 
@@ -1092,16 +1104,27 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Sub-panel Bottom Stats */}
+                {/* Both figures are only meaningful once the workspace has actually attempted
+                    a reply. "Avg Speed" had no data source at all - it was a
+                    literal 1.4s in the markup - so both now read as "no data"
+                    instead of inventing a number. */}
                 <div className="pt-3 border-t border-zinc-200/80 text-[11px] text-zinc-600">
                   <div className="flex justify-between py-0.5">
                     <span>Reply Success:</span>
                     <span className="font-semibold text-zinc-900">
-                      {stats.replySuccessRate}%
+                      {stats.repliesDelivered + stats.failedReplies > 0
+                        ? `${stats.replySuccessRate}%`
+                        : "—"}
                     </span>
                   </div>
                   <div className="flex justify-between py-0.5">
                     <span>Avg Speed:</span>
-                    <span className="font-semibold text-zinc-900">1.4s</span>
+                    <span
+                      className="font-semibold text-zinc-900"
+                      title="Not tracked yet"
+                    >
+                      —
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1525,9 +1548,11 @@ export default function DashboardPage() {
                   <p className="text-2xl font-heading font-bold text-zinc-950 mt-1">
                     {stats.repliesDelivered}
                   </p>
-                  <p className="text-[10px] text-emerald-700 font-medium mt-1">
-                    {stats.replySuccessRate}% success rate
-                  </p>
+<p className="text-[10px] text-emerald-700 font-medium mt-1">
+                        {stats.repliesDelivered + stats.failedReplies > 0
+                          ? `${stats.replySuccessRate}% success rate`
+                          : "No replies sent yet"}
+                      </p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white border border-zinc-200 shadow-xs">
@@ -1787,7 +1812,7 @@ export default function DashboardPage() {
                               "{Hey|Hi|Hello} {{first_name}}! {Here is the exact link mentioned in the video|Check out the product details here}: {{cta_url}}"
                             );
                             setRuleKeywords("link, where to buy, buy, price, cost");
-                            setRuleCtaUrl("https://tubeflow.in/product-deal");
+                            setRuleCtaUrl("");
                             setActiveTab("automations");
                             setIsRuleModalOpen(true);
                           }}
@@ -1853,7 +1878,7 @@ export default function DashboardPage() {
                         "{Hey|Hi|Hello} {{first_name}}! {Grab it here directly with 20% discount|You can buy the genuine product here|Here is the direct product link}: {{cta_url}}\n" +
                         "{Hello|Hey} {{first_name}}! {Check out the product details and fast delivery options here|Here is where you can get it}: {{cta_url}}"
                       );
-                      setRuleCtaUrl("https://tubeflow.in/shop/deal");
+                      setRuleCtaUrl("");
                       setRuleIntentCategory("ALL");
                       setRuleDelay(5);
                       setSpintaxPreviewSamples([]);
@@ -2463,7 +2488,7 @@ export default function DashboardPage() {
                   </label>
                   <input
                     type="url"
-                    placeholder="https://tubeflow.in/gear-setup"
+                    placeholder="https://yourstore.com/product"
                     value={ruleCtaUrl}
                     onChange={(e) => setRuleCtaUrl(e.target.value)}
                     className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:outline-none"
@@ -2572,19 +2597,19 @@ export default function DashboardPage() {
 
                     <div className="p-2.5 rounded-xl bg-red-50/50 border border-red-200/60">
                       <span className="text-[10px] font-bold text-red-800 uppercase tracking-wider block mb-0.5">
-                        TubeFlow Auto-Reply:
+                        BigRedHub Auto-Reply:
                       </span>
                       <p className="text-zinc-900">
                         {comm.reply_text ||
                           `Hey ${comm.author_name.split(" ")[0]}! Grab the exact link here: ${
-                            campaignRepliesModalRule.cta_url || "https://tubeflow.in"
+                            campaignRepliesModalRule.cta_url || "(no CTA URL set)"
                           }`}
                       </p>
                       <div className="flex items-center gap-4 mt-2 pt-2 border-t border-red-100 text-[11px] text-zinc-500">
                         <span>
                           🔗 Destination:{" "}
                           <span className="font-mono text-zinc-800">
-                            {campaignRepliesModalRule.cta_url || "https://tubeflow.in"}
+                            {campaignRepliesModalRule.cta_url || "(no CTA URL set)"}
                           </span>
                         </span>
                         <span className="text-emerald-700 font-bold ml-auto">
