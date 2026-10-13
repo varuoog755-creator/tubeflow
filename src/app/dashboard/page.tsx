@@ -457,22 +457,67 @@ export default function DashboardPage() {
   }, [comments, activeChannelId, inboxFilter, searchQuery, sortBy]);
 
   // Action: Trigger Background Channel Polling
+  //
+  // Three defects used to sit in this one handler:
+  //
+  //  1. It POSTed to /api/cron/poll-comments, which only exports GET. Next
+  //     answered 405, so the button could never work.
+  //  2. A 405 comes back with an empty/HTML body, so `res.json()` threw and the
+  //     catch reported "Failed to reach polling endpoint." - which is a
+  //     connectivity error, and the endpoint had in fact been reached. It was
+  //     the answer that was wrong, not the connection.
+  //  3. The success copy read `commentsInspected` / `repliesConfirmed`. The
+  //     route returns `commentsInspectedCount` / `confirmedRepliesCount`, so
+  //     even once the method was right every poll would have reported 0 and 0.
   const handleTriggerPolling = async () => {
     setIsPollingManual(true);
     try {
-      const res = await fetch("/api/cron/poll-comments", { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        showNotification(
-          "success",
-          `Polled comments: ${data.commentsInspected || 0} inspected, ${data.repliesConfirmed || 0} replied.`
-        );
-        fetchDashboardData();
-      } else {
-        showNotification("error", data.error || "Channel polling returned an error.");
+      // GET, not POST: the route is GET-only, and `manual=true` switches it
+      // from the CRON_SECRET check to a session check.
+      const res = await fetch("/api/cron/poll-comments?manual=true");
+
+      // Parse defensively. A non-JSON body must not be reported as a network
+      // failure - say what actually came back.
+      const raw = await res.text();
+      let data: Record<string, unknown> = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = {};
       }
+
+      if (!res.ok) {
+        const detail =
+          (typeof data.error === "string" && data.error) ||
+          (raw ? raw.slice(0, 120) : `HTTP ${res.status}`);
+        showNotification("error", `Polling failed (${res.status}): ${detail}`);
+        return;
+      }
+
+      const inspected = Number(data.commentsInspectedCount ?? 0);
+      const replied = Number(data.confirmedRepliesCount ?? 0);
+      const skipped = Number(data.skippedByGuard ?? 0);
+      const limited = Array.isArray(data.results)
+        ? (data.results as Array<Record<string, unknown>>).filter(
+            (r) => r.status === "plan_limit_reached"
+          ).length
+        : 0;
+
+      const parts = [`${inspected} comment${inspected === 1 ? "" : "s"} inspected`, `${replied} repl${replied === 1 ? "y" : "ies"} sent`];
+      if (skipped > 0) {
+        parts.push(`${skipped} held by a rule's daily cap or cooldown`);
+      }
+      if (limited > 0) {
+        parts.push(`${limited} channel stopped on the plan reply limit`);
+      }
+      showNotification(replied > 0 ? "success" : "info", `Poll finished: ${parts.join(", ")}.`);
+      fetchDashboardData();
     } catch (err: unknown) {
-      showNotification("error", "Failed to reach polling endpoint.");
+      // Only a genuine transport failure reaches here now.
+      showNotification(
+        "error",
+        `Could not reach the polling endpoint: ${err instanceof Error ? err.message : String(err)}`
+      );
     } finally {
       setIsPollingManual(false);
     }

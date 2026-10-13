@@ -8,7 +8,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test tests/reply-engine.test.ts tests/intent.test.ts tests/session-auth.test.ts tests/pipeline.test.ts tests/plan-limits.test.ts"
+    "test": "node --experimental-strip-types --test tests/reply-engine.test.ts tests/intent.test.ts tests/session-auth.test.ts tests/pipeline.test.ts tests/plan-limits.test.ts tests/poll-endpoint.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
