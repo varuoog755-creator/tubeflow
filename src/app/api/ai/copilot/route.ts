@@ -49,12 +49,16 @@ export async function POST(request: NextRequest) {
     const normalized = message.toLowerCase();
     let advice = "";
 
+    // These are template strings, not model output, so every claim in them is a
+    // claim the product makes to the customer. The previous wording told people
+    // BigRedHub "delivers within 2 seconds while viewer intent is 100%" - the
+    // poll cron runs once a day, so the real worst case is nearly 24 hours.
     if (normalized.includes("best converting") || normalized.includes("trigger")) {
-      advice = `Based on your channel data (${channelSummary}), high-intent keywords like "LINK", "BUY", and "PRICE" yield the strongest click-through rates. Ensure your reply contains an instant direct link rather than asking them to DM you.`;
+      advice = `Based on your channel data (${channelSummary}), high-intent keywords like "LINK", "BUY", and "PRICE" are the ones worth testing first. Put the tracked link directly in the reply rather than asking people to DM you.`;
     } else if (normalized.includes("cta") || normalized.includes("shorts")) {
-      advice = `For YouTube Shorts, high-performing creators place the CTA in the first 2 seconds of the description and use this pinned pattern: "Pin a top comment: 'Drop LINK below and I will send you the secret formula instantly.' BigRedHub then delivers within 2 seconds while viewer intent is 100%."`;
+      advice = `For YouTube Shorts, put the CTA at the top of the description and pin a comment in the pattern: "Drop LINK below and I will send you the link." Replies go out on the next polling cycle, so set your rule delay to 0 to post as soon as that cycle sees the comment.`;
     } else if (normalized.includes("competitor")) {
-      advice = `When analyzing competitor channels, identify video titles with a view-to-subscriber ratio exceeding 3x. Post a contrasting breakdown Short addressing the exact viewer questions from their comments.`;
+      advice = `When analyzing competitor channels, compare video titles against your own rather than copying formats. Post a Short that answers the exact questions appearing in their comments.`;
     } else {
       advice = `Channel Context: ${channelSummary}. You have ${activeRulesCount} active automation rules. Tracked CTA clicks: ${totalClicks}. Total attributed revenue: ₹${totalRevenue}. Recommendation: Add a dedicated rule for discount codes (e.g., 'CODE', 'DISCOUNT') to capture price-sensitive buyers immediately before they leave the video.`;
     }

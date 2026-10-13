@@ -103,6 +103,13 @@ interface TriggerRule {
   youtube_channels?: { channel_title?: string };
 }
 
+interface DashboardNotice {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+}
+
 interface ProcessedComment {
   id: string;
   channel_id: string;
@@ -164,6 +171,21 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<{ email: string; full_name?: string } | null>(null);
   const [channels, setChannels] = useState<Channel[]>([]);
+  const [notices, setNotices] = useState<DashboardNotice[]>([]);
+
+  const dismissNotices = async (noticeIds: string[]) => {
+    if (noticeIds.length === 0) return;
+    setNotices((current) => current.filter((n) => !noticeIds.includes(n.id)));
+    try {
+      await fetch("/api/dashboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ noticeIds }),
+      });
+    } catch {
+      // A notice that comes back on the next load is not worth failing over.
+    }
+  };
   const [activeChannelId, setActiveChannelId] = useState<string>("ALL");
   const [rules, setRules] = useState<TriggerRule[]>([]);
   const [comments, setComments] = useState<ProcessedComment[]>([]);
@@ -281,6 +303,16 @@ export default function DashboardPage() {
       setProfile(data.profile);
       setChannels(data.channels || []);
       setRules(data.rules || []);
+
+      // Notices the server raised for this workspace - plan limits, quota
+      // warnings, channels refused by a channel limit. These rows were being
+      // written to the notifications table and then never read back, so a
+      // refusal the customer needed to know about was silent.
+      const unread: DashboardNotice[] = data.notices || [];
+      setNotices(unread);
+      if (unread.length > 0) {
+        void dismissNotices(unread.map((n) => n.id));
+      }
 
       // Only show comments persisted from this workspace; never substitute demo rows.
       const loadedLogs: ProcessedComment[] = data.logs || [];
@@ -881,6 +913,35 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
+
+      {/* Server-raised notices: plan limits reached, channel refused, quota
+          warnings. These arrive in the dashboard payload and are dismissed by
+          marking them read, so they do not reappear on the next load. */}
+      {notices.length > 0 && (
+        <div className="px-4 pt-3 space-y-2 md:px-6">
+          {notices.map((notice) => (
+            <div
+              key={notice.id}
+              role="status"
+              className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900"
+            >
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+              <div className="flex-1">
+                <p className="font-semibold">{notice.title}</p>
+                <p className="mt-0.5 text-amber-800">{notice.message}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void dismissNotices([notice.id])}
+                aria-label={`Dismiss: ${notice.title}`}
+                className="shrink-0 rounded-lg p-1 text-amber-700 hover:bg-amber-100 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* WORKSPACE BODY WITH SIDEBAR */}
       <div className="flex-1 flex overflow-hidden">
@@ -2504,10 +2565,15 @@ export default function DashboardPage() {
                     onChange={(e) => setRuleDelay(Number(e.target.value))}
                     className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:outline-none"
                   >
-                    <option value={0}>⚡ Instant (&lt; 2 seconds)</option>
-                    <option value={5}>⏱️ 5 Seconds (Paced Human)</option>
-                    <option value={15}>🛡️ 15 Seconds (Safe Anti-Bot)</option>
-                    <option value={30}>🕒 30 Seconds (Max Safety)</option>
+                    {/* "Instant (< 2 seconds)" was a claim with nothing behind it: the poll
+                        cron runs once a day, and nothing in the reply path
+                        applies delay_seconds at all. The control is kept so
+                        saved rules survive, but it no longer promises a
+                        latency the system cannot produce. */}
+                    <option value={0}>No extra delay</option>
+                    <option value={5}>5 seconds</option>
+                    <option value={15}>15 seconds</option>
+                    <option value={30}>30 seconds</option>
                   </select>
                 </div>
               </div>

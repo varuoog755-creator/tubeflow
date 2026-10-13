@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
-import { PLAN_CONFIGS } from "@/lib/admin";
+import { PLAN_CONFIGS, isAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +99,24 @@ export async function POST(request: NextRequest) {
 
     if (!profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    // No payment processor is wired up, so this endpoint used to be a free
+    // upgrade for anyone with a session: POST {"plan":"scale"} and the
+    // workspace moved to the paid tier without a charge ever being attempted.
+    //
+    // Rather than let that stand while the wording says "upgraded", a plan
+    // change now has to come from an administrator. Self-service upgrades
+    // reopen the moment a provider is connected - see the confirmPaidPlan
+    // guard, which is the single place that decision belongs.
+    if (!isAdmin(email)) {
+      return NextResponse.json(
+        {
+          error:
+            "Self-service plan changes are not available yet. Contact support to change your plan.",
+        },
+        { status: 403 }
+      );
     }
 
     // Update workspace plan

@@ -21,7 +21,19 @@ export async function GET(
       .maybeSingle();
 
     if (!link) {
-      return NextResponse.redirect(new URL("/", request.url));
+      // Previously a 307 to "/". A short link is pasted into a real YouTube
+      // comment, so a deleted or mistyped slug bounced that visitor onto the
+      // sales page: the customer read it as the destination failing and the
+      // creator got no signal that their link was dead. 404 says what happened.
+      return new NextResponse(
+        "<!doctype html><meta charset=\"utf-8\"><title>Link not found</title>" +
+          "<meta name=\"robots\" content=\"noindex\">" +
+          "<body style=\"font:16px system-ui;padding:3rem;max-width:34rem;margin:auto\">" +
+          "<h1>Link not found</h1>" +
+          "<p>This tracked link is no longer active. If you followed it from a video " +
+          "comment, the creator may have changed or removed it.</p></body>",
+        { status: 404, headers: { "content-type": "text/html; charset=utf-8" } }
+      );
     }
 
     // 1. Record Click Event asynchronously

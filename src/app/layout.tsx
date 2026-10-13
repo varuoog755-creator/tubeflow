@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s | BigRedHub",
   },
   description:
-    "BigRedHub monitors YouTube Shorts comments, detects high buyer intent in sub-2 seconds, and auto-delivers tracked product, affiliate, and course links with anti-spam Spintax variations.",
+    "BigRedHub monitors YouTube Shorts comments, detects commercial buyer intent, and delivers trackable product links with automated Spintax variations.",
   keywords: [
     "YouTube comment automation",
     "YouTube Shorts sales tool",
@@ -45,9 +45,10 @@ export const metadata: Metadata = {
     url: "https://bigredhub.info",
     siteName: "BigRedHub",
     title: "BigRedHub — Turn YouTube Shorts Comments Into Instant Sales & Leads",
-    // No response-time figure here on purpose. The dashboard's "Avg Speed: 1.4s"
-    // was removed in #8 for having no data source, and a share card is the one
-    // place that text outlives the tab it was read in.
+    // No response-time figure here on purpose, and none in the page description or
+    // the JSON-LD either. The dashboard's "Avg Speed: 1.4s" was removed in #8 for
+    // having no data source, and the poll cron is scheduled once a day
+    // (vercel.json "0 0 * * *"), so a reply can wait nearly 24 hours to be seen.
     description:
       "Automated comment-to-link engine for creators and brands. Detect buyer intent, reply automatically, and send every comment to a trackable product link.",
   },
@@ -91,9 +92,9 @@ const jsonLd = {
     priceCurrency: "INR",
   },
   description:
-    "BigRedHub monitors YouTube Shorts comments, detects buyer intent in sub-2 seconds, and delivers trackable product links with automated Spintax variations.",
+    "BigRedHub monitors YouTube Shorts comments, classifies commercial buyer intent, and delivers trackable product links with automated Spintax variations.",
   featureList: [
-    "Sub-2s automated comment response",
+    "Automated comment-to-reply workflow",
     "Commercial buyer intent classification",
     "Anti-spam Spintax variations",
     "Official YouTube Data API compliance",

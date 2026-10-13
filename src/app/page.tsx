@@ -524,7 +524,11 @@ Example Replies
                       <span>My Channel</span>
                       <ChevronDown className="w-3 h-3 text-zinc-400" />
                     </div>
-                    <button className="text-zinc-400 hover:text-zinc-600 p-1">
+                    <button
+                      type="button"
+                      aria-label="Notifications in the product preview"
+                      className="text-zinc-400 hover:text-zinc-600 p-1"
+                    >
                       <Bell className="w-3.5 h-3.5" />
                     </button>
                     <div className="w-6 h-6 rounded-full bg-zinc-800 text-white text-[10px] font-bold flex items-center justify-center">
@@ -625,6 +629,9 @@ Example Replies
                             <button
                               type="button"
                               onClick={() => setAutomationActive(!automationActive)}
+                              role="switch"
+                              aria-checked={automationActive}
+                              aria-label="Toggle auto replies"
                               className={`w-7 h-4 rounded-full transition-colors relative cursor-pointer ${
                                 automationActive ? "bg-emerald-500" : "bg-zinc-300"
                               }`}
@@ -699,7 +706,13 @@ Example Replies
                                   Pending
                                 </span>
                               )}
-                              <button className="text-zinc-300 hover:text-zinc-600">
+                              <button
+                                type="button"
+                                aria-label={`More actions for this example comment${
+                                  item.author ? ` from ${item.author}` : ""
+                                }`}
+                                className="text-zinc-300 hover:text-zinc-600"
+                              >
                                 <MoreVertical className="w-3 h-3" />
                               </button>
                             </div>
@@ -1178,7 +1191,7 @@ Example Replies
                 <ul className="space-y-2.5 text-xs sm:text-sm text-zinc-300 mb-6">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                    <span>Respond instantly to common questions</span>
+                    <span>Answer common questions on autopilot</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
