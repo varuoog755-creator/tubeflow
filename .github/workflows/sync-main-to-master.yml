@@ -1,0 +1,60 @@
+name: Sync main to master (production branch)
+
+# This project's Vercel Production Branch is `master`, not `main`. Pushing only
+# to `main` produces a preview deployment and leaves production on stale code -
+# which is exactly what happened on 2026-10-12: a full day of merges shipped as
+# previews while bigredhub.info kept serving a build from 19 hours earlier,
+# hardcoded credentials and all.
+#
+# This workflow fast-forwards `master` to `main` after every merge to `main`,
+# which triggers the Vercel production deploy.
+#
+# It only ever fast-forwards. If `master` has commits that `main` does not, the
+# step fails loudly instead of rewriting anything.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-main-to-master
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fast-forward master to main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          git fetch origin main master
+
+          # Refuse to touch master if it holds anything main does not have.
+          if [ -n "$(git rev-list --left-right --count origin/master...origin/main | awk '{print $1}')" ] && \
+             [ "$(git rev-list --left-right --count origin/master...origin/main | awk '{print $1}')" != "0" ]; then
+            echo "::error::origin/master has commits that origin/main does not."
+            echo "Resolve this manually before syncing; this workflow only fast-forwards."
+            git log --oneline origin/main..origin/master
+            exit 1
+          fi
+
+          if [ "$(git rev-parse origin/master)" = "$(git rev-parse origin/main)" ]; then
+            echo "master is already up to date with main."
+            exit 0
+          fi
+
+          git push origin origin/main:master
+          echo "master advanced to $(git rev-parse --short origin/main)"
