@@ -189,7 +189,9 @@ export default function AdminPage() {
           SuperAdmin Access Required
         </h1>
         <p className="text-zinc-400 text-sm max-w-md mb-6 leading-relaxed">
-          This control center is restricted to verified BigRedHub platform administrators. Please sign in with your authorized admin account (<code className="text-red-400 font-mono text-xs">govinda755rock755@gmail.com</code>).
+          This control center is restricted to verified BigRedHub platform
+          administrators. Sign in with the admin account configured in the
+          deployment environment, then return here.
         </p>
 
         {/* Admin Authentication */}

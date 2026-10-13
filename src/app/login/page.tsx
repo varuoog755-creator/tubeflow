@@ -21,7 +21,7 @@ function LoginForm() {
   useEffect(() => {
     const headers: Record<string, string> = {};
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("tf_session_token");
+      const token = localStorage.getItem("brh_session_token");
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
