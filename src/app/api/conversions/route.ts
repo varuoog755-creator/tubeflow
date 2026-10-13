@@ -5,16 +5,19 @@ import { validateCtaUrl } from "@/lib/reply-engine";
 
 export const dynamic = "force-dynamic";
 
+// Empty for no session, empty for no profile, empty for no workspace: three
+  // different states collapsed into one 200 shape, which left a signed-out
+  // caller indistinguishable from a new account with no tracked links. The
+  // query below was always workspace-scoped, so nothing ever leaked - the
+  // contract was just ambiguous. Authenticated-no-data still returns 200 with
+  // the empty shape.
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     const email = session?.email;
 
     if (!email) {
-      return NextResponse.json({
-        links: [],
-        totals: { clicks: 0, leads: 0, conversions: 0, revenue: 0 },
-      });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { data: profile } = await supabaseAdmin
@@ -24,10 +27,7 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (!profile) {
-      return NextResponse.json({
-        links: [],
-        totals: { clicks: 0, leads: 0, conversions: 0, revenue: 0 },
-      });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { data: workspace } = await supabaseAdmin
@@ -37,10 +37,7 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (!workspace) {
-      return NextResponse.json({
-        links: [],
-        totals: { clicks: 0, leads: 0, conversions: 0, revenue: 0 },
-      });
+      return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
     }
 
     const { data: links, error } = await supabaseAdmin
