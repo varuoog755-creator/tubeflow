@@ -820,7 +820,7 @@ export default function DashboardPage() {
               <Video className="w-3.5 h-3.5 fill-white" />
             </div>
             <span className="font-heading font-bold text-base tracking-tight text-zinc-950">
-              Tube<span className="text-red-600">Flow</span>
+              Big<span className="text-red-600">Red</span>Hub
             </span>
           </Link>
 
