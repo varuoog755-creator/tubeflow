@@ -26,7 +26,6 @@ import {
   Smile,
   Bell,
   MoreVertical,
-  Star,
   ExternalLink,
 } from "lucide-react";
 
@@ -297,7 +296,7 @@ export default function Home() {
                       Demo Video & Tour
                     </a>
                     <a
-                      href="#creators"
+                      href="#example-replies"
                       onClick={() => setResourcesOpen(false)}
                       className="block px-3 py-2 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-colors"
                     >
@@ -316,10 +315,10 @@ export default function Home() {
             </div>
 
 <a
-href="#creators"
+href="#example-replies"
 className="hover:text-white transition-colors"
 >
-Why BigRedHub
+Example Replies
 </a>
 </nav>
 
@@ -378,11 +377,11 @@ Why BigRedHub
               Pricing
             </a>
 <a
-href="#creators"
+href="#example-replies"
 onClick={() => setMobileMenuOpen(false)}
 className="block px-3 py-2 rounded-lg text-base font-medium text-zinc-200 hover:bg-zinc-800"
 >
-Why BigRedHub
+Example Replies
 </a>
             <div className="pt-3 border-t border-zinc-800 flex flex-col gap-2">
               <Link
@@ -816,16 +815,16 @@ Why BigRedHub
             </div>
           </div>
 
-          {/* Item 4: Trusted by Creators */}
+          {/* Item 4: was "Trusted by Creators" with no evidence behind it */}
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
               <Users className="w-5 h-5" />
             </div>
             <div>
               <p className="font-bold text-xs sm:text-sm text-zinc-900 leading-tight">
-                Trusted by Creators
+                Made for creators
               </p>
-              <p className="text-xs text-zinc-500 mt-0.5">From small creators to big brands</p>
+              <p className="text-xs text-zinc-500 mt-0.5">You stay in control of every rule</p>
             </div>
           </div>
         </div>
@@ -1228,21 +1227,31 @@ Why BigRedHub
       </section>
 
       {/* ========================================================= */}
-      {/* 7. LOVED BY CREATORS (Testimonials)                       */}
+      {/* 7. EXAMPLE REPLIES (illustrative, not customer quotes)    */}
       {/* ========================================================= */}
-      <section id="creators" className="py-20 lg:py-28 bg-white">
+      {/* This used to be a testimonials section under the heading
+          "Loved by Creators" with the line "Join hundreds of creators".
+          It carried three invented people - Tech With Rohan (120K
+          subscribers), Travel Vibes India (80K) and Creative Girl (95K) -
+          each with a five star row and a first person quote. No such
+          creators exist; they were placeholder personas that shipped to
+          production. Reframed as example replies so the cards do real work:
+          they now show the comment-to-reply shape the product produces and
+          claim nothing about who is using it. */}
+      <section id="example-replies" className="py-20 lg:py-28 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-zinc-950 tracking-tight">
-              Loved by Creators
+              What an Automated Reply Looks Like
             </h2>
             <p className="text-zinc-500 text-sm sm:text-base mt-2">
-              Join hundreds of creators who are growing with BigRedHub.
+              Example comments and the replies BigRedHub would post for them.
+              Illustrative samples, not customer testimonials.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Testimonial 1 */}
+            {/* Example 1 - price request */}
             <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-4">
@@ -1250,24 +1259,28 @@ Why BigRedHub
                     R
                   </div>
                   <div>
-                    <h4 className="font-heading font-bold text-sm text-zinc-950">Tech With Rohan</h4>
-                    <p className="text-xs text-zinc-500">120K subscribers</p>
+                    <h4 className="font-heading font-bold text-sm text-zinc-950">Example viewer</h4>
+                    <p className="text-xs text-zinc-500">Comment on your Shorts</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 mb-3 text-amber-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-400" />
-                  ))}
-                </div>
-
-                <p className="text-zinc-700 text-xs sm:text-sm leading-relaxed italic">
-                  &quot;BigRedHub saves me hours every week! Replies are natural and my engagement has increased a lot.&quot;
+                <p className="text-zinc-600 text-xs sm:text-sm leading-relaxed mb-3">
+                  &quot;How much is this curtain set? Is it in stock?&quot;
                 </p>
+
+                <div className="border-l-2 border-red-500 pl-3">
+                  <p className="text-zinc-900 text-xs sm:text-sm leading-relaxed">
+                    &quot;Thanks for asking! It is in stock and the set ships
+                    nationwide. Here is the full listing: {`{your tracked link}`}&quot;
+                  </p>
+                  <p className="text-[11px] text-zinc-400 mt-1.5">
+                    Matched: price request &middot; Spintax variation
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Testimonial 2 */}
+            {/* Example 2 - explicit link request */}
             <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-4">
@@ -1275,24 +1288,28 @@ Why BigRedHub
                     T
                   </div>
                   <div>
-                    <h4 className="font-heading font-bold text-sm text-zinc-950">Travel Vibes India</h4>
-                    <p className="text-xs text-zinc-500">80K subscribers</p>
+                    <h4 className="font-heading font-bold text-sm text-zinc-950">Example viewer</h4>
+                    <p className="text-xs text-zinc-500">Comment on your Shorts</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 mb-3 text-amber-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-400" />
-                  ))}
-                </div>
-
-                <p className="text-zinc-700 text-xs sm:text-sm leading-relaxed italic">
-                  &quot;Super easy to set up and works perfectly. My audience loves the quick replies.&quot;
+                <p className="text-zinc-600 text-xs sm:text-sm leading-relaxed mb-3">
+                  &quot;link plz&quot;
                 </p>
+
+                <div className="border-l-2 border-red-500 pl-3">
+                  <p className="text-zinc-900 text-xs sm:text-sm leading-relaxed">
+                    &quot;Here you go: {`{your tracked link}`} &mdash; it tracks which
+                    replies turn into visits.&quot;
+                  </p>
+                  <p className="text-[11px] text-zinc-400 mt-1.5">
+                    Matched: link request &middot; Reply delay applied
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Testimonial 3 */}
+            {/* Example 3 - filtered out */}
             <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-4">
@@ -1300,20 +1317,23 @@ Why BigRedHub
                     C
                   </div>
                   <div>
-                    <h4 className="font-heading font-bold text-sm text-zinc-950">Creative Girl</h4>
-                    <p className="text-xs text-zinc-500">95K subscribers</p>
+                    <h4 className="font-heading font-bold text-sm text-zinc-950">Example viewer</h4>
+                    <p className="text-xs text-zinc-500">Comment on your Shorts</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 mb-3 text-amber-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-400" />
-                  ))}
-                </div>
-
-                <p className="text-zinc-700 text-xs sm:text-sm leading-relaxed italic">
-                  &quot;A must-have tool for every creator. Clean interface and very reliable.&quot;
+                <p className="text-zinc-600 text-xs sm:text-sm leading-relaxed mb-3">
+                  &quot;first!! love this&quot;
                 </p>
+
+                <div className="border-l-2 border-zinc-300 pl-3">
+                  <p className="text-zinc-500 text-xs sm:text-sm leading-relaxed italic">
+                    No reply posted &mdash; the comment matched a negative keyword.
+                  </p>
+                  <p className="text-[11px] text-zinc-400 mt-1.5">
+                    Matched: negative filter &middot; Silence is the point
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -1382,7 +1402,7 @@ Why BigRedHub
                 <ul className="space-y-3 text-xs sm:text-sm text-zinc-600 mb-8">
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>100 comments/month</span>
+                    <span>100 replies/month</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-red-600 shrink-0" />
@@ -1424,7 +1444,7 @@ Why BigRedHub
                 <ul className="space-y-3 text-xs sm:text-sm text-zinc-600 mb-8">
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span className="font-medium text-zinc-900">5,000 comments/month</span>
+                    <span className="font-medium text-zinc-900">5,000 replies/month</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-red-600 shrink-0" />
@@ -1461,7 +1481,7 @@ Why BigRedHub
                 <ul className="space-y-3 text-xs sm:text-sm text-zinc-600 mb-8">
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>20,000 comments/month</span>
+                    <span>20,000 replies/month</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-red-600 shrink-0" />
@@ -1575,8 +1595,8 @@ YouTube Guide
               </h5>
               <ul className="space-y-2 text-xs">
                 <li>
-                  <a href="#creators" className="hover:text-white transition-colors">
-                    About
+                  <a href="#example-replies" className="hover:text-white transition-colors">
+                    Example Replies
                   </a>
                 </li>
 <li>

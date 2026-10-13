@@ -172,11 +172,13 @@ function LoginForm() {
           {/* Legal Footer */}
           <div className="mt-6 text-center text-[11px] text-zinc-600 space-x-2">
             <span>By continuing, you accept our</span>
-            <Link href="/" className="text-zinc-700 hover:text-zinc-950 underline">
+            {/* These pointed at "/" when the footer links were fixed in #8. The
+                sign-in page has its own copy of this block, so it was missed. */}
+            <Link href="/terms" className="text-zinc-700 hover:text-zinc-950 underline">
               Terms
             </Link>
             <span>&</span>
-            <Link href="/" className="text-zinc-700 hover:text-zinc-950 underline">
+            <Link href="/privacy" className="text-zinc-700 hover:text-zinc-950 underline">
               Privacy Policy
             </Link>
           </div>
