@@ -247,13 +247,13 @@ export default function Home() {
               )}
             </div>
 
-            <a
-              href="#blog"
-              className="hover:text-white transition-colors"
-            >
-              Blog
-            </a>
-          </nav>
+<a
+href="#creators"
+className="hover:text-white transition-colors"
+>
+Why BigRedHub
+</a>
+</nav>
 
           {/* Right Action CTAs */}
           <div className="hidden sm:flex items-center gap-5">
@@ -309,13 +309,13 @@ export default function Home() {
             >
               Pricing
             </a>
-            <a
-              href="#blog"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-base font-medium text-zinc-200 hover:bg-zinc-800"
-            >
-              Blog
-            </a>
+<a
+href="#creators"
+onClick={() => setMobileMenuOpen(false)}
+className="block px-3 py-2 rounded-lg text-base font-medium text-zinc-200 hover:bg-zinc-800"
+>
+Why BigRedHub
+</a>
             <div className="pt-3 border-t border-zinc-800 flex flex-col gap-2">
               <Link
                 href="/login"
@@ -1486,23 +1486,18 @@ export default function Home() {
               <h5 className="font-bold text-xs uppercase tracking-wider text-zinc-200 mb-3">
                 Resources
               </h5>
-              <ul className="space-y-2 text-xs">
-                <li>
-                  <a href="#blog" className="hover:text-white transition-colors">
-                    Blog
-                  </a>
-                </li>
-                <li>
-                  <a href="#action" className="hover:text-white transition-colors">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#how-it-works" className="hover:text-white transition-colors">
-                    YouTube Guide
-                  </a>
-                </li>
-              </ul>
+<ul className="space-y-2 text-xs">
+<li>
+<a href="#action" className="hover:text-white transition-colors">
+Product Tour
+</a>
+</li>
+<li>
+<a href="#how-it-works" className="hover:text-white transition-colors">
+YouTube Guide
+</a>
+</li>
+</ul>
             </div>
 
             {/* Col 4: Company */}
@@ -1516,16 +1511,16 @@ export default function Home() {
                     About
                   </a>
                 </li>
-                <li>
-                  <a href="#pricing" className="hover:text-white transition-colors">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#pricing" className="hover:text-white transition-colors">
-                    Terms of Service
-                  </a>
-                </li>
+<li>
+<a href="/privacy" className="hover:text-white transition-colors">
+Privacy Policy
+</a>
+</li>
+<li>
+<a href="/terms" className="hover:text-white transition-colors">
+Terms of Service
+</a>
+</li>
               </ul>
             </div>
           </div>

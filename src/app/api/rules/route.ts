@@ -163,7 +163,11 @@ export async function POST(request: NextRequest) {
         renderedPreview = renderReply(replyTemplate, {
           authorName: testAuthorName || "TestViewer",
           channelTitle: auth.channels[0]?.channel_title || "My YouTube Channel",
-          ctaUrl: ctaUrl || "https://tubeflow.in/preview",
+          // Previously this fell back to a real (old-brand) URL, so a dry run on a
+          // rule with no CTA configured rendered a link that looked legitimate but
+          // pointed nowhere useful. An explicit placeholder is honest about the
+          // rule being incomplete.
+          ctaUrl: ctaUrl || "[no CTA URL set]",
         });
       }
 
