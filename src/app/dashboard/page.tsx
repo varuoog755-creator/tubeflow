@@ -769,9 +769,14 @@ export default function DashboardPage() {
         </div>
       </div>
     );
-  }
+}
 
-  return (
+    // Shared by the desktop sidebar badge and the mobile tab bar so the two
+    // never disagree about how many comments are awaiting a reply.
+    const pendingCount =
+      comments.filter((c) => c.reply_status === "pending").length || comments.length;
+
+    return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans flex flex-col selection:bg-red-100 selection:text-red-700">
       {/* Toast Notification Banner */}
       {notification && (
@@ -883,7 +888,7 @@ export default function DashboardPage() {
                 <span>Comment Inbox</span>
               </div>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-800">
-                {comments.filter((c) => c.reply_status === "pending").length || comments.length}
+                {pendingCount}
               </span>
             </button>
 
@@ -968,7 +973,8 @@ export default function DashboardPage() {
         </aside>
 
         {/* MAIN DISPLAY AREA */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-white">
+        {/* pb on small screens keeps the last row clear of the fixed mobile tab bar */}
+        <main className="flex-1 flex flex-col overflow-hidden bg-white pb-16 md:pb-0">
           {/* TAB 1: THREE-PANEL COMMENT INBOX */}
           {activeTab === "inbox" && (
             <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
@@ -2054,8 +2060,11 @@ export default function DashboardPage() {
               </div>
 
               {/* Links Table */}
+{/* The table keeps its column widths on narrow screens and scrolls sideways
+              rather than squeezing every column into an unreadable sliver. */}
               <div className="rounded-2xl border border-zinc-200 overflow-hidden bg-white shadow-xs">
-                <table className="w-full text-left text-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-left text-xs">
                   <thead className="bg-zinc-50 border-b border-zinc-200 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
                     <tr>
                       <th className="py-3 px-4">Shortlink</th>
@@ -2094,7 +2103,8 @@ export default function DashboardPage() {
                       ))
                     )}
                   </tbody>
-                </table>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -2271,7 +2281,9 @@ export default function DashboardPage() {
                 <label className="font-bold text-zinc-800 block">
                   Target Video Scope (Konsi video par chalana hai)
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                {/* Three option buttons side by side leave each label too narrow on a phone,
+                    so they stack below sm. */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -2807,6 +2819,45 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* MOBILE TAB BAR - the sidebar is hidden below md, so without this there
+          is no way to switch tabs on a phone. */}
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]"
+        aria-label="Dashboard sections"
+      >
+        <div className="grid grid-cols-6">
+          {([
+            { id: "inbox", label: "Inbox", Icon: Inbox },
+            { id: "overview", label: "Overview", Icon: BarChart3 },
+            { id: "videos", label: "Videos", Icon: Video },
+            { id: "automations", label: "Rules", Icon: Zap },
+            { id: "links", label: "Links", Icon: LinkIcon },
+            { id: "settings", label: "Setup", Icon: Settings },
+          ] as const).map(({ id, label, Icon }) => {
+            const active = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveTab(id)}
+                aria-current={active ? "page" : undefined}
+                className={`flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold transition-colors ${
+                  active ? "text-red-600" : "text-zinc-500"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="truncate max-w-full px-0.5">{label}</span>
+                {id === "inbox" && pendingCount > 0 && (
+                  <span className="absolute mt-0.5 ml-6 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center">
+                    {pendingCount > 99 ? "99+" : pendingCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }
