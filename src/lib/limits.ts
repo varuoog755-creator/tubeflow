@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { type PlanConfig } from "@/lib/admin";
+import { isTestAccount } from "@/lib/admin";
 import {
   planFor,
   monthWindowStart,
@@ -7,11 +8,12 @@ import {
   monthlyAllowance,
   channelAllowance,
   decideRuleGuard,
+  UNLIMITED_PLAN,
   type Allowance,
   type RuleGuardVerdict,
 } from "@/lib/plan-limits";
 
-export { planFor, monthWindowStart, monthWindowEnd, decideRuleGuard };
+export { planFor, monthWindowStart, monthWindowEnd, decideRuleGuard, UNLIMITED_PLAN };
 export type { Allowance, PlanConfig, RuleGuardVerdict };
 
 /**
@@ -41,6 +43,35 @@ export async function getWorkspacePlan(workspaceId: string): Promise<PlanConfig>
   return planFor(data?.plan);
 }
 
+/**
+ * The plan this workspace is actually metered against.
+ *
+ * A test account gets `UNLIMITED_PLAN` regardless of what `workspaces.plan`
+ * says. Resolving it here - one function used by both gates - means the reply
+ * cap and the channel cap can never disagree about who is exempt.
+ */
+async function resolveEffectivePlan(workspaceId: string): Promise<PlanConfig> {
+  const { data } = await supabaseAdmin
+    .from("workspaces")
+    .select("plan, owner_id")
+    .eq("id", workspaceId)
+    .maybeSingle();
+
+  if (data?.owner_id) {
+    const { data: owner } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", data.owner_id)
+      .maybeSingle();
+
+    if (isTestAccount(owner?.email)) {
+      return UNLIMITED_PLAN;
+    }
+  }
+
+  return planFor(data?.plan);
+}
+
 export async function countConnectedChannels(workspaceId: string): Promise<number> {
   const { count } = await supabaseAdmin
     .from("youtube_channels")
@@ -50,7 +81,7 @@ export async function countConnectedChannels(workspaceId: string): Promise<numbe
 }
 
 export async function getReplyAllowance(workspaceId: string): Promise<Allowance & { plan: PlanConfig }> {
-  const plan = await getWorkspacePlan(workspaceId);
+  const plan = await resolveEffectivePlan(workspaceId);
   const since = monthWindowStart().toISOString();
 
   // processed_comments is keyed by channel, not workspace, so the workspace's
@@ -162,7 +193,7 @@ export async function canConnectChannel(
   workspaceId: string,
   alreadyConnected: boolean
 ): Promise<{ allowed: boolean; plan: PlanConfig; connected: number; limit: number }> {
-  const plan = await getWorkspacePlan(workspaceId);
+  const plan = await resolveEffectivePlan(workspaceId);
   if (alreadyConnected) {
     return { allowed: true, plan, connected: 0, limit: plan.channelLimit };
   }

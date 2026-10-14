@@ -8,12 +8,41 @@ import {
   channelAllowance,
   decideRuleGuard,
   PLAN_CONFIGS,
+  UNLIMITED_PLAN,
 } from "../src/lib/plan-limits.ts";
 
 // These rules were added in the limits PR and shipped with no test coverage,
 // because the code lived in a module that imports the Supabase client and so
 // could not be loaded by node --test. These cover the decisions, not the
 // queries.
+
+test("Test account: the unlimited plan can never be metered out", () => {
+  // The exemption is expressed as very large ceilings rather than a flag, so the
+  // existing arithmetic has no branch to get wrong. Assert that with a reply
+  // count far above every real plan.
+  const heavy = monthlyAllowance(9_000_000, UNLIMITED_PLAN.monthlyRepliesLimit);
+  assert.equal(heavy.exhausted, false);
+  assert.equal(heavy.used, 9_000_000);
+  assert.ok(heavy.remaining > 9_000_000);
+
+  const channels = channelAllowance(99, UNLIMITED_PLAN.channelLimit, false);
+  assert.equal(channels.atLimit, false);
+  assert.equal(channels.allowed, true);
+});
+
+test("Test account: it does not leak into planFor, so no other account inherits it", () => {
+  assert.equal(UNLIMITED_PLAN.id, "free");
+  // A stored "free" must still resolve to the metered free plan.
+  assert.notEqual(planFor("free"), UNLIMITED_PLAN);
+  assert.equal(planFor("free").monthlyRepliesLimit, 100);
+  assert.equal(planFor(undefined).monthlyRepliesLimit, 100);
+});
+
+test("Test account: a real free account is still capped after its 100 replies", () => {
+  const capped = monthlyAllowance(100, PLAN_CONFIGS.free.monthlyRepliesLimit);
+  assert.equal(capped.exhausted, true);
+  assert.equal(capped.remaining, 0);
+});
 
 test("Plan resolution: unknown or missing plan falls back to free, never to unlimited", () => {
   assert.equal(planFor(undefined).id, "free");
