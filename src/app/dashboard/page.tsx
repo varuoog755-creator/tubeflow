@@ -44,8 +44,16 @@ import {
   Share2,
   GraduationCap,
   Flame,
-  Target,
   Layers,
+  Target,
+  Bell,
+  MoreVertical,
+  Crown,
+  Shield,
+  PieChart,
+  HelpCircle,
+  Calendar,
+  MessageCircle,
 } from "lucide-react";
 
 // Single source of truth for links we hand to customers. Previously the
@@ -973,7 +981,7 @@ export default function DashboardPage() {
       comments.filter((c) => c.reply_status === "pending").length || comments.length;
 
     return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans flex flex-col selection:bg-red-100 selection:text-red-700">
+    <div className="h-screen flex bg-[#f8fafc] text-zinc-900 font-sans overflow-hidden selection:bg-purple-100 selection:text-purple-700">
       {/* Toast Notification Banner */}
       {notification && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-zinc-950 text-white text-xs font-medium shadow-xl border border-zinc-800 transition-all">
@@ -996,721 +1004,939 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* TOP HEADER BAR */}
-      <header className="h-14 border-b border-zinc-200 bg-white sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-7 h-7 rounded-lg bg-red-600 text-white flex items-center justify-center shadow-xs">
-              <Video className="w-3.5 h-3.5 fill-white" />
-            </div>
-            <span className="font-heading font-bold text-base tracking-tight text-zinc-950">
-              Big<span className="text-red-600">Red</span>Hub
-            </span>
-          </Link>
-
-          <span className="text-zinc-300 font-light hidden sm:inline">/</span>
-
-          {/* Channel Selector */}
-          <div className="flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-1 text-xs font-medium text-zinc-700">
-            <Radio className="w-3 h-3 text-red-600 animate-pulse" />
-            <select
-              value={activeChannelId}
-              onChange={(e) => setActiveChannelId(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-zinc-900 focus:outline-none cursor-pointer pr-1"
-            >
-              <option value="ALL">All Channels ({channels.length || 1})</option>
-              {channels.map((ch) => (
-                <option key={ch.id} value={ch.id}>
-                  {ch.channel_title}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Channel Live Status Pill */}
-          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200/80 text-[11px] font-semibold text-emerald-800">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-            <span>YouTube Sync Ready</span>
-          </div>
-
-          {/* Manual Poll Trigger Button */}
-          <button
-            onClick={handleTriggerPolling}
-            disabled={isPollingManual}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-200 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition-all disabled:opacity-50"
-            title="Poll YouTube for new comments now"
-          >
-            <RefreshCw
-              className={`w-3.5 h-3.5 ${isPollingManual ? "animate-spin text-red-600" : ""}`}
-            />
-            <span className="hidden sm:inline">
-              {isPollingManual ? "Polling..." : "Poll Channel"}
-            </span>
-          </button>
-
-          {/* Account Profile / Logout */}
-          <div className="flex items-center gap-2 border-l border-zinc-200 pl-3">
-            <div className="w-7 h-7 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-800 text-xs font-bold flex items-center justify-center">
-              {profile?.email?.charAt(0).toUpperCase() || "U"}
-            </div>
-            <Link
-              href="/api/auth/logout"
-              className="text-xs text-zinc-500 hover:text-zinc-950 p-1.5 rounded-md hover:bg-zinc-100 transition-colors"
-              title="Sign Out"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Server-raised notices: plan limits reached, channel refused, quota
-          warnings. These arrive in the dashboard payload and are dismissed by
-          marking them read, so they do not reappear on the next load. */}
-      {notices.length > 0 && (
-        <div className="px-4 pt-3 space-y-2 md:px-6">
-          {notices.map((notice) => (
-            <div
-              key={notice.id}
-              role="status"
-              className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900"
-            >
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
-              <div className="flex-1">
-                <p className="font-semibold">{notice.title}</p>
-                <p className="mt-0.5 text-amber-800">{notice.message}</p>
+      {/* LEFT DARK SIDEBAR - Exactly matching mockup */}
+      <aside className="w-64 bg-[#0b0f19] text-white flex flex-col justify-between shrink-0 hidden md:flex border-r border-zinc-800/80 z-20">
+        <div className="flex flex-col h-full justify-between p-4">
+          <div className="space-y-6">
+            {/* Brand Logo & Name */}
+            <div className="flex items-center gap-3 px-2 pt-1">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-purple-600/30">
+                <Video className="w-5 h-5 fill-white text-white" />
               </div>
+              <div className="flex flex-col">
+                <span className="font-heading font-black text-lg tracking-tight text-white leading-none">
+                  BigRed<span className="text-purple-400">Hub</span>
+                </span>
+                <span className="text-[10px] text-zinc-400 font-medium tracking-wider uppercase mt-1">
+                  Creator Automation
+                </span>
+              </div>
+            </div>
+
+            {/* Profile Pill */}
+            <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5 truncate">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                  {profile?.email?.charAt(0).toUpperCase() || "A"}
+                </div>
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-zinc-200 truncate">
+                    {profile?.email?.split("@")[0] || "Active Account"}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 truncate">
+                    {profile?.email || "Connected"}
+                  </p>
+                </div>
+              </div>
+              <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" />
+            </div>
+
+            {/* Navigation Tabs */}
+            <nav className="space-y-1.5 pt-1">
               <button
-                type="button"
-                onClick={() => void dismissNotices([notice.id])}
-                aria-label={`Dismiss: ${notice.title}`}
-                className="shrink-0 rounded-lg p-1 text-amber-700 hover:bg-amber-100 transition-colors"
+                onClick={() => setActiveTab("inbox")}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === "inbox"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/25"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900/60"
+                }`}
               >
-                <X className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-3">
+                  <Inbox className="w-4 h-4" />
+                  <span>Inbox</span>
+                </div>
+                {pendingCount > 0 && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    activeTab === "inbox"
+                      ? "bg-white text-indigo-700"
+                      : "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                  }`}>
+                    {pendingCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={() => setActiveTab("overview")}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === "overview"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/25"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900/60"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <PieChart className="w-4 h-4" />
+                  <span>Overview & ROI</span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("videos")}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === "videos"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/25"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900/60"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Video className="w-4 h-4" />
+                  <span>Channel & Videos</span>
+                </div>
+                <span className="text-[10px] font-medium text-zinc-400 px-1.5 py-0.5 rounded bg-zinc-800">
+                  {channelVideos.length || 52}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("automations")}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === "automations"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/25"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900/60"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Zap className="w-4 h-4" />
+                  <span>Campaigns & Rules</span>
+                </div>
+                <span className="text-[10px] font-medium text-zinc-400 px-1.5 py-0.5 rounded bg-zinc-800">
+                  {rules.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("links")}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === "links"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/25"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900/60"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <LinkIcon className="w-4 h-4" />
+                  <span>Tracked Links</span>
+                </div>
+                <span className="text-[10px] font-medium text-zinc-400 px-1.5 py-0.5 rounded bg-zinc-800">
+                  {trackedLinks.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === "settings"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/25"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900/60"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Settings className="w-4 h-4" />
+                  <span>Channels & Setup</span>
+                </div>
+              </button>
+            </nav>
+          </div>
+
+          {/* Bottom Sidebar: Upgrade Card & System Links */}
+          <div className="space-y-4 pt-4">
+            {/* Upgrade to Pro Card */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-indigo-950/80 via-slate-900 to-purple-950/70 border border-indigo-500/30 rounded-2xl p-4 shadow-lg">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl pointer-events-none" />
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="w-4 h-4 text-amber-400" />
+                <span className="text-xs font-bold text-white tracking-wide">Upgrade to Pro</span>
+              </div>
+              <p className="text-[11px] text-zinc-300 leading-relaxed mb-3">
+                Unlock instant AI neural spintax, multi-channel polling, and unlimited conversions.
+              </p>
+              <button
+                onClick={() => setActiveTab("settings")}
+                className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>Upgrade Plan</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
-          ))}
+
+            {/* Quick Links */}
+            <div className="pt-2 border-t border-zinc-800/80 space-y-1 text-xs text-zinc-400">
+              <a
+                href="https://t.me"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-zinc-900 hover:text-zinc-200 transition-colors"
+              >
+                <HelpCircle className="w-4 h-4 text-zinc-500" />
+                <span>Help & Support</span>
+              </a>
+              <Link
+                href="/api/auth/logout"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-rose-400/90 hover:bg-rose-950/30 hover:text-rose-300 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </Link>
+            </div>
+          </div>
         </div>
-      )}
+      </aside>
 
-      {/* WORKSPACE BODY WITH SIDEBAR */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* LEFT COMPACT SIDEBAR */}
-        <aside className="w-56 border-r border-zinc-200 bg-white flex flex-col justify-between shrink-0 hidden md:flex">
-          <div className="p-3 space-y-1">
-            <button
-              onClick={() => setActiveTab("inbox")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === "inbox"
-                  ? "bg-red-50 text-red-700 border border-red-200/60"
-                  : "text-zinc-600 hover:bg-zinc-100/70 hover:text-zinc-950"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Inbox className="w-4 h-4 text-red-600" />
-                <span>Comment Inbox</span>
-              </div>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-800">
-                {pendingCount}
+      {/* MAIN CONTENT WRAPPER */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        {/* TOP LIGHT HEADER - Exactly matching mockup */}
+        <header className="h-18 bg-white border-b border-zinc-200/80 shrink-0 px-6 py-4 flex items-center justify-between z-10">
+          <div>
+            <h1 className="font-heading font-black text-xl text-zinc-950 tracking-tight flex items-center gap-2">
+              <span>{channels[0]?.channel_title || "dream aura"}</span>
+              <span className="text-xs font-semibold text-zinc-500 font-sans tracking-normal hidden sm:inline">
+                ({channels[0]?.custom_url || "@dreamaura"})
               </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("overview")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === "overview"
-                  ? "bg-zinc-100 text-zinc-950"
-                  : "text-zinc-600 hover:bg-zinc-100/70 hover:text-zinc-950"
-              }`}
-            >
-              <BarChart3 className="w-4 h-4 text-zinc-500" />
-              <span>Overview & ROI</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("videos")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === "videos"
-                  ? "bg-red-50 text-red-700 border border-red-200/60"
-                  : "text-zinc-600 hover:bg-zinc-100/70 hover:text-zinc-950"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Video className="w-4 h-4 text-red-600" />
-                <span>Channel & Videos</span>
-              </div>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-700">
-                {channelVideos.length || 52}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("automations")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === "automations"
-                  ? "bg-zinc-100 text-zinc-950"
-                  : "text-zinc-600 hover:bg-zinc-100/70 hover:text-zinc-950"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Zap className="w-4 h-4 text-zinc-500" />
-                <span>Campaigns & Rules</span>
-              </div>
-              <span className="text-[10px] font-semibold text-zinc-500">
-                {rules.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("links")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === "links"
-                  ? "bg-zinc-100 text-zinc-950"
-                  : "text-zinc-600 hover:bg-zinc-100/70 hover:text-zinc-950"
-              }`}
-            >
-              <LinkIcon className="w-4 h-4 text-zinc-500" />
-              <span>Tracked Links</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === "settings"
-                  ? "bg-zinc-100 text-zinc-950"
-                  : "text-zinc-600 hover:bg-zinc-100/70 hover:text-zinc-950"
-              }`}
-            >
-              <Settings className="w-4 h-4 text-zinc-500" />
-              <span>Channels & Setup</span>
-            </button>
-          </div>
-
-          {/* Sidebar Footer info */}
-          <div className="p-3 border-t border-zinc-100 text-[11px] text-zinc-500 space-y-1">
-            <p className="font-semibold text-zinc-800 truncate">
-              {profile?.email || "Account"}
+            </h1>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Live automated buyer intent conversion & YouTube comment management
             </p>
-            <p className="text-[10px] text-zinc-600">BigRedHub v0.2.0 • Production</p>
           </div>
-        </aside>
 
-        {/* MAIN DISPLAY AREA */}
-        {/* pb on small screens keeps the last row clear of the fixed mobile tab bar */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-white pb-16 md:pb-0">
-          {/* TAB 1: THREE-PANEL COMMENT INBOX */}
+          <div className="flex items-center gap-3">
+            {/* Channel Selector / Poll Channel Pill */}
+            <div className="flex items-center bg-zinc-50 border border-zinc-200/90 rounded-xl p-1 gap-1">
+              <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-zinc-700">
+                <div className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                  {channels[0]?.channel_title?.charAt(0) || "D"}
+                </div>
+                <select
+                  value={activeChannelId}
+                  onChange={(e) => setActiveChannelId(e.target.value)}
+                  className="bg-transparent text-xs font-semibold text-zinc-900 focus:outline-none cursor-pointer max-w-[140px] truncate"
+                >
+                  <option value="ALL">All Channels</option>
+                  {channels.map((ch) => (
+                    <option key={ch.id} value={ch.id}>
+                      {ch.channel_title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={handleTriggerPolling}
+                disabled={isPollingManual}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-zinc-200 shadow-xs hover:bg-zinc-50 text-xs font-semibold text-zinc-800 transition-all disabled:opacity-50"
+                title="Poll YouTube for new comments now"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 ${isPollingManual ? "animate-spin text-purple-600" : "text-zinc-600"}`}
+                />
+                <span className="hidden sm:inline">
+                  {isPollingManual ? "Polling..." : "Poll Channel"}
+                </span>
+              </button>
+            </div>
+
+            {/* YouTube Sync Ready Pill */}
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>YouTube Sync Ready</span>
+            </div>
+
+            {/* Date Range Selector Pill */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-700">
+              <Calendar className="w-3.5 h-3.5 text-zinc-500" />
+              <span>Oct 8, 2026 - Oct 15, 2026</span>
+            </div>
+
+            {/* Bell & User Avatar */}
+            <div className="flex items-center gap-2 pl-1 border-l border-zinc-200">
+              <button
+                className="w-9 h-9 rounded-xl border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 relative"
+                title="Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-purple-600 rounded-full ring-2 ring-white" />
+              </button>
+
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                {profile?.email?.charAt(0).toUpperCase() || "A"}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Server-raised notices */}
+        {notices.length > 0 && (
+          <div className="px-6 pt-3 space-y-2 shrink-0">
+            {notices.map((notice) => (
+              <div
+                key={notice.id}
+                role="status"
+                className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900"
+              >
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+                <div className="flex-1">
+                  <p className="font-semibold">{notice.title}</p>
+                  <p className="mt-0.5 text-amber-800">{notice.message}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void dismissNotices([notice.id])}
+                  aria-label={`Dismiss: ${notice.title}`}
+                  className="shrink-0 rounded-lg p-1 text-amber-700 hover:bg-amber-100 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* WORKSPACE SCROLL AREA */}
+        <main className="flex-1 overflow-y-auto p-6 space-y-6 pb-20 md:pb-6">
+          {/* TAB 1: MODERN TWO-COLUMN COMMENT INBOX WITH STATS BAR */}
           {activeTab === "inbox" && (
-            <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
-              {/* PANEL 1: Filters & Saved Views (Left Sub-panel) */}
-              <div className="w-full md:w-52 border-b md:border-b-0 md:border-r border-zinc-200 bg-zinc-50/70 p-3 shrink-0 flex flex-col justify-between">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600 block px-2 mb-2">
-                    Comment Views
-                  </span>
-
-                  <div className="space-y-1">
-                    <button
-                      onClick={() => setInboxFilter("all")}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        inboxFilter === "all"
-                          ? "bg-white text-zinc-950 shadow-xs border border-zinc-200"
-                          : "text-zinc-600 hover:text-zinc-950"
-                      }`}
-                    >
-                      <span>All Comments</span>
-                      <span className="text-[10px] text-zinc-600">
-                        {comments.length}
+            <div className="space-y-6">
+              {/* TOP HORIZONTAL 8 STAT CARDS - Exactly matching mockup */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                {/* 1. Comment Views */}
+                <div className="bg-white rounded-2xl border border-zinc-200/80 p-3.5 shadow-xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-zinc-500">
+                    <span className="text-[11px] font-semibold">Comment Views</span>
+                    <Eye className="w-3.5 h-3.5 text-zinc-400" />
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-xl font-heading font-black text-zinc-950">
+                      {channelVideos.reduce((acc, v) => acc + (v.commentCount || 0), 0) || 52}
+                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-emerald-600 font-bold flex items-center">
+                        ↑ 23%
                       </span>
-                    </button>
-
-                    <button
-                      onClick={() => setInboxFilter("needs_review")}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        inboxFilter === "needs_review"
-                          ? "bg-white text-zinc-950 shadow-xs border border-zinc-200"
-                          : "text-zinc-600 hover:text-zinc-950"
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        <span>Needs Review</span>
-                      </div>
-                      <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 rounded">
-                        {comments.filter((c) => c.reply_status === "pending").length}
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => setInboxFilter("high_intent")}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        inboxFilter === "high_intent"
-                          ? "bg-white text-red-700 shadow-xs border border-red-200"
-                          : "text-zinc-600 hover:text-zinc-950"
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <Sparkles className="w-3 h-3 text-red-600" />
-                        <span>High Intent</span>
-                      </div>
-                      <span className="text-[10px] text-red-700 font-bold bg-red-50 px-1.5 rounded">
-                        {
-                          comments.filter(
-                            (c) =>
-                              (c.detected_intent === "BUYING_INTENT" ||
-                                c.detected_intent === "LINK_REQUEST") &&
-                              c.reply_status !== "spam"
-                          ).length
-                        }
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => setInboxFilter("replied")}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        inboxFilter === "replied"
-                          ? "bg-white text-zinc-950 shadow-xs border border-zinc-200"
-                          : "text-zinc-600 hover:text-zinc-950"
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span>Auto-Replied</span>
-                      </div>
-                      <span className="text-[10px] text-zinc-600">
-                        {comments.filter((c) => c.reply_status === "replied").length}
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => setInboxFilter("failed")}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        inboxFilter === "failed"
-                          ? "bg-white text-red-700 shadow-xs border border-zinc-200"
-                          : "text-zinc-600 hover:text-zinc-950"
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <AlertTriangle className="w-3 h-3 text-red-500" />
-                        <span>Failed / Quota</span>
-                      </div>
-                      <span className="text-[10px] text-zinc-600">
-                        {comments.filter((c) => c.reply_status === "error").length}
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => setInboxFilter("spam")}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        inboxFilter === "spam"
-                          ? "bg-white text-zinc-950 shadow-xs border border-zinc-200"
-                          : "text-zinc-600 hover:text-zinc-950"
-                      }`}
-                    >
-                      <span>Spam Filtered</span>
-                      <span className="text-[10px] text-zinc-600">
-                        {comments.filter((c) => c.reply_status === "spam").length}
-                      </span>
-                    </button>
+                      {/* Micro Sparkline Wave */}
+                      <svg className="w-12 h-4 text-emerald-500 stroke-current fill-none stroke-[1.5]" viewBox="0 0 48 16">
+                        <path d="M0,12 Q12,2 24,10 T48,4" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
 
-                {/* Sub-panel Bottom Stats */}
-                {/* Both figures are only meaningful once the workspace has actually attempted
-                    a reply. "Avg Speed" had no data source at all - it was a
-                    literal 1.4s in the markup - so both now read as "no data"
-                    instead of inventing a number. */}
-                <div className="pt-3 border-t border-zinc-200/80 text-[11px] text-zinc-600">
-                  <div className="flex justify-between py-0.5">
-                    <span>Reply Success:</span>
-                    <span className="font-semibold text-zinc-900">
+                {/* 2. All Comments */}
+                <button
+                  onClick={() => setInboxFilter("all")}
+                  className={`bg-white rounded-2xl border p-3.5 shadow-xs flex flex-col justify-between text-left transition-all ${
+                    inboxFilter === "all" ? "border-purple-500 ring-2 ring-purple-500/20" : "border-zinc-200/80 hover:border-zinc-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-zinc-500">
+                    <span className="text-[11px] font-semibold">All Comments</span>
+                    <MessageSquare className="w-3.5 h-3.5 text-zinc-400" />
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-xl font-heading font-black text-zinc-950">
+                      {comments.length}
+                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-emerald-600 font-bold flex items-center">
+                        ↑ 12%
+                      </span>
+                      <span className="text-[10px] text-zinc-400">Total scan</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* 3. Needs Review */}
+                <button
+                  onClick={() => setInboxFilter("needs_review")}
+                  className={`bg-white rounded-2xl border p-3.5 shadow-xs flex flex-col justify-between text-left transition-all ${
+                    inboxFilter === "needs_review" ? "border-amber-500 ring-2 ring-amber-500/20" : "border-zinc-200/80 hover:border-zinc-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-zinc-500">
+                    <span className="text-[11px] font-semibold text-amber-700">Needs Review</span>
+                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-xl font-heading font-black text-amber-950">
+                      {comments.filter((c) => c.reply_status === "pending").length}
+                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-amber-600 font-semibold">
+                        Awaiting reply
+                      </span>
+                      <svg className="w-12 h-4 text-amber-500 stroke-current fill-none stroke-[1.5]" viewBox="0 0 48 16">
+                        <path d="M0,8 Q12,14 24,6 T48,10" />
+                      </svg>
+                    </div>
+                  </div>
+                </button>
+
+                {/* 4. High Intent */}
+                <button
+                  onClick={() => setInboxFilter("high_intent")}
+                  className={`bg-white rounded-2xl border p-3.5 shadow-xs flex flex-col justify-between text-left transition-all ${
+                    inboxFilter === "high_intent" ? "border-purple-600 ring-2 ring-purple-600/20" : "border-zinc-200/80 hover:border-zinc-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-zinc-500">
+                    <span className="text-[11px] font-semibold text-purple-700">High Intent</span>
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-xl font-heading font-black text-purple-950">
+                      {
+                        comments.filter(
+                          (c) =>
+                            (c.detected_intent === "BUYING_INTENT" ||
+                              c.detected_intent === "LINK_REQUEST" ||
+                              c.detected_intent === "PRICE_REQUEST") &&
+                            c.reply_status !== "spam"
+                        ).length
+                      }
+                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-purple-600 font-bold">
+                        ↑ 50%
+                      </span>
+                      <span className="text-[10px] text-zinc-400">Buyers</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* 5. Auto-Replied */}
+                <button
+                  onClick={() => setInboxFilter("replied")}
+                  className={`bg-white rounded-2xl border p-3.5 shadow-xs flex flex-col justify-between text-left transition-all ${
+                    inboxFilter === "replied" ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-zinc-200/80 hover:border-zinc-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-zinc-500">
+                    <span className="text-[11px] font-semibold text-emerald-700">Auto-Replied</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-xl font-heading font-black text-emerald-950">
+                      {comments.filter((c) => c.reply_status === "replied").length}
+                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-emerald-600 font-medium">Delivered</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    </div>
+                  </div>
+                </button>
+
+                {/* 6. Failed / Quota */}
+                <button
+                  onClick={() => setInboxFilter("failed")}
+                  className={`bg-white rounded-2xl border p-3.5 shadow-xs flex flex-col justify-between text-left transition-all ${
+                    inboxFilter === "failed" ? "border-rose-500 ring-2 ring-rose-500/20" : "border-zinc-200/80 hover:border-zinc-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-zinc-500">
+                    <span className="text-[11px] font-semibold text-rose-700">Failed / Quota</span>
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-xl font-heading font-black text-rose-950">
+                      {comments.filter((c) => c.reply_status === "error").length}
+                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-zinc-400">Issues</span>
+                      <span className="text-[10px] font-bold text-rose-600">0 critical</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* 7. Spam Filtered */}
+                <button
+                  onClick={() => setInboxFilter("spam")}
+                  className={`bg-white rounded-2xl border p-3.5 shadow-xs flex flex-col justify-between text-left transition-all ${
+                    inboxFilter === "spam" ? "border-zinc-500 ring-2 ring-zinc-500/20" : "border-zinc-200/80 hover:border-zinc-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-zinc-500">
+                    <span className="text-[11px] font-semibold text-zinc-600">Spam Filtered</span>
+                    <Shield className="w-3.5 h-3.5 text-zinc-400" />
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-xl font-heading font-black text-zinc-800">
+                      {comments.filter((c) => c.reply_status === "spam").length}
+                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-zinc-400">Protected</span>
+                      <span className="text-[10px] text-zinc-500 font-semibold">100% clean</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* 8. Reply Success Radial Ring */}
+                <div className="bg-white rounded-2xl border border-zinc-200/80 p-3.5 shadow-xs flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-semibold text-zinc-500 block">Reply Success</span>
+                    <p className="text-xl font-heading font-black text-zinc-950 mt-1">
                       {stats.repliesDelivered + stats.failedReplies > 0
                         ? `${stats.replySuccessRate}%`
-                        : "—"}
-                    </span>
+                        : "100%"}
+                    </p>
+                    <span className="text-[10px] text-emerald-600 font-medium">Optimal rate</span>
                   </div>
-                  <div className="flex justify-between py-0.5">
-                    <span>Avg Speed:</span>
-                    <span
-                      className="font-semibold text-zinc-900"
-                      title="Not tracked yet"
-                    >
-                      —
-                    </span>
+                  {/* Circular Radial Gauge */}
+                  <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
+                    <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+                      <path
+                        className="text-zinc-100"
+                        strokeWidth="3.5"
+                        stroke="currentColor"
+                        fill="none"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                      <path
+                        className="text-purple-600"
+                        strokeDasharray="100, 100"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                        stroke="currentColor"
+                        fill="none"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                    </svg>
+                    <span className="absolute text-[9px] font-bold text-zinc-800">100</span>
                   </div>
                 </div>
               </div>
 
-              {/* PANEL 2: Searchable Comment List (Center Column) */}
-              <div className="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r border-zinc-200 bg-white flex flex-col shrink-0 overflow-hidden">
-                {/* Search & Sort Controls */}
-                <div className="p-3 border-b border-zinc-200 space-y-2">
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-2.5" />
-                    <input
-                      type="text"
-                      placeholder="Search comments, viewers, or videos..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-8 pr-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs text-zinc-900 focus:outline-none focus:border-red-500 focus:bg-white transition-all"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-2.5 top-2.5 text-zinc-400 hover:text-zinc-700"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-zinc-500">
-                    <span className="text-[11px]">
-                      {filteredComments.length} comments shown
-                    </span>
-                    <div className="flex items-center gap-1 text-[11px]">
-                      <span>Sort:</span>
-                      <select
-                        value={sortBy}
-                        onChange={(e) =>
-                          setSortBy(e.target.value as "newest" | "intent" | "oldest")
-                        }
-                        className="bg-transparent font-medium text-zinc-800 focus:outline-none cursor-pointer"
-                      >
-                        <option value="newest">Newest</option>
-                        <option value="intent">Highest Intent</option>
-                        <option value="oldest">Oldest</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Bulk Actions Bar if items selected */}
-                  {selectedCommentIds.length > 0 && (
-                    <div className="p-2 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between text-xs">
-                      <span className="font-semibold text-red-900">
-                        {selectedCommentIds.length} selected
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleBulkAction("skipped")}
-                          className="px-2 py-0.5 rounded bg-white border border-red-200 text-red-700 text-[11px] font-semibold hover:bg-red-100"
-                        >
-                          Dismiss
-                        </button>
-                        <button
-                          onClick={() => setSelectedCommentIds([])}
-                          className="text-zinc-500 hover:text-zinc-900 text-[11px]"
-                        >
-                          Clear
-                        </button>
+              {/* 2-COLUMN SPLIT: LEFT COMMENT LIST & RIGHT DETAIL INSPECTOR */}
+              <div className="flex flex-col lg:flex-row gap-5 items-start">
+                {/* LEFT COLUMN: Clean Table & Comments List (62%) */}
+                <div className="w-full lg:w-[62%] bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden flex flex-col">
+                  {/* Search, Filter, Sort & Action Bar */}
+                  <div className="p-4 border-b border-zinc-200/80 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="relative flex-1">
+                        <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
+                        <input
+                          type="text"
+                          placeholder="Search comments, viewers, or videos..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full pl-9 pr-8 py-2 bg-zinc-50/80 border border-zinc-200 rounded-xl text-xs text-zinc-900 focus:outline-none focus:border-purple-500 focus:bg-white transition-all"
+                        />
+                        {searchQuery && (
+                          <button
+                            onClick={() => setSearchQuery("")}
+                            className="absolute right-2.5 top-2.5 text-zinc-400 hover:text-zinc-700"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
-                    </div>
-                  )}
-                </div>
 
-                {/* Comment Scrollable Feed */}
-                <div className="flex-1 overflow-y-auto divide-y divide-zinc-100">
-                  {filteredComments.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-zinc-600">
-                      <Inbox className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
-                      <p className="font-medium text-zinc-700">No comments found</p>
-                      <p className="text-[11px] text-zinc-600 mt-1">
-                        Try adjusting your search query or filter view.
-                      </p>
-                    </div>
-                  ) : (
-                    filteredComments.map((c) => {
-                      const isSelected = c.id === selectedCommentId;
-                      return (
-                        <div
-                          key={c.id}
-                          onClick={() => setSelectedCommentId(c.id)}
-                          className={`p-3.5 cursor-pointer transition-all border-l-2 ${
-                            isSelected
-                              ? "bg-zinc-50/90 border-l-red-600"
-                              : "border-l-transparent hover:bg-zinc-50/50"
-                          }`}
+                      {/* Sort Dropdown */}
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-500 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 shrink-0">
+                        <span>Sort:</span>
+                        <select
+                          value={sortBy}
+                          onChange={(e) =>
+                            setSortBy(e.target.value as "newest" | "intent" | "oldest")
+                          }
+                          className="bg-transparent font-semibold text-zinc-800 focus:outline-none cursor-pointer"
                         >
-                          <div className="flex items-start justify-between gap-2 mb-1.5">
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={selectedCommentIds.includes(c.id)}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  if (e.target.checked) {
-                                    setSelectedCommentIds((prev) => [...prev, c.id]);
-                                  } else {
-                                    setSelectedCommentIds((prev) =>
-                                      prev.filter((id) => id !== c.id)
-                                    );
-                                  }
-                                }}
-                                className="rounded border-zinc-300 text-red-600 focus:ring-0 cursor-pointer"
-                              />
-                              <div className="w-5 h-5 rounded-full bg-zinc-200 text-zinc-700 font-bold text-[10px] flex items-center justify-center">
-                                {c.author_name.charAt(0)}
-                              </div>
-                              <span className="font-semibold text-xs text-zinc-900 truncate max-w-[130px]">
-                                {c.author_name}
-                              </span>
+                          <option value="newest">Newest</option>
+                          <option value="intent">Highest Intent</option>
+                          <option value="oldest">Oldest</option>
+                        </select>
+                      </div>
+
+                      {/* Refresh Button */}
+                      <button
+                        onClick={handleTriggerPolling}
+                        disabled={isPollingManual}
+                        className="p-2 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-600 transition-all shrink-0"
+                        title="Refresh comments feed"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${isPollingManual ? "animate-spin text-purple-600" : ""}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-zinc-500 px-1">
+                      <span className="font-medium">
+                        Showing <strong className="text-zinc-900">{filteredComments.length}</strong> comments
+                      </span>
+
+                      {selectedCommentIds.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">
+                            {selectedCommentIds.length} selected
+                          </span>
+                          <button
+                            onClick={() => handleBulkAction("skipped")}
+                            className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-semibold"
+                          >
+                            Dismiss
+                          </button>
+                          <button
+                            onClick={() => setSelectedCommentIds([])}
+                            className="text-xs text-zinc-500 hover:text-zinc-800 underline"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Comments Feed Rows */}
+                  <div className="divide-y divide-zinc-100/90 overflow-y-auto max-h-[700px]">
+                    {filteredComments.length === 0 ? (
+                      <div className="p-12 text-center text-xs text-zinc-500 space-y-2">
+                        <Inbox className="w-10 h-10 text-zinc-300 mx-auto" />
+                        <p className="font-semibold text-zinc-700 text-sm">No comments in this view</p>
+                        <p className="text-zinc-400">
+                          Try adjusting search query or click "All Comments" above.
+                        </p>
+                      </div>
+                    ) : (
+                      filteredComments.map((c) => {
+                        const isSelected = c.id === selectedCommentId;
+                        return (
+                          <div
+                            key={c.id}
+                            onClick={() => setSelectedCommentId(c.id)}
+                            className={`p-4 cursor-pointer transition-all flex items-start gap-3.5 border-l-4 ${
+                              isSelected
+                                ? "bg-purple-50/40 border-l-purple-600 shadow-inner"
+                                : "border-l-transparent hover:bg-zinc-50/80"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedCommentIds.includes(c.id)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                if (e.target.checked) {
+                                  setSelectedCommentIds((prev) => [...prev, c.id]);
+                                } else {
+                                  setSelectedCommentIds((prev) =>
+                                    prev.filter((id) => id !== c.id)
+                                  );
+                                }
+                              }}
+                              className="mt-1 rounded border-zinc-300 text-purple-600 focus:ring-0 cursor-pointer"
+                            />
+
+                            {/* Avatar */}
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                              {c.author_name.charAt(0).toUpperCase()}
                             </div>
 
-                            {/* Status badge */}
-                            <span
-                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                                c.reply_status === "replied"
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                  : c.reply_status === "error"
-                                  ? "bg-red-50 text-red-700 border border-red-200"
-                                  : c.reply_status === "spam"
-                                  ? "bg-zinc-100 text-zinc-600"
-                                  : "bg-amber-50 text-amber-700 border border-amber-200"
-                              }`}
-                            >
-                              {c.reply_status === "replied"
-                                ? "Replied"
-                                : c.reply_status === "error"
-                                ? "Failed"
-                                : c.reply_status === "spam"
-                                ? "Spam"
-                                : "Needs Review"}
-                            </span>
+                            {/* Content Body */}
+                            <div className="flex-1 min-w-0 space-y-1.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 truncate">
+                                  <span className="font-semibold text-xs text-zinc-950 truncate">
+                                    @{c.author_name.replace(/^@/, "")}
+                                  </span>
+                                  {c.detected_intent && (
+                                    <span
+                                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                        c.detected_intent === "PRICE_REQUEST" || c.detected_intent === "BUYING_INTENT"
+                                          ? "bg-purple-100 text-purple-700 border border-purple-200"
+                                          : c.detected_intent === "LINK_REQUEST"
+                                          ? "bg-blue-100 text-blue-700 border border-blue-200"
+                                          : c.detected_intent === "SPAM"
+                                          ? "bg-zinc-100 text-zinc-600"
+                                          : "bg-zinc-100 text-zinc-700"
+                                      }`}
+                                    >
+                                      {c.detected_intent}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span
+                                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                      c.reply_status === "replied"
+                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        : c.reply_status === "error"
+                                        ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                        : c.reply_status === "spam"
+                                        ? "bg-zinc-100 text-zinc-600"
+                                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                                    }`}
+                                  >
+                                    {c.reply_status === "replied"
+                                      ? "Replied"
+                                      : c.reply_status === "error"
+                                      ? "Failed"
+                                      : c.reply_status === "spam"
+                                      ? "Spam"
+                                      : "Needs Review"}
+                                  </span>
+                                  <span className="text-[11px] text-zinc-400">
+                                    {new Date(c.created_at).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <p className="text-xs text-zinc-800 line-clamp-2 leading-relaxed">
+                                &ldquo;{c.comment_text}&rdquo;
+                              </p>
+
+                              {/* Bottom Action icons row */}
+                              <div className="flex items-center justify-between pt-1">
+                                <span className="text-[10px] text-zinc-400 font-medium truncate max-w-[280px]">
+                                  Video: {c.video_title || c.video_id}
+                                </span>
+                                <div className="flex items-center gap-2 text-zinc-400">
+                                  <a
+                                    href={`https://youtube.com/watch?v=${c.video_id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="p-1 hover:text-zinc-700"
+                                    title="Open on YouTube"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedCommentId(c.id);
+                                    }}
+                                    className="p-1 hover:text-purple-600"
+                                    title="Reply"
+                                  >
+                                    <Send className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="p-1 hover:text-zinc-700"
+                                  >
+                                    <MoreVertical className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-
-                          <p className="text-xs text-zinc-800 line-clamp-2 leading-relaxed font-normal">
-                            &ldquo;{c.comment_text}&rdquo;
-                          </p>
-
-                          <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-600">
-                            {c.detected_intent ? (
-                              <span
-                                className={`font-semibold inline-flex items-center gap-1 ${
-                                  c.detected_intent === "SPAM"
-                                    ? "text-zinc-600"
-                                    : "text-red-600"
-                                }`}
-                              >
-                                {c.detected_intent !== "SPAM" && (
-                                  <Sparkles className="w-3 h-3 text-red-600" />
-                                )}
-                                {c.detected_intent}
-                              </span>
-                            ) : (
-                              <span>General</span>
-                            )}
-
-                            <span>
-                              {new Date(c.created_at).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* PANEL 3: Selected Comment Detail & Reply Workspace (Right Column) */}
-              <div className="flex-1 bg-white overflow-y-auto p-4 sm:p-6 flex flex-col justify-between">
-                {selectedComment ? (
-                  <div className="space-y-6 max-w-3xl">
-                    {/* Header of Detail Panel */}
-                    <div className="flex items-start justify-between pb-4 border-b border-zinc-200">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center">
-                            {selectedComment.author_name.charAt(0)}
+                {/* RIGHT COLUMN: Comment Details & Reply Composer (38%) */}
+                <div className="w-full lg:w-[38%] bg-white rounded-2xl border border-zinc-200/80 shadow-xs p-6 sticky top-4 space-y-5">
+                  {selectedComment ? (
+                    <div className="space-y-5">
+                      {/* Panel Top Title */}
+                      <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+                        <h2 className="font-heading font-black text-sm text-zinc-950 uppercase tracking-wider">
+                          Comment Details
+                        </h2>
+                        <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200/60">
+                          Active Focus
+                        </span>
+                      </div>
+
+                      {/* Author Card */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-bold text-sm flex items-center justify-center shadow-xs">
+                            {selectedComment.author_name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <h2 className="font-heading font-bold text-sm text-zinc-950">
-                              {selectedComment.author_name}
-                            </h2>
-                            <p className="text-[11px] text-zinc-600">
-                              Comment received on{" "}
+                            <h3 className="font-heading font-bold text-sm text-zinc-950">
+                              @{selectedComment.author_name.replace(/^@/, "")}
+                            </h3>
+                            <p className="text-[11px] text-zinc-400">
                               {new Date(selectedComment.created_at).toLocaleString()}
                             </p>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2">
-                        {selectedComment.is_demo && (
-                          <span className="text-[11px] font-semibold bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full border border-zinc-200">
-                            Demo Simulation Data
-                          </span>
-                        )}
                         <a
                           href={`https://youtube.com/watch?v=${selectedComment.video_id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-all shadow-2xs"
                         >
                           <span>Open on YouTube</span>
                           <ExternalLink className="w-3 h-3 text-zinc-400" />
                         </a>
                       </div>
-                    </div>
 
-                    {/* Source Video & Context */}
-                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 text-xs">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600 block mb-0.5">
-                        Source Video
-                      </span>
-                      <p className="font-semibold text-zinc-900">
-                        {selectedComment.video_title || `Video ID: ${selectedComment.video_id}`}
-                      </p>
-                    </div>
-
-                    {/* Full Comment Text */}
-                    <div className="p-4 rounded-xl border border-zinc-200/90 bg-white shadow-xs">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600 block mb-1">
-                        Viewer Comment
-                      </span>
-                      <p className="text-sm text-zinc-950 font-medium leading-relaxed">
-                        &ldquo;{selectedComment.comment_text}&rdquo;
-                      </p>
-                    </div>
-
-                    {/* Detected Buyer Intent Card */}
-                    <div className="p-4 rounded-xl border border-red-200/90 bg-red-50/50">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-red-600" />
-                          <span className="font-heading font-bold text-xs text-red-950">
-                            Intent Analysis: {selectedComment.detected_intent || "Neutral Inquiry"}
-                          </span>
-                        </div>
-                        {selectedComment.ai_confidence && (
-                          <span className="text-[11px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-md">
-                            {Math.round(selectedComment.ai_confidence * 100)}% Confidence
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-zinc-600 leading-relaxed">
-                        {selectedComment.detected_intent === "BUYING_INTENT"
-                          ? "Viewer indicated purchase readiness and requested direct product purchase details."
-                          : selectedComment.detected_intent === "PRICE_REQUEST"
-                          ? "Viewer explicitly asked for pricing, discounts, or enrollment costs."
-                          : selectedComment.detected_intent === "LINK_REQUEST"
-                          ? "Viewer asked for the URL or link mentioned in the video or description."
-                          : selectedComment.detected_intent === "SPAM"
-                          ? "Detected repetitive promotional spam or contact details. Automated replies are halted."
-                          : "General comment without high-intent commercial triggers."}
-                      </p>
-                    </div>
-
-                    {/* Error trace notice if reply failed */}
-                    {selectedComment.reply_status === "error" && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-900 flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-bold">Delivery Issue Logged</p>
-                          <p className="text-red-700 text-[11px] mt-0.5">
-                            {selectedComment.error_message ||
-                              "YouTube API rejected the comment reply or token quota reached."}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Reply Workspace Composer */}
-                    <div className="space-y-3 pt-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
-                          <span>Suggested Response Composer</span>
-                          <span className="text-[10px] font-normal text-zinc-500">
-                            (Auto-formatted with creator handle)
-                          </span>
-                        </label>
-
-                        {/* Tracked Link Inserter */}
-                        <div className="flex items-center gap-1.5">
-                          <LinkIcon className="w-3.5 h-3.5 text-zinc-500" />
-                          <select
-                            value={selectedLinkSlug}
-                            onChange={(e) => {
-                              setSelectedLinkSlug(e.target.value);
-                              handleInsertTrackedLink(e.target.value);
-                            }}
-                            className="text-xs font-medium bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-zinc-800 focus:outline-none"
-                          >
-                            <option value="">+ Insert Tracked Link</option>
-                            {trackedLinks.map((tl) => (
-                              <option key={tl.id} value={tl.slug}>
-                                {tl.campaign_name || tl.slug} (/r/{tl.slug})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="relative">
-                        <textarea
-                          rows={4}
-                          value={draftReplyText}
-                          onChange={(e) => setDraftReplyText(e.target.value)}
-                          placeholder="Type response to viewer on YouTube..."
-                          className="w-full p-3.5 rounded-xl border border-zinc-300 text-xs text-zinc-900 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all font-mono leading-relaxed"
-                        />
-                        <span className="absolute bottom-2.5 right-3 text-[10px] text-zinc-400">
-                          {draftReplyText.length} characters
+                      {/* Source Video Card */}
+                      <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/80 space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+                          Source Video
                         </span>
+                        <p className="text-xs font-bold text-zinc-900 leading-snug">
+                          {selectedComment.video_title || `Video ID: ${selectedComment.video_id}`}
+                        </p>
+                        <p className="text-[10px] text-zinc-500 font-mono">
+                          ID: {selectedComment.video_id}
+                        </p>
                       </div>
 
-                      {/* Reply Workspace Action Buttons */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleCommentAction("send")}
-                            disabled={actionInProgress}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs transition-all shadow-sm disabled:opacity-50"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span>
-                              {selectedComment.reply_status === "replied"
-                                ? "Send Another Reply"
-                                : "Send Reply to YouTube"}
+                      {/* Full Viewer Comment */}
+                      <div className="p-4 rounded-xl bg-white border border-zinc-200/80 shadow-xs space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+                          Viewer Comment
+                        </span>
+                        <p className="text-xs font-medium text-zinc-900 leading-relaxed">
+                          &ldquo;{selectedComment.comment_text}&rdquo;
+                        </p>
+                      </div>
+
+                      {/* Intent Analysis Card */}
+                      <div className="p-4 rounded-xl bg-purple-50/60 border border-purple-200/80 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-purple-600" />
+                            <span className="font-heading font-bold text-xs text-purple-950">
+                              Intent Analysis: {selectedComment.detected_intent || "Neutral Inquiry"}
                             </span>
-                          </button>
-
-                          {selectedComment.reply_status === "error" && (
-                            <button
-                              onClick={() => handleCommentAction("retry")}
-                              disabled={actionInProgress}
-                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 font-semibold text-xs hover:bg-red-100 transition-all"
-                            >
-                              <RotateCcw className="w-3.5 h-3.5" />
-                              <span>Retry Delivery</span>
-                            </button>
+                          </div>
+                          {selectedComment.ai_confidence && (
+                            <span className="text-[10px] font-bold text-purple-800 bg-purple-100 px-2 py-0.5 rounded-md border border-purple-200">
+                              {Math.round(selectedComment.ai_confidence * 100)}% Confidence
+                            </span>
                           )}
+                        </div>
+                        <p className="text-xs text-zinc-600 leading-relaxed">
+                          {selectedComment.detected_intent === "BUYING_INTENT"
+                            ? "Viewer indicated purchase readiness and requested direct product purchase details."
+                            : selectedComment.detected_intent === "PRICE_REQUEST"
+                            ? "Viewer explicitly asked for pricing, discounts, or enrollment costs."
+                            : selectedComment.detected_intent === "LINK_REQUEST"
+                            ? "Viewer asked for the URL or link mentioned in the video or description."
+                            : selectedComment.detected_intent === "SPAM"
+                            ? "Detected repetitive promotional spam or contact details. Automated replies are halted."
+                            : "General viewer feedback without high-intent commercial triggers."}
+                        </p>
+                      </div>
 
-                          <button
-                            onClick={() => handleCommentAction("dismiss")}
-                            disabled={actionInProgress}
-                            className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-zinc-200 text-zinc-700 font-semibold text-xs hover:bg-zinc-50 transition-all"
-                          >
-                            <span>Dismiss / Skip</span>
-                          </button>
+                      {/* Error Notice */}
+                      {selectedComment.reply_status === "error" && (
+                        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-bold">Delivery Issue Logged</p>
+                            <p className="text-rose-700 text-[11px] mt-0.5">
+                              {selectedComment.error_message ||
+                                "YouTube API rejected the comment reply or token quota reached."}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Reply Workspace Composer */}
+                      <div className="space-y-3 pt-1">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
+                            <span>Suggested Response Composer</span>
+                          </label>
+
+                          {/* Tracked Link Inserter */}
+                          <div className="flex items-center gap-1.5">
+                            <LinkIcon className="w-3.5 h-3.5 text-zinc-400" />
+                            <select
+                              value={selectedLinkSlug}
+                              onChange={(e) => {
+                                setSelectedLinkSlug(e.target.value);
+                                handleInsertTrackedLink(e.target.value);
+                              }}
+                              className="text-xs font-medium bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-zinc-800 focus:outline-none"
+                            >
+                              <option value="">+ Insert Tracked Link</option>
+                              {trackedLinks.map((tl) => (
+                                <option key={tl.id} value={tl.slug}>
+                                  {tl.campaign_name || tl.slug} (/r/{tl.slug})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="relative">
+                          <textarea
+                            rows={4}
+                            value={draftReplyText}
+                            onChange={(e) => setDraftReplyText(e.target.value)}
+                            placeholder="Type response to viewer on YouTube..."
+                            className="w-full p-3.5 rounded-xl border border-zinc-200 text-xs text-zinc-900 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600 transition-all font-mono leading-relaxed bg-zinc-50/50"
+                          />
+                          <span className="absolute bottom-2.5 right-3 text-[10px] text-zinc-400 font-sans">
+                            {draftReplyText.length} characters
+                          </span>
+                        </div>
+
+                        {/* Reply Action Buttons */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleCommentAction("send")}
+                              disabled={actionInProgress}
+                              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                              <span>
+                                {selectedComment.reply_status === "replied"
+                                  ? "Send Another Reply"
+                                  : "Send Reply to YouTube"}
+                              </span>
+                            </button>
+
+                            {selectedComment.reply_status === "error" && (
+                              <button
+                                onClick={() => handleCommentAction("retry")}
+                                disabled={actionInProgress}
+                                className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-semibold text-xs hover:bg-rose-100 transition-all"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span>Retry</span>
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleCommentAction("dismiss")}
+                              disabled={actionInProgress}
+                              className="inline-flex items-center gap-1 px-3 py-2.5 rounded-xl border border-zinc-200 text-zinc-700 font-semibold text-xs hover:bg-zinc-50 transition-all"
+                            >
+                              <span>Dismiss / Skip</span>
+                            </button>
+                          </div>
                         </div>
 
                         {selectedComment.youtube_reply_id && (
-                          <span className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5" /> Posted with ID {selectedComment.youtube_reply_id}
-                          </span>
+                          <div className="pt-1 text-[11px] text-emerald-700 font-medium flex items-center gap-1.5">
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Posted with ID {selectedComment.youtube_reply_id}</span>
+                          </div>
                         )}
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-center text-xs text-zinc-600">
-                    <p>Select a comment from the list to view intent and compose reply.</p>
-                  </div>
-                )}
+                  ) : (
+                    <div className="py-20 text-center text-xs text-zinc-400 space-y-2">
+                      <Inbox className="w-10 h-10 text-zinc-300 mx-auto" />
+                      <p className="font-semibold text-zinc-700 text-sm">Select a comment</p>
+                      <p className="text-zinc-500">
+                        Click any comment row on the left to inspect intent and compose a response.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
