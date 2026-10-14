@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, verifySessionToken } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
   evaluateRuleMatch,
@@ -13,7 +13,14 @@ export const dynamic = "force-dynamic";
 
 // Helper: resolve user profile and workspace
 async function getAuthenticatedUser(request: NextRequest) {
-  const session = await getSession();
+  let session = await getSession();
+  if (!session) {
+    const authHeader = request.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.substring(7).trim();
+      session = await verifySessionToken(token);
+    }
+  }
   const email = session?.email;
   if (!email) return null;
 
@@ -225,24 +232,23 @@ export async function POST(request: NextRequest) {
     }
 
     // ACTION: CREATE RULE
-    const {
-      name,
-      keywords,
-      negativeKeywords,
-      matchType,
-      keywordMatchOperator,
-      targetMode,
-      targetVideoIds,
-      targetVideoId,
-      campaignType,
-      replyTemplates,
-      ctaUrl,
-      intentCategory,
-      delaySeconds,
-      channelId,
-    } = body;
+    const name = body.name?.trim();
+    const keywords = body.keywords;
+    const negativeKeywords = body.negativeKeywords ?? body.negative_keywords;
+    const matchType = body.matchType ?? body.match_type;
+    const keywordMatchOperator = body.keywordMatchOperator ?? body.keyword_match_operator;
+    const targetMode = body.targetMode ?? body.target_mode;
+    const targetVideoIds = body.targetVideoIds ?? body.target_video_ids;
+    const targetVideoId = body.targetVideoId ?? body.target_video_id;
+    const campaignType = body.campaignType ?? body.campaign_type;
+    const replyTemplates = body.replyTemplates ?? body.reply_templates;
+    const ctaUrl = body.ctaUrl ?? body.cta_url;
+    const intentCategory = body.intentCategory ?? body.intent_category;
+    const delaySeconds = body.delaySeconds ?? body.delay_seconds;
+    const channelId = body.channelId ?? body.channel_id;
+    const isActive = body.isActive ?? body.is_active;
 
-    if (!name || !keywords || !replyTemplates || replyTemplates.length === 0) {
+    if (!name || !keywords || !replyTemplates || (Array.isArray(replyTemplates) && replyTemplates.length === 0)) {
       return NextResponse.json(
         { error: "Rule name, keywords, and at least one reply template are required" },
         { status: 400 }
@@ -352,24 +358,22 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      id,
-      name,
-      keywords,
-      negativeKeywords,
-      matchType,
-      keywordMatchOperator,
-      targetMode,
-      targetVideoIds,
-      targetVideoId,
-      campaignType,
-      replyTemplates,
-      ctaUrl,
-      intentCategory,
-      delaySeconds,
-      channelId,
-      is_active,
-    } = body;
+    const id = body.id;
+    const name = body.name?.trim();
+    const keywords = body.keywords;
+    const negativeKeywords = body.negativeKeywords ?? body.negative_keywords;
+    const matchType = body.matchType ?? body.match_type;
+    const keywordMatchOperator = body.keywordMatchOperator ?? body.keyword_match_operator;
+    const targetMode = body.targetMode ?? body.target_mode;
+    const targetVideoIds = body.targetVideoIds ?? body.target_video_ids;
+    const targetVideoId = body.targetVideoId ?? body.target_video_id;
+    const campaignType = body.campaignType ?? body.campaign_type;
+    const replyTemplates = body.replyTemplates ?? body.reply_templates;
+    const ctaUrl = body.ctaUrl ?? body.cta_url;
+    const intentCategory = body.intentCategory ?? body.intent_category;
+    const delaySeconds = body.delaySeconds ?? body.delay_seconds;
+    const channelId = body.channelId ?? body.channel_id;
+    const is_active = body.isActive ?? body.is_active;
 
     if (!id) {
       return NextResponse.json({ error: "Rule ID is required" }, { status: 400 });
