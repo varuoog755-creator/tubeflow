@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
 import { PLAN_CONFIGS, isAdmin, isTestAccount } from "@/lib/admin";
+import { getReplyAllowance } from "@/lib/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,14 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     const currentPlanId = (workspace?.plan || "free").toLowerCase();
-    const currentPlan = PLAN_CONFIGS[currentPlanId] || PLAN_CONFIGS.free;
+
+    // Read the plan through the same resolver the reply and channel gates use.
+    // Looking it up from PLAN_CONFIGS directly made this endpoint report the
+    // stored plan, so a test account was shown "Free / 100 replies" while
+    // actually being metered as unlimited - the dashboard contradicted the
+    // behaviour the customer was getting.
+    const allowance = workspace?.id ? await getReplyAllowance(workspace.id) : null;
+    const currentPlan = allowance?.plan ?? (PLAN_CONFIGS[currentPlanId] || PLAN_CONFIGS.free);
 
     // Count user's channels
     const { count: channelCount } = await supabaseAdmin
@@ -59,7 +67,7 @@ export async function GET(request: NextRequest) {
       usage: {
         channelsConnected: channelCount || 0,
         channelsLimit: currentPlan.channelLimit,
-        repliesThisMonth: repliesCount || 0,
+        repliesThisMonth: allowance?.used ?? repliesCount ?? 0,
         repliesLimit: currentPlan.monthlyRepliesLimit,
       },
       plans: PLAN_CONFIGS,
