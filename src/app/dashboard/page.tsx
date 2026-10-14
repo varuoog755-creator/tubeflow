@@ -407,6 +407,28 @@ export default function DashboardPage() {
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- load remote dashboard state on mount
     fetchDashboardData();
+
+    // Auto-poll YouTube for new comments every 60s while dashboard is active
+    const pollInterval = setInterval(() => {
+      fetch("/api/cron/poll-comments?manual=true", { headers: getAuthHeaders() })
+        .then((res) => {
+          if (res.ok) {
+            return fetch("/api/dashboard", { headers: getAuthHeaders() });
+          }
+        })
+        .then((res) => res?.json())
+        .then((data) => {
+          if (data?.logs) {
+            setComments(data.logs);
+          }
+          if (data?.stats) {
+            setStats((prev) => ({ ...prev, ...data.stats }));
+          }
+        })
+        .catch(() => {});
+    }, 60000);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
   // Set default selected comment when comments load

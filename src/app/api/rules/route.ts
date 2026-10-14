@@ -358,7 +358,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const id = body.id;
+    const id = body.id || new URL(request.url).searchParams.get("id");
     const name = body.name?.trim();
     const keywords = body.keywords;
     const negativeKeywords = body.negativeKeywords ?? body.negative_keywords;
