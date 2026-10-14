@@ -179,7 +179,7 @@ export default function DashboardPage() {
     try {
       await fetch("/api/dashboard", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ noticeIds }),
       });
     } catch {
@@ -647,7 +647,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch("/api/logs", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ logIds: selectedCommentIds, status: newStatus }),
       });
       if (res.ok) {

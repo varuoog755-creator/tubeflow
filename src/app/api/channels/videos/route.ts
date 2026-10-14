@@ -37,7 +37,7 @@ function formatDuration(seconds: number): string {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(request);
     const email = session?.email;
     if (!email || !session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

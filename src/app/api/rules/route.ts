@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 // Helper: resolve user profile and workspace
 async function getAuthenticatedUser(request: NextRequest) {
-  let session = await getSession();
+  let session = await getSession(request);
   if (!session) {
     const authHeader = request.headers.get("authorization");
     if (authHeader?.startsWith("Bearer ")) {

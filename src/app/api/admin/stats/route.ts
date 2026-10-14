@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(request);
 
     if (!session?.email || !isAdmin(session.email)) {
       return NextResponse.json({ error: "Forbidden: Admin privileges required" }, { status: 403 });

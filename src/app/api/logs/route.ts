@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(request);
     const email = session?.email;
     if (!email) {
       return NextResponse.json({ logs: [], pagination: { page: 1, limit: 25, total: 0, totalPages: 0 } }, { status: 401 });
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(request);
     const email = session?.email || request.cookies.get("brh_user_email")?.value;
     if (!email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -18,8 +18,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized cron execution" }, { status: 401 });
   }
 
+  let session: Awaited<ReturnType<typeof getSession>> = null;
   if (manual) {
-    const session = await getSession();
+    session = await getSession(request);
     if (!session?.userId || !session.workspaceId) {
       return NextResponse.json({ error: "Unauthorized user session" }, { status: 401 });
     }
@@ -31,9 +32,7 @@ export async function GET(request: NextRequest) {
       .from("youtube_channels")
       .select("*, trigger_rules(*)")
       .eq("is_active", true);
-    if (manual) {
-      const session = await getSession();
-      if (!session) return NextResponse.json({ error: "Unauthorized user session" }, { status: 401 });
+    if (manual && session) {
       channelsQuery = channelsQuery.eq("user_id", session.userId).eq("workspace_id", session.workspaceId);
     }
     const { data: channels, error: channelsError } = await channelsQuery;

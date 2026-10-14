@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(request);
     const email = session?.email;
 
     if (!email) {
@@ -219,7 +219,7 @@ const totalAttempts = repliesSent + failedReplies;
 // dashboard's authenticated, workspace-scoped endpoint.
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(request);
     if (!session?.userId || !session.workspaceId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
   // the empty shape.
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(request);
     const email = session?.email;
 
     if (!email) {
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(request);
     const email = session?.email || request.cookies.get("brh_user_email")?.value;
     if (!email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

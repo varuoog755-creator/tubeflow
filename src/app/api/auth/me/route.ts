@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { NextRequest, NextResponse } from "next/server";
+import { getSession, setSessionCookie, createSessionToken } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(request);
     if (!session) {
       return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
     }
@@ -23,8 +23,15 @@ export async function GET() {
       .eq("id", session.workspaceId)
       .maybeSingle();
 
-    return NextResponse.json({
+    const authHeader = request.headers.get("authorization");
+    let token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7).trim() : null;
+    if (!token) {
+      token = await createSessionToken(session);
+    }
+
+    const response = NextResponse.json({
       authenticated: true,
+      token,
       user: {
         id: session.userId,
         email: session.email,
@@ -37,6 +44,12 @@ export async function GET() {
         },
       },
     });
+
+    if (token) {
+      setSessionCookie(response, token);
+    }
+
+    return response;
   } catch (error: unknown) {
     console.error("Session fetch error:", error);
     return NextResponse.json({ error: "Failed to verify session" }, { status: 500 });

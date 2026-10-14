@@ -19,26 +19,46 @@ function LoginForm() {
   const errorParam = searchParams.get("auth_error") || searchParams.get("error");
 
   useEffect(() => {
+    // If user arrived after explicit logout, clear localStorage immediately
+    if (searchParams.get("logged_out")) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("brh_session_token");
+        localStorage.removeItem("tf_session_token");
+      }
+      setCheckingAuth(false);
+      return;
+    }
+
     const headers: Record<string, string> = {};
+    let storedToken: string | null = null;
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("brh_session_token");
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
+      storedToken = localStorage.getItem("brh_session_token") || localStorage.getItem("tf_session_token");
+      if (storedToken) {
+        headers["Authorization"] = `Bearer ${storedToken}`;
       }
     }
 
     fetch("/api/auth/me", { headers })
-      .then((res) => {
+      .then(async (res) => {
         if (res.ok) {
-          window.location.href = "/dashboard";
+          const data = await res.json().catch(() => null);
+          const activeToken = data?.token || storedToken;
+          if (activeToken && typeof window !== "undefined") {
+            localStorage.setItem("brh_session_token", activeToken);
+          }
+          window.location.href = activeToken ? `/dashboard?token=${encodeURIComponent(activeToken)}` : "/dashboard";
         } else {
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("brh_session_token");
+            localStorage.removeItem("tf_session_token");
+          }
           setCheckingAuth(false);
         }
       })
       .catch(() => {
         setCheckingAuth(false);
       });
-  }, []);
+  }, [searchParams]);
 
   const handleGoogleLogin = () => {
     setLoggingIn(true);

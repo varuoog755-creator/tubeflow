@@ -9,7 +9,18 @@ function getJwtSecret(): Uint8Array | null {
 
 export async function middleware(request: NextRequest) {
   const secret = getJwtSecret();
-  const token = request.cookies.get("brh_session_token")?.value;
+  // 1. Primary cookie
+  let token = request.cookies.get("brh_session_token")?.value;
+  // 2. Fallback to legacy cookie
+  if (!token) {
+    token = request.cookies.get("tf_session_token")?.value;
+  }
+  // 3. Fallback to URL token query parameter
+  const urlToken = request.nextUrl.searchParams.get("token");
+  if (!token && urlToken) {
+    token = urlToken;
+  }
+
   let authenticated = false;
 
   if (secret && token) {
@@ -30,15 +41,24 @@ export async function middleware(request: NextRequest) {
   if (!authenticated) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", request.nextUrl.pathname);
-    const response = NextResponse.redirect(loginUrl);
-    response.cookies.delete("brh_session_token");
-    response.cookies.delete("brh_user_email");
-    return response;
+    return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  // Persist / refresh the 30-day session cookie so active sessions never expire
+  if (token) {
+    response.cookies.set("brh_session_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+    });
+  }
+  return response;
 }
 
 export const config = {
   matcher: ["/dashboard/:path*"],
 };
+

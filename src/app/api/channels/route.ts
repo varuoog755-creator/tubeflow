@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // GET all connected channels for the user's workspace
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(request);
     const email = session?.email;
 
     if (!email) {
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 // POST switch active channel or refresh metrics
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(request);
     const email = session?.email;
 
     if (!email) {
