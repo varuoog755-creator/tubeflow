@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
-import { PLAN_CONFIGS, isAdmin } from "@/lib/admin";
+import { PLAN_CONFIGS, isAdmin, isTestAccount } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -109,7 +109,11 @@ export async function POST(request: NextRequest) {
     // change now has to come from an administrator. Self-service upgrades
     // reopen the moment a provider is connected - see the confirmPaidPlan
     // guard, which is the single place that decision belongs.
-    if (!isAdmin(email)) {
+    // A test account is allowed through so the owner can drive the dashboard
+    // into each paid state and check the UI. It still moves only its own
+    // workspace, and it stays exempt from the limits either way, so this
+    // cannot be used to buy anyone else capacity.
+    if (!isAdmin(email) && !isTestAccount(email)) {
       return NextResponse.json(
         {
           error:

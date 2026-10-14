@@ -98,6 +98,32 @@ export const PLAN_CONFIGS: Record<string, PlanConfig> = {
  * decide.
  */
 
+/**
+ * The allowance handed to a test account in place of a real plan.
+ *
+ * Used only where `isTestAccount()` has already matched the workspace owner.
+ * Both ceilings are `MAX_SAFE_INTEGER`, which keeps the existing arithmetic in
+ * `monthlyAllowance` / `channelAllowance` untouched: neither can ever report
+ * `exhausted` or `atLimit`, so no branch has to learn about test accounts.
+ */
+export const UNLIMITED_PLAN: PlanConfig = {
+  // Deliberately "free": `workspaces.plan` stores the id, and a test account's
+  // stored plan must still resolve to something real if this ever leaks into a
+  // read path. The name is what surfaces in the UI.
+  id: "free",
+  name: "Test account",
+  tagline: "Unlimited access while you build",
+  priceMonthlyInr: 0,
+  priceMonthlyInrYearly: 0,
+  channelLimit: Number.MAX_SAFE_INTEGER,
+  monthlyRepliesLimit: Number.MAX_SAFE_INTEGER,
+  features: [
+    "Unlimited replies",
+    "Unlimited YouTube channels",
+    "Every Pro and Business feature",
+  ],
+};
+
 export function planFor(planId?: string | null): PlanConfig {
   if (!planId) return PLAN_CONFIGS.free;
   return PLAN_CONFIGS[String(planId).toLowerCase()] || PLAN_CONFIGS.free;
