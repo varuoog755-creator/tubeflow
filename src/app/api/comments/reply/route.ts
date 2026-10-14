@@ -68,7 +68,11 @@ export async function POST(request: NextRequest) {
     if (channelId) {
       const { data: chan } = await supabaseAdmin
         .from("youtube_channels")
-        .select("*")
+        // Server-side only: the row is used to authenticate the YouTube insert
+        // and is never returned. Named columns keep the credentials out of the
+        // object entirely rather than relying on the caller to remember not to
+        // echo it.
+        .select("id, access_token, refresh_token, token_expiry")
         .eq("id", channelId)
         .eq("user_id", profile.id)
         .maybeSingle();
@@ -87,7 +91,7 @@ export async function POST(request: NextRequest) {
         storedCommentId = logRec.comment_id;
         const { data: chan } = await supabaseAdmin
           .from("youtube_channels")
-          .select("*")
+          .select("id, access_token, refresh_token, token_expiry")
           .eq("id", logRec.channel_id)
           .eq("user_id", profile.id)
           .maybeSingle();

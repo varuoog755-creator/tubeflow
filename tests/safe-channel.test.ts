@@ -1,6 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { publicChannel } from "../src/lib/safe-channel.ts";
+
+function routeFiles(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      out.push(...routeFiles(full));
+    } else if (entry === "route.ts") {
+      out.push(full);
+    }
+  }
+  return out;
+}
 
 // Two endpoints returned `select("*")` on youtube_channels and shipped the row
 // to the browser. `/api/channels/videos` leaked the credentials for months;
@@ -70,4 +85,43 @@ test("publicChannel serialises to JSON without any credential", () => {
   assert.equal(json.includes("ya29.token"), false);
   assert.equal(json.includes("1//refresh"), false);
   assert.equal(json.includes("dream aura"), true);
+});
+
+// This exact bug shipped three times: /api/channels/videos, then /api/campaigns,
+// then /api/dashboard - each fixed in isolation, each left by reading the file
+// that was fixed last rather than by checking the others. The pattern is always
+// the same, so it is checked mechanically instead of by memory.
+test("no API route ships a full youtube_channels row without sanitising it", () => {
+  const offenders: string[] = [];
+
+  for (const file of routeFiles(join(process.cwd(), "src", "app", "api"))) {
+    const source = readFileSync(file, "utf8");
+
+    // Only routes that pull the entire table back matter. Routes selecting
+    // named columns cannot leak one the select did not ask for.
+    const selectsAll = /from\("youtube_channels"\)\s*\n\s*\.select\("\*"\)/.test(source);
+    if (!selectsAll) continue;
+
+    if (!source.includes("publicChannel")) {
+      offenders.push(file.replace(process.cwd(), "."));
+    }
+  }
+
+  assert.deepEqual(
+    offenders,
+    [],
+    `Routes select(*) from youtube_channels but never call publicChannel: ${offenders.join(", ")}`
+  );
+});
+
+test("the sanitiser is actually reachable from the routes that need it", () => {
+  // Guards against the scan passing because the helper was deleted or renamed.
+  const helper = join(process.cwd(), "src", "lib", "safe-channel.ts");
+  assert.equal(statSync(helper).isFile(), true);
+
+  const dashboard = readFileSync(
+    join(process.cwd(), "src", "app", "api", "dashboard", "route.ts"),
+    "utf8"
+  );
+  assert.equal(dashboard.includes("publicChannel"), true);
 });

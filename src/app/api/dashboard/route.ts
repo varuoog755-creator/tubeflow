@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
+import { publicChannel } from "@/lib/safe-channel";
 
 export const dynamic = "force-dynamic";
 
@@ -186,8 +187,12 @@ const totalAttempts = repliesSent + failedReplies;
       authenticated: true,
       profile,
       workspace,
-      channel: activeChannel,
-      channels: channels || [],
+      // Stripped via the shared helper. This endpoint is the busiest signed-in
+      // response in the product - it is what the dashboard calls on every load -
+      // and it was returning both rows straight out of `select("*")`, carrying
+      // access_token and refresh_token to every signed-in user.
+      channel: publicChannel(activeChannel || {}),
+      channels: (channels || []).map((c) => publicChannel(c)),
       rules,
       logs,
       notices: unreadNotices || [],

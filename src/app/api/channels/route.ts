@@ -66,7 +66,10 @@ export async function POST(request: NextRequest) {
     if (action === "sync_metrics") {
       const { data: channel } = await supabaseAdmin
         .from("youtube_channels")
-        .select("*")
+        // Only what the YouTube client needs. This is server-side work that
+        // never serialises the row, so credentials are not required here and
+        // are deliberately not pulled into memory.
+        .select("id, channel_id, access_token, refresh_token, token_expiry")
         .eq("id", channelDbId)
         .eq("user_id", profile.id)
         .single();
