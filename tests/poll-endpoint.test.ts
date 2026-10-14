@@ -30,9 +30,15 @@ test("Poll Channel uses GET, matching the only method the cron route exports", (
 
   // The manual path is what a signed-in user is allowed to trigger; it swaps
   // the CRON_SECRET check for a session check.
+  // The options argument is deliberately not part of this pattern. It used to
+  // demand a bare `fetch("...?manual=true")`, but the call legitimately passes
+  // session headers as a second argument, so the assertion described a call
+  // shape that does not exist in the source and failed against correct code.
+  // What matters is that this exact URL is fetched; how the request is
+  // authenticated does not change the method being GET.
   assert.match(
     dashboard,
-    /fetch\(\s*"\/api\/cron\/poll-comments\?manual=true"\s*\)/
+    /fetch\(\s*"\/api\/cron\/poll-comments\?manual=true"/
   );
 
   assert.doesNotMatch(
