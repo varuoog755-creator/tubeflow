@@ -2320,7 +2320,7 @@ export default function DashboardPage() {
                       setSpintaxPreviewSamples([]);
                       setIsRuleModalOpen(true);
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs transition-all shadow-sm"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Create Campaign Rule</span>
@@ -2513,7 +2513,7 @@ export default function DashboardPage() {
 
                 <button
                   onClick={() => setIsLinkModalOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs shadow-sm"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition-all"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Create Tracked Link</span>
