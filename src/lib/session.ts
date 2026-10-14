@@ -61,10 +61,32 @@ export async function verifySessionToken(token: string): Promise<UserSession | n
   }
 }
 
-export async function getSession(): Promise<UserSession | null> {
+export async function getSession(request?: Request): Promise<UserSession | null> {
   try {
-    const { cookies } = await import("next/headers");
-    const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+    // 1. Direct request Authorization header if supplied
+    if (request) {
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.substring(7).trim();
+        const verified = await verifySessionToken(token);
+        if (verified) return verified;
+      }
+    }
+
+    // 2. Cookie extraction from next/headers
+    const { cookies, headers } = await import("next/headers");
+    const cookieStore = await cookies();
+    let token = cookieStore.get(SESSION_COOKIE_NAME)?.value || cookieStore.get("tf_session_token")?.value;
+
+    // 3. Header fallback from next/headers
+    if (!token) {
+      const headerStore = await headers();
+      const authHeader = headerStore.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        token = authHeader.substring(7).trim();
+      }
+    }
+
     if (!token) return null;
     return verifySessionToken(token);
   } catch {

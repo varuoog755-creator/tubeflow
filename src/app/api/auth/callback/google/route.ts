@@ -236,8 +236,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 6. Issue secure Signed JWT Session Cookie
-    const response = NextResponse.redirect(`${origin}/dashboard?authenticated=true`);
-    // Account linking must preserve the existing app session and never switch identities.
+    let redirectUrl = `${origin}/dashboard?authenticated=true`;
     if (mode !== "connect_youtube") {
       const sessionToken = await createSessionToken({
         userId,
@@ -246,8 +245,12 @@ export async function GET(request: NextRequest) {
         avatarUrl: avatar,
         workspaceId,
       });
+      redirectUrl = `${origin}/dashboard?authenticated=true&token=${sessionToken}`;
+      const response = NextResponse.redirect(redirectUrl);
       setSessionCookie(response, sessionToken);
+      return clearOAuthCookies(response);
     }
+    const response = NextResponse.redirect(redirectUrl);
     return clearOAuthCookies(response);
   } catch (err: unknown) {
     console.error("OAuth Callback failed:", err);

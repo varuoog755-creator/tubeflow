@@ -258,7 +258,16 @@ export default function DashboardPage() {
   // Dry Run Modal
   const [isDryRunOpen, setIsDryRunOpen] = useState(false);
   const [dryRunComment, setDryRunComment] = useState("");
-  const [dryRunResult, setDryRunResult] = useState<{ matched: boolean; rendered_reply?: string | null } | null>(null);
+  // Mirrors the server's response shape: it returns
+  // { evaluation: { matched, reason, ... }, detectedIntent, renderedPreview }.
+  // The old type named `rendered_reply`, a field the API never sends.
+  const [dryRunResult, setDryRunResult] = useState<{
+    matched: boolean;
+    renderedPreview?: string | null;
+    detectedIntent?: string;
+    reason?: string;
+    error?: string;
+  } | null>(null);
   const [dryRunLoading, setDryRunLoading] = useState(false);
 
   // Tracked Link Modal
@@ -281,11 +290,22 @@ export default function DashboardPage() {
     setTimeout(() => setNotification(null), 5000);
   };
 
+  const getAuthHeaders = (customHeaders: Record<string, string> = {}) => {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("brh_session_token") || localStorage.getItem("tf_session_token")
+        : null;
+    return {
+      ...customHeaders,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
   // Initial Data Fetch
   const fetchDashboardData = async () => {
     try {
       setIsRefreshing(true);
-      const res = await fetch("/api/dashboard");
+      const res = await fetch("/api/dashboard", { headers: getAuthHeaders() });
       if (!res.ok) {
         if (res.status === 401) {
           router.replace("/login");
@@ -337,7 +357,7 @@ export default function DashboardPage() {
 
       // Load Tracked Links
       try {
-        const linkRes = await fetch("/api/conversions");
+        const linkRes = await fetch("/api/conversions", { headers: getAuthHeaders() });
         if (linkRes.ok) {
           const linkData = await linkRes.json();
           setTrackedLinks(linkData.links || []);
@@ -349,7 +369,7 @@ export default function DashboardPage() {
       // Load Channel Videos and Per-Video Metrics
       try {
         setLoadingVideos(true);
-        const vidRes = await fetch("/api/channels/videos");
+        const vidRes = await fetch("/api/channels/videos", { headers: getAuthHeaders() });
         if (vidRes.ok) {
           const vidData = await vidRes.json();
           if (vidData.videos && vidData.videos.length > 0) {
@@ -374,6 +394,15 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get("token");
+      if (urlToken) {
+        localStorage.setItem("brh_session_token", urlToken);
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, "", cleanUrl);
+      }
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- load remote dashboard state on mount
     fetchDashboardData();
   }, []);
@@ -474,7 +503,7 @@ export default function DashboardPage() {
     try {
       // GET, not POST: the route is GET-only, and `manual=true` switches it
       // from the CRON_SECRET check to a session check.
-      const res = await fetch("/api/cron/poll-comments?manual=true");
+      const res = await fetch("/api/cron/poll-comments?manual=true", { headers: getAuthHeaders() });
 
       // Parse defensively. A non-JSON body must not be reported as a network
       // failure - say what actually came back.
@@ -560,7 +589,7 @@ export default function DashboardPage() {
       // Live Backend Action
       const res = await fetch("/api/comments/reply", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           logId: selectedComment.id,
           commentId: selectedComment.comment_id,
@@ -642,7 +671,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch(`/api/rules?id=${rule.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ is_active: !rule.is_active }),
       });
       if (res.ok) {
@@ -760,7 +789,7 @@ export default function DashboardPage() {
       const method = editingRule ? "PUT" : "POST";
       const res = await fetch("/api/rules", {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
 
@@ -771,6 +800,7 @@ export default function DashboardPage() {
         );
         setIsRuleModalOpen(false);
         setEditingRule(null);
+        setRuleName("");
         fetchDashboardData();
       } else {
         const data = await res.json();
@@ -789,17 +819,22 @@ export default function DashboardPage() {
     try {
       const res = await fetch("/api/rules", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          action: "dry_run",
-          comment_text: dryRunComment,
+          // The server switches on "test_dry_run". This sent "dry_run", which
+          // matched no branch, fell through to rule creation and came back 400
+          // for a missing name. Field names below must match the server's
+          // destructuring exactly.
+          action: "test_dry_run",
+          testCommentText: dryRunComment,
+          testAuthorName: "TestViewer",
           keywords: ruleKeywords.split(",").map((k) => k.trim()).filter(Boolean),
-          negative_keywords: ruleNegativeKeywords.split(",").map((k) => k.trim()).filter(Boolean),
-          match_type: ruleMatchType,
-          keyword_match_operator: ruleOperator,
-          intent_category: ruleIntentCategory,
-          reply_template: ruleTemplates.split("\n")[0] || "Hey {{first_name}}! Check: {{cta_url}}",
-          cta_url: ruleCtaUrl || undefined,
+          negativeKeywords: ruleNegativeKeywords.split(",").map((k) => k.trim()).filter(Boolean),
+          matchType: ruleMatchType,
+          keywordMatchOperator: ruleOperator,
+          intentCategory: ruleIntentCategory,
+          replyTemplate: ruleTemplates.split("\n")[0] || "Hey {{first_name}}! Check: {{cta_url}}",
+          ctaUrl: ruleCtaUrl || undefined,
         }),
       });
       const data = await res.json();
@@ -829,7 +864,7 @@ export default function DashboardPage() {
       confirmText: "Delete Rule",
       onConfirm: async () => {
         try {
-          const res = await fetch(`/api/rules?id=${id}`, { method: "DELETE" });
+          const res = await fetch(`/api/rules?id=${id}`, { method: "DELETE", headers: getAuthHeaders() });
           if (res.ok) {
             setRules((prev) => prev.filter((r) => r.id !== id));
             showNotification("success", "Rule deleted.");
@@ -2843,7 +2878,7 @@ export default function DashboardPage() {
                 try {
                   const res = await fetch("/api/conversions", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: getAuthHeaders({ "Content-Type": "application/json" }),
                     body: JSON.stringify({
                       slug: linkSlug.trim().toLowerCase(),
                       destination_url: linkDestination.trim(),

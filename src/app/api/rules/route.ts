@@ -490,7 +490,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, is_active } = body;
+    const id = body.id || new URL(request.url).searchParams.get("id");
+    const is_active = body.is_active !== undefined ? body.is_active : body.isActive;
 
     if (!id) {
       return NextResponse.json({ error: "Rule ID required" }, { status: 400 });
