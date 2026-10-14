@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
           token_expiry: channel.token_expiry,
         });
 
-        // Fetch latest comment threads from the channel
+        // Fetch latest published comment threads from the channel
         const commentsRes = await youtube.commentThreads.list({
           part: ["snippet"],
           allThreadsRelatedToChannelId: channel.channel_id,
@@ -79,7 +79,23 @@ export async function GET(request: NextRequest) {
           order: "time",
         });
 
-        const threads = commentsRes.data.items || [];
+        const threads = [...(commentsRes.data.items || [])];
+
+        // Also fetch held-for-review threads so short buyer comments (like "link", "price")
+        // flagged by YouTube automated filters are captured
+        try {
+          const heldRes = await youtube.commentThreads.list({
+            part: ["snippet"],
+            allThreadsRelatedToChannelId: channel.channel_id,
+            moderationStatus: "heldForReview",
+            maxResults: 25,
+          });
+          if (heldRes.data.items?.length) {
+            threads.push(...heldRes.data.items);
+          }
+        } catch {
+          // Non-blocking if channel permissions do not allow moderation queries
+        }
 
         for (const thread of threads) {
           const topComment = thread.snippet?.topLevelComment;
@@ -231,6 +247,16 @@ export async function GET(request: NextRequest) {
               );
             } else {
               try {
+                // Ensure held-for-review comments are published and visible
+                try {
+                  await youtube.comments.setModerationStatus({
+                    id: [commentId],
+                    moderationStatus: "published",
+                  });
+                } catch {
+                  // Non-blocking if already published
+                }
+
                 const insertRes = await youtube.comments.insert({
                   part: ["snippet"],
                   requestBody: {

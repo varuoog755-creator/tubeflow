@@ -307,6 +307,7 @@ export async function POST(request: NextRequest) {
       cta_url: ctaUrl?.trim() || null,
       intent_category: intentCategory || "ALL",
       delay_seconds: parseInt(delaySeconds || "0", 10),
+      cooldown_minutes: 0,
       is_active: true,
     };
 
