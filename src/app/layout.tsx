@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { PLAN_CONFIGS } from "@/lib/plan-limits";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,17 +45,21 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://bigredhub.info",
     siteName: "BigRedHub",
-    title: "BigRedHub — Turn YouTube Shorts Comments Into Instant Sales & Leads",
+    title: "BigRedHub — Turn YouTube Shorts Comments Into Trackable Sales & Leads",
     // No response-time figure here on purpose, and none in the page description or
     // the JSON-LD either. The dashboard's "Avg Speed: 1.4s" was removed in #8 for
     // having no data source, and the poll cron is scheduled once a day
     // (vercel.json "0 0 * * *"), so a reply can wait nearly 24 hours to be seen.
+    // The word "Instant" was removed from this title for the same reason: the
+    // speed claims were stripped from the body copy and then missed here, which
+    // left the social share card - the one piece of copy everyone actually reads
+    // - as the last place still promising a speed the product cannot keep.
     description:
       "Automated comment-to-link engine for creators and brands. Detect buyer intent, reply automatically, and send every comment to a trackable product link.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "BigRedHub — Turn YouTube Shorts Comments Into Instant Sales & Leads",
+    title: "BigRedHub — Turn YouTube Shorts Comments Into Trackable Sales & Leads",
     description:
       "Automated comment-to-link engine for creators and brands. Detect buyer intent and reply with tracked links.",
   },
@@ -86,11 +91,17 @@ const jsonLd = {
   name: "BigRedHub",
   operatingSystem: "Web",
   applicationCategory: "BusinessApplication",
-  offers: {
+  // Derived from PLAN_CONFIGS rather than typed out. This block advertised a
+  // single ₹0 offer while the page sold three tiers, so search results could
+  // never show the paid plans. Hard-coding prices here is how the two drifted
+  // apart the first time; taking them from the catalogue makes that impossible.
+  offers: [PLAN_CONFIGS.free, PLAN_CONFIGS.growth, PLAN_CONFIGS.scale].map((plan) => ({
     "@type": "Offer",
-    price: "0",
+    name: plan.name,
+    description: `${plan.name} plan: ${plan.monthlyRepliesLimit.toLocaleString("en-IN")} replies per month, up to ${plan.channelLimit} YouTube channel${plan.channelLimit === 1 ? "" : "s"}.`,
+    price: String(plan.priceMonthlyInr),
     priceCurrency: "INR",
-  },
+  })),
   description:
     "BigRedHub monitors YouTube Shorts comments, classifies commercial buyer intent, and delivers trackable product links with automated Spintax variations.",
   featureList: [
@@ -98,7 +109,7 @@ const jsonLd = {
     "Commercial buyer intent classification",
     "Anti-spam Spintax variations",
     "Official YouTube Data API compliance",
-    "Real-time conversion tracking",
+    "Conversion tracking for replies",
   ],
 };
 
