@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getSession } from "@/lib/session";
+import { publicChannel } from "@/lib/safe-channel";
+import { validateReplyTemplate } from "@/lib/reply-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +15,7 @@ export async function GET(request: NextRequest) {
     // 1. Get Profile
     const { data: profile } = await supabaseAdmin
       .from("profiles")
-      .select("*")
+      .select("id, email, full_name, avatar_url")
       .eq("email", email)
       .maybeSingle();
 
@@ -28,6 +30,10 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. Get Channel
+    // `select("*")` plus a bare `channel` in the response published this
+    // workspace's YouTube access_token and refresh_token to the client. The
+    // refresh token never expires on its own, so whoever read it could act as
+    // the creator on YouTube indefinitely. Stripped via the shared helper.
     const { data: channel } = await supabaseAdmin
       .from("youtube_channels")
       .select("*")
@@ -35,8 +41,15 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     // 3. Get Campaigns
+    //
+    // Reads `trigger_rules`, not the legacy `campaigns` table. The endpoint was
+    // still writing to and reading from `campaigns` while the entire product -
+    // dashboard, poll worker, rule editor - ran on `trigger_rules`. Nothing
+    // ever displayed or executed a campaign created here, so POST returned
+    // `{"success": true}` for a row that could never fire a reply. Returning
+    // the same list the engine actually reads makes the endpoint honest.
     const { data: campaigns } = await supabaseAdmin
-      .from("campaigns")
+      .from("trigger_rules")
       .select("*")
       .eq("user_id", profile.id)
       .order("created_at", { ascending: false });
@@ -56,7 +69,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       authenticated: true,
       profile,
-      channel,
+      channel: publicChannel(channel || {}),
       campaigns: campaigns || [],
       logs: logs || [],
       stats: {
@@ -106,19 +119,41 @@ export async function POST(request: NextRequest) {
       ? keywords
       : keywords.split(",").map((k: string) => k.trim().toUpperCase());
 
+    // Validated with the same validator the rule editor uses, so a template
+    // that would publish literal "{cta_url}" into a public comment is rejected
+    // at creation rather than at reply time.
+    const templateCheck = validateReplyTemplate(replyTemplate);
+    if (!templateCheck.valid) {
+      return NextResponse.json({ error: templateCheck.error }, { status: 400 });
+    }
+
+    const { data: workspace } = await supabaseAdmin
+      .from("workspaces")
+      .select("id")
+      .eq("owner_id", profile.id)
+      .maybeSingle();
+
+    // Written to `trigger_rules` - the table the poll worker, the dashboard and
+    // the rule editor all read. This used to insert into the legacy `campaigns`
+    // table, which nothing has ever executed, so the endpoint answered
+    // `{"success": true}` for a campaign that could never reply to anything.
     const { data: campaign, error: insertErr } = await supabaseAdmin
-      .from("campaigns")
+      .from("trigger_rules")
       .insert({
         user_id: profile.id,
-        channel_id: channel?.id,
+        workspace_id: workspace?.id || null,
+        channel_id: channel.id,
         name,
         is_active: true,
         target_mode: targetMode || "all",
         keywords: keywordList,
+        negative_keywords: [],
         match_type: "contains",
+        keyword_match_operator: "ANY",
         reply_templates: [replyTemplate],
-        auto_like: true,
-        auto_heart: true,
+        cta_url: typeof body.ctaUrl === "string" && body.ctaUrl.trim() ? body.ctaUrl.trim() : null,
+        intent_category: "ALL",
+        delay_seconds: 0,
       })
       .select("*")
       .single();

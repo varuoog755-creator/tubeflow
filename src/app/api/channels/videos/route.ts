@@ -1,23 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
+import { publicChannel } from "@/lib/safe-channel";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getValidYoutubeClient } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
-
-/**
- * Strips OAuth credentials before a channel row is serialised to the browser.
- * The route used to `return { channel }` with the whole database row, which
- * published `access_token` and `refresh_token` to any signed-in user. The
- * refresh token is long lived, so that is account-takeover grade, not cosmetic.
- */
-function publicChannel<T extends Record<string, unknown>>(channel: T): Omit<T, "access_token" | "refresh_token"> {
-  if (!channel) return channel;
-  const safe: Record<string, unknown> = { ...channel };
-  delete safe.access_token;
-  delete safe.refresh_token;
-  return safe as Omit<T, "access_token" | "refresh_token">;
-}
 
 export interface ChannelVideoItem {
   id: string;
