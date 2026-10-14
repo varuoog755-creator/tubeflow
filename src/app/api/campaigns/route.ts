@@ -48,11 +48,24 @@ export async function GET(request: NextRequest) {
     // ever displayed or executed a campaign created here, so POST returned
     // `{"success": true}` for a row that could never fire a reply. Returning
     // the same list the engine actually reads makes the endpoint honest.
-    const { data: campaigns } = await supabaseAdmin
-      .from("trigger_rules")
-      .select("*")
-      .eq("user_id", profile.id)
-      .order("created_at", { ascending: false });
+    //
+    // Scoped by channel_id, which is how a rule is actually attached.
+    // `trigger_rules` has no user_id column; scoping by it silently returned an
+    // empty list for a workspace that demonstrably had rules.
+    const { data: ownedChannels } = await supabaseAdmin
+      .from("youtube_channels")
+      .select("id")
+      .eq("user_id", profile.id);
+
+    const ownedChannelIds = (ownedChannels || []).map((c) => c.id as string);
+
+    const { data: campaigns } = ownedChannelIds.length
+      ? await supabaseAdmin
+          .from("trigger_rules")
+          .select("*")
+          .in("channel_id", ownedChannelIds)
+          .order("created_at", { ascending: false })
+      : { data: [] };
 
     // 4. Get Logs
     const { data: logs } = await supabaseAdmin
@@ -137,10 +150,12 @@ export async function POST(request: NextRequest) {
     // the rule editor all read. This used to insert into the legacy `campaigns`
     // table, which nothing has ever executed, so the endpoint answered
     // `{"success": true}` for a campaign that could never reply to anything.
+    //
+    // No `user_id`: that column does not exist on `trigger_rules`. A rule is
+    // attached by workspace_id + channel_id, matching the rule editor's insert.
     const { data: campaign, error: insertErr } = await supabaseAdmin
       .from("trigger_rules")
       .insert({
-        user_id: profile.id,
         workspace_id: workspace?.id || null,
         channel_id: channel.id,
         name,
