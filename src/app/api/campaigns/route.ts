@@ -153,25 +153,64 @@ export async function POST(request: NextRequest) {
     //
     // No `user_id`: that column does not exist on `trigger_rules`. A rule is
     // attached by workspace_id + channel_id, matching the rule editor's insert.
-    const { data: campaign, error: insertErr } = await supabaseAdmin
-      .from("trigger_rules")
-      .insert({
-        workspace_id: workspace?.id || null,
-        channel_id: channel.id,
-        name,
-        is_active: true,
-        target_mode: targetMode || "all",
-        keywords: keywordList,
-        negative_keywords: [],
-        match_type: "contains",
-        keyword_match_operator: "ANY",
-        reply_templates: [replyTemplate],
-        cta_url: typeof body.ctaUrl === "string" && body.ctaUrl.trim() ? body.ctaUrl.trim() : null,
-        intent_category: "ALL",
-        delay_seconds: 0,
-      })
-      .select("*")
-      .single();
+    const insertPayload: Record<string, unknown> = {
+      workspace_id: workspace?.id || null,
+      channel_id: channel.id,
+      name,
+      is_active: true,
+      target_mode: targetMode || "all",
+      keywords: keywordList,
+      negative_keywords: [],
+      match_type: "contains",
+      keyword_match_operator: "ANY",
+      reply_templates: [replyTemplate],
+      cta_url: typeof body.ctaUrl === "string" && body.ctaUrl.trim() ? body.ctaUrl.trim() : null,
+      intent_category: "ALL",
+      delay_seconds: 0,
+    };
+
+    let campaign: unknown = null;
+    let insertErr: { message: string } | null = null;
+
+    // Retried without columns the deployed database turns out not to have.
+    // trigger_rules predates this repository - its schema is referenced by the
+    // migrations but never defined in them - so a column the rule editor can
+    // write is not guaranteed to exist here. /api/rules carries a hand written
+    // fallback for one such column; this does it generically so the next schema
+    // drift cannot break campaign creation with an opaque 500.
+    //
+    // Only optional columns may be dropped. name, reply_templates and
+    // channel_id are load bearing: without them there is no rule to create.
+    const DROPPABLE = [
+      "keyword_match_operator",
+      "intent_category",
+      "delay_seconds",
+      "negative_keywords",
+      "target_mode",
+    ];
+
+    for (let attempt = 0; attempt <= DROPPABLE.length; attempt++) {
+      const res = await supabaseAdmin
+        .from("trigger_rules")
+        .insert(insertPayload)
+        .select("*")
+        .single();
+
+      if (!res.error) {
+        campaign = res.data;
+        insertErr = null;
+        break;
+      }
+
+      insertErr = res.error;
+
+      // Supabase reports it as: column trigger_rules.<name> does not exist
+      const missing = res.error.message.match(/column\s+[\w.]*?([a-z_]+)\s+does not exist/i);
+      const column = missing ? missing[1] : null;
+
+      if (!column || !DROPPABLE.includes(column) || !(column in insertPayload)) break;
+      delete insertPayload[column];
+    }
 
     if (insertErr) {
       return NextResponse.json({ error: insertErr.message }, { status: 500 });
@@ -180,6 +219,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, campaign });
   } catch (err: unknown) {
     console.error("Create campaign error:", err);
-    return NextResponse.json({ error: "Failed to create campaign" }, { status: 500 });
+    // The bare string this used to return hid the real cause. A live attempt
+    // against the deployed database failed with only "Failed to create
+    // campaign", so the missing column could not be identified without server
+    // log access. The message is the operator's own environment and names no
+    // credential.
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Failed to create campaign: ${detail}` }, { status: 500 });
   }
 }
