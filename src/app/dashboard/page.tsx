@@ -264,9 +264,11 @@ export default function DashboardPage() {
   const [dryRunResult, setDryRunResult] = useState<{
     matched: boolean;
     renderedPreview?: string | null;
+    rendered_reply?: string | null;
     detectedIntent?: string;
     reason?: string;
     error?: string;
+    [key: string]: unknown;
   } | null>(null);
   const [dryRunLoading, setDryRunLoading] = useState(false);
 
@@ -838,12 +840,60 @@ export default function DashboardPage() {
         }),
       });
       const data = await res.json();
-      setDryRunResult(data);
+
+      // Never render a verdict the server did not actually produce. The old
+      // code assigned the whole response, so a 400 error object set `matched`
+      // to undefined and the panel printed NO MATCH for every comment ever
+      // typed. A simulation tool that always says the rule does not fire is
+      // worse than no simulator at all.
+      if (!res.ok || data?.error || !data?.evaluation) {
+        setDryRunResult({
+          matched: false,
+          error: data?.error || `Dry run failed (HTTP ${res.status}).`,
+        });
+        return;
+      }
+
+      setDryRunResult({
+        matched: Boolean(data.evaluation.matched),
+        renderedPreview: data.renderedPreview ?? null,
+        detectedIntent: data.detectedIntent?.category,
+        reason: data.evaluation.reason,
+      });
     } catch (err) {
-      showNotification("error", "Dry run evaluation failed.");
+      setDryRunResult({
+        matched: false,
+        error: err instanceof Error ? err.message : "Dry run evaluation failed.",
+      });
     } finally {
       setDryRunLoading(false);
     }
+  };
+
+  /**
+   * Open the simulator against a real rule.
+   *
+   * It evaluates whatever is in the rule editor's form state, and that state is
+   * empty when the panel is opened from the Campaigns header rather than from
+   * editing a rule. Testing an empty keyword list can only ever answer NO MATCH.
+   * Seed the form from the first active saved rule so the button means what the
+   * label above it claims.
+   */
+  const openDryRun = (rule?: TriggerRule) => {
+    const target = rule || rules.find((r) => r.is_active) || rules[0];
+
+    if (target) {
+      setRuleKeywords((target.keywords || []).join(", "));
+      setRuleNegativeKeywords((target.negative_keywords || []).join(", "));
+      setRuleMatchType(target.match_type || "contains");
+      setRuleOperator(target.keyword_match_operator || "ANY");
+      setRuleIntentCategory(target.intent_category || "ALL");
+      setRuleTemplates((target.reply_templates || []).join("\n"));
+      setRuleCtaUrl(target.cta_url || "");
+    }
+
+    setIsDryRunOpen(true);
+    setDryRunResult(null);
   };
 
   // Insert Tracked Link into reply
@@ -1994,10 +2044,7 @@ export default function DashboardPage() {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      setIsDryRunOpen(true);
-                      setDryRunResult(null);
-                    }}
+                    onClick={() => openDryRun()}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 transition-all"
                   >
                     <Play className="w-3.5 h-3.5 text-zinc-600" />
@@ -2826,26 +2873,51 @@ export default function DashboardPage() {
 
               {dryRunResult && (
                 <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 space-y-2 mt-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-zinc-900">Result:</span>
-                    <span
-                      className={`font-bold px-2 py-0.5 rounded text-[11px] ${
-                        dryRunResult.matched
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {dryRunResult.matched ? "MATCHED" : "NO MATCH"}
-                    </span>
-                  </div>
+                  {dryRunResult.error ? (
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="font-bold text-zinc-900">Result:</span>
+                      <span className="font-bold px-2 py-0.5 rounded text-[11px] bg-amber-100 text-amber-800">
+                        ERROR
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-zinc-900">Result:</span>
+                      <span
+                        className={`font-bold px-2 py-0.5 rounded text-[11px] ${
+                          dryRunResult.matched
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {dryRunResult.matched ? "MATCHED" : "NO MATCH"}
+                      </span>
+                    </div>
+                  )}
 
-                  {dryRunResult.rendered_reply && (
+                  {dryRunResult.error && (
+                    <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">
+                      {dryRunResult.error}
+                    </p>
+                  )}
+
+                  {!dryRunResult.error && !dryRunResult.matched && dryRunResult.reason && (
+                    <p className="text-[11px] text-zinc-600">{dryRunResult.reason}</p>
+                  )}
+
+                  {!dryRunResult.error && dryRunResult.detectedIntent && (
+                    <p className="text-[11px] text-zinc-600">
+                      Detected intent: <span className="font-semibold">{dryRunResult.detectedIntent}</span>
+                    </p>
+                  )}
+
+                  {dryRunResult.renderedPreview && (
                     <div className="pt-2 border-t border-zinc-200">
                       <span className="font-semibold text-zinc-700 block mb-1">
                         Rendered Reply:
                       </span>
                       <p className="p-2 rounded bg-white border border-zinc-200 text-zinc-900 font-mono text-[11px]">
-                        {dryRunResult.rendered_reply}
+                        {dryRunResult.renderedPreview}
                       </p>
                     </div>
                   )}
