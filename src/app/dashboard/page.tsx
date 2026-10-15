@@ -227,6 +227,14 @@ export default function DashboardPage() {
   const [byokHasSecret, setByokHasSecret] = useState(false);
   const [byokSaving, setByokSaving] = useState(false);
   const [byokMessage, setByokMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showByokGuideModal, setShowByokGuideModal] = useState(false);
+  const [byokCopiedField, setByokCopiedField] = useState<string | null>(null);
+
+  const handleCopyByokField = (text: string, fieldId: string) => {
+    navigator.clipboard.writeText(text);
+    setByokCopiedField(fieldId);
+    setTimeout(() => setByokCopiedField(null), 2500);
+  };
 
   // Comment Inbox Workspace State
   const [inboxFilter, setInboxFilter] = useState<InboxFilterView>("all");
@@ -2931,24 +2939,34 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${
-                      byokEnabled && byokClientId
-                        ? "bg-purple-50 text-purple-800 border-purple-200"
-                        : "bg-zinc-100 text-zinc-600 border-zinc-200"
-                    }`}
-                  >
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowByokGuideModal(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs border border-purple-200 transition-all shadow-xs"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Beginner Setup Guide (No Coding)</span>
+                    </button>
                     <span
-                      className={`w-2 h-2 rounded-full ${
-                        byokEnabled && byokClientId ? "bg-purple-600 animate-pulse" : "bg-zinc-400"
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${
+                        byokEnabled && byokClientId
+                          ? "bg-purple-50 text-purple-800 border-purple-200"
+                          : "bg-zinc-100 text-zinc-600 border-zinc-200"
                       }`}
-                    />
-                    <span>
-                      {byokEnabled && byokClientId
-                        ? "BYOK Private Quota Active"
-                        : "Shared System Quota"}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          byokEnabled && byokClientId ? "bg-purple-600 animate-pulse" : "bg-zinc-400"
+                        }`}
+                      />
+                      <span>
+                        {byokEnabled && byokClientId
+                          ? "BYOK Private Quota Active"
+                          : "Shared System Quota"}
+                      </span>
                     </span>
-                  </span>
+                  </div>
                 </div>
 
                 {/* BYOK Toggle */}
@@ -2956,7 +2974,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-xs font-bold text-zinc-900">Enable Dedicated GCP Project</p>
                     <p className="text-[11px] text-zinc-500">
-                      Route all YouTube comment scanning and auto-replies through your personal Google Cloud credentials.
+                      Route all YouTube comment scanning and auto-replies through your personal Google Cloud credentials (10,000 units/day private quota).
                     </p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -2970,35 +2988,164 @@ export default function DashboardPage() {
                   </label>
                 </div>
 
+                {/* Google Cloud Copy-Paste Companion Box (Matches Google Console Form) */}
+                <div className="rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/40 via-white to-purple-50/20 p-4 space-y-3.5 shadow-2xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                        G
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
+                          <span>Google Cloud Form Helper</span>
+                          <span className="text-[10px] text-indigo-700 bg-indigo-100 font-semibold px-2 py-0.5 rounded-full">
+                            Copy-Paste values for Google Console
+                          </span>
+                        </h4>
+                        <p className="text-[11px] text-zinc-500">
+                          Google Console me naya OAuth Client banate waqt ye values direct copy karke paste karein:
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href="https://console.cloud.google.com/apis/credentials/oauthclient"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold shadow-xs transition-all"
+                      >
+                        <span>Open Google Console</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-xs">
+                    {/* 1. App Type */}
+                    <div className="p-3 rounded-xl bg-white border border-zinc-200/80 flex flex-col justify-between shadow-2xs">
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                        1. Application Type (Dropdown)
+                      </span>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span className="font-bold text-zinc-900">Web application</span>
+                        <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-100 font-bold px-2 py-0.5 rounded-md">
+                          Select in Google
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 2. App Name */}
+                    <div className="p-3 rounded-xl bg-white border border-zinc-200/80 flex flex-col justify-between shadow-2xs">
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                        2. Name
+                      </span>
+                      <div className="flex items-center justify-between mt-1.5 gap-2">
+                        <span className="font-mono text-zinc-900 font-semibold text-xs truncate">BigRedHub Automation</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyByokField("BigRedHub Automation", "name")}
+                          className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-[11px] font-bold flex items-center gap-1 transition-all shrink-0 border border-zinc-200"
+                        >
+                          {byokCopiedField === "name" ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-zinc-500" />}
+                          <span>{byokCopiedField === "name" ? "Copied" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 3. Authorized Javascript Origins */}
+                    <div className="p-3 rounded-xl bg-white border border-zinc-200/80 flex flex-col justify-between shadow-2xs">
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                        3. Authorized JavaScript origins
+                      </span>
+                      <div className="flex items-center justify-between mt-1.5 gap-2">
+                        <span className="font-mono text-zinc-900 font-semibold text-xs truncate">https://bigredhub.info</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyByokField("https://bigredhub.info", "origin")}
+                          className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-[11px] font-bold flex items-center gap-1 transition-all shrink-0 border border-zinc-200"
+                        >
+                          {byokCopiedField === "origin" ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-zinc-500" />}
+                          <span>{byokCopiedField === "origin" ? "Copied" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 4. Authorized Redirect URI */}
+                    <div className="p-3 rounded-xl bg-white border border-indigo-200 flex flex-col justify-between shadow-2xs">
+                      <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">
+                        4. Authorized redirect URIs (Mandatory)
+                      </span>
+                      <div className="flex items-center justify-between mt-1.5 gap-2">
+                        <span className="font-mono text-indigo-900 font-bold text-xs truncate">
+                          https://bigredhub.info/api/auth/callback/google
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyByokField("https://bigredhub.info/api/auth/callback/google", "redirect")}
+                          className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold flex items-center gap-1 transition-all shrink-0 border border-indigo-200"
+                        >
+                          {byokCopiedField === "redirect" ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-indigo-600" />}
+                          <span>{byokCopiedField === "redirect" ? "Copied" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* YouTube Data API Enable Link */}
+                  <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span className="text-[11px] text-amber-950">
+                        <strong>Required Step:</strong> Google Cloud me <strong>YouTube Data API v3</strong> ko Enable karna zaroori hai.
+                      </span>
+                    </div>
+                    <a
+                      href="https://console.cloud.google.com/apis/library/youtube.googleapis.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-900 hover:text-amber-700 underline shrink-0"
+                    >
+                      <span>Enable YouTube API in Google</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+
                 {/* Form fields */}
-                <div className="space-y-4">
+                <div className="space-y-4 pt-1">
                   <div>
-                    <label className="block text-xs font-bold text-zinc-800 mb-1">
-                      Google OAuth Client ID
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-zinc-800">
+                        Google OAuth Client ID
+                      </label>
+                      <span className="text-[10px] text-zinc-400">Ends with .apps.googleusercontent.com</span>
+                    </div>
                     <input
                       type="text"
                       placeholder="e.g. 1234567890-abcdef.apps.googleusercontent.com"
                       value={byokClientId}
                       onChange={(e) => setByokClientId(e.target.value)}
-                      className="w-full text-xs font-mono p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:outline-none focus:border-purple-600"
+                      className="w-full text-xs font-mono p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:outline-none focus:border-purple-600 focus:bg-white transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-zinc-800 mb-1">
-                      Google OAuth Client Secret
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-zinc-800">
+                        Google OAuth Client Secret
+                      </label>
+                      <span className="text-[10px] text-zinc-400">Stored safely encrypted in database</span>
+                    </div>
                     <input
                       type="password"
                       placeholder={
                         byokHasSecret
                           ? "•••••••••••••••••••••••••••••••• (Secret Saved & Encrypted)"
-                          : "Paste your Google Client Secret"
+                          : "Paste your Google Client Secret (starts with GOCSPX-...)"
                       }
                       value={byokClientSecret}
                       onChange={(e) => setByokClientSecret(e.target.value)}
-                      className="w-full text-xs font-mono p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:outline-none focus:border-purple-600"
+                      className="w-full text-xs font-mono p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:outline-none focus:border-purple-600 focus:bg-white transition-all"
                     />
                   </div>
 
@@ -4046,6 +4193,210 @@ export default function DashboardPage() {
                 className="px-4 py-1.5 rounded-xl bg-red-600 text-white text-xs font-semibold"
               >
                 {confirmDialog.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BEGINNER BYOK SETUP GUIDE MODAL (NO CODING) */}
+      {showByokGuideModal && (
+        <div className="fixed inset-0 z-50 bg-zinc-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl bg-white rounded-3xl border border-zinc-200 shadow-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-3 border-b border-zinc-100">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                    Agency / Enterprise
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    Zero Coding Required
+                  </span>
+                </div>
+                <h2 className="font-heading font-black text-lg text-zinc-950">
+                  Google Cloud Dedicated Quota (BYOK) Setup Guide
+                </h2>
+                <p className="text-xs text-zinc-500">
+                  3 minute me apna personal 10,000 units/day quota setup karein. Sirf niche diye gaye values copy-paste karne hain.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowByokGuideModal(false)}
+                className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Step by Step Progression */}
+            <div className="space-y-4 text-xs">
+              {/* Step 1 */}
+              <div className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50/70 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                      1
+                    </span>
+                    <span className="font-bold text-zinc-900 text-xs">
+                      Google Cloud Console me Project Banayein (Free)
+                    </span>
+                  </div>
+                  <a
+                    href="https://console.cloud.google.com/projectcreate"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline"
+                  >
+                    <span>Open Project Creator</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <p className="text-zinc-600 pl-8 text-[11px]">
+                  Link open karein, Project name me kuch bhi type karein (e.g. <em>YouTube Automation</em>) aur <strong>Create</strong> click karein.
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50/70 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                      2
+                    </span>
+                    <span className="font-bold text-zinc-900 text-xs">
+                      YouTube Data API v3 ko Enable Karein
+                    </span>
+                  </div>
+                  <a
+                    href="https://console.cloud.google.com/apis/library/youtube.googleapis.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline"
+                  >
+                    <span>Open YouTube API Page</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <p className="text-zinc-600 pl-8 text-[11px]">
+                  Page khulte hi blue color ka <strong>"Enable"</strong> button dabayein. Yeh Google ka free official API hai.
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="p-4 rounded-2xl border border-indigo-200 bg-indigo-50/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                      3
+                    </span>
+                    <span className="font-bold text-indigo-950 text-xs">
+                      Credentials Page par jaakar ye Form Fill Karein:
+                    </span>
+                  </div>
+                  <a
+                    href="https://console.cloud.google.com/apis/credentials/oauthclient"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold shadow-xs transition-all"
+                  >
+                    <span>Open Credentials Page</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+
+                {/* Google Form Copy Helper Table */}
+                <div className="pl-8 space-y-2 text-[11px]">
+                  <p className="text-zinc-600 font-medium">
+                    Google ke form me same to same ye values copy-paste karein:
+                  </p>
+                  <div className="space-y-1.5 border border-indigo-100 rounded-xl bg-white p-3 shadow-2xs">
+                    <div className="flex items-center justify-between py-1 border-b border-zinc-100">
+                      <span className="text-zinc-500 font-medium">Application type:</span>
+                      <span className="font-bold text-zinc-800">Web application</span>
+                    </div>
+
+                    <div className="flex items-center justify-between py-1 border-b border-zinc-100">
+                      <span className="text-zinc-500 font-medium">Name:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-zinc-800 font-semibold">BigRedHub Automation</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyByokField("BigRedHub Automation", "modal_name")}
+                          className="px-2 py-0.5 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-bold flex items-center gap-1"
+                        >
+                          {byokCopiedField === "modal_name" ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-zinc-500" />}
+                          <span>{byokCopiedField === "modal_name" ? "Copied" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between py-1 border-b border-zinc-100">
+                      <span className="text-zinc-500 font-medium">Authorized JavaScript origins:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-zinc-800 font-semibold">https://bigredhub.info</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyByokField("https://bigredhub.info", "modal_origin")}
+                          className="px-2 py-0.5 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-bold flex items-center gap-1"
+                        >
+                          {byokCopiedField === "modal_origin" ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-zinc-500" />}
+                          <span>{byokCopiedField === "modal_origin" ? "Copied" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-indigo-700 font-bold">Authorized redirect URIs:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-indigo-900 font-bold text-[10px]">
+                          https://bigredhub.info/api/auth/callback/google
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyByokField("https://bigredhub.info/api/auth/callback/google", "modal_redirect")}
+                          className="px-2 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center gap-1 border border-indigo-200"
+                        >
+                          {byokCopiedField === "modal_redirect" ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-indigo-600" />}
+                          <span>{byokCopiedField === "modal_redirect" ? "Copied" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50/70 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                    4
+                  </span>
+                  <span className="font-bold text-zinc-900 text-xs">
+                    Popup se Client ID & Secret Copy karke Yahan Paste Karein
+                  </span>
+                </div>
+                <p className="text-zinc-600 pl-8 text-[11px] leading-relaxed">
+                  Google create button dabate hi ek popup dikhayega: <strong>Your Client ID</strong> aur <strong>Your Client Secret</strong>. Dono ko copy karke BigRedHub ke inputs me paste karein aur <strong>"Save BYOK Configuration"</strong> dabayein.
+                </p>
+              </div>
+
+              {/* FAQ Box */}
+              <div className="p-3.5 rounded-2xl bg-zinc-100 border border-zinc-200 text-zinc-600 space-y-1.5 text-[11px]">
+                <span className="font-bold text-zinc-800">Frequently Asked Questions:</span>
+                <p>• <strong>Kya iske paise lagenge?</strong> Bilkul nahi, Google Cloud YouTube Data API ke 10,000 units/day permanently free deta hai.</p>
+                <p>• <strong>Kya Gmail aur YouTube channel same hona chahiye?</strong> Nahi, kisi bhi Gmail ID se Google Cloud Project banaya ja sakta hai.</p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end pt-3 border-t border-zinc-100">
+              <button
+                type="button"
+                onClick={() => setShowByokGuideModal(false)}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all"
+              >
+                I Understand, Let's Setup!
               </button>
             </div>
           </div>
