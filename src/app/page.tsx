@@ -1534,14 +1534,14 @@ Example Replies
               </Link>
             </div>
 
-            {/* Plan 4: Agency BYOK */}
+            {/* Plan 4: Agency Unlimited */}
             <div className="bg-gradient-to-b from-zinc-900 to-black text-white rounded-2xl border border-zinc-800 p-6 shadow-xl flex flex-col justify-between">
               <div>
                 <div className="inline-block bg-purple-500/20 text-purple-300 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md border border-purple-500/30 mb-2">
-                  BYOK Engine
+                  High Volume
                 </div>
-                <h3 className="font-heading font-bold text-lg text-white">Agency BYOK</h3>
-                <p className="text-xs text-zinc-400 mt-0.5 mb-5">Unlimited via your own GCP key</p>
+                <h3 className="font-heading font-bold text-lg text-white">Agency / Unlimited</h3>
+                <p className="text-xs text-zinc-400 mt-0.5 mb-5">Unlimited replies for agencies & power creators</p>
 
                 <div className="mb-6 flex items-baseline">
                   <span className="font-heading font-extrabold text-3xl text-white">
@@ -1553,7 +1553,7 @@ Example Replies
                 <ul className="space-y-2.5 text-xs text-zinc-300 mb-8">
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-purple-400 shrink-0" />
-                    <span><strong className="text-white">Unlimited replies</strong> (BYOK)</span>
+                    <span><strong className="text-white">Unlimited replies</strong> (Dedicated Quota)</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-purple-400 shrink-0" />
@@ -1561,7 +1561,7 @@ Example Replies
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-purple-400 shrink-0" />
-                    <span>Own GCP 10k/day quota</span>
+                    <span>Dedicated high-volume quota</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-purple-400 shrink-0" />
@@ -1578,7 +1578,7 @@ Example Replies
                 href="/login"
                 className="w-full text-center py-2.5 rounded-xl bg-white text-zinc-950 hover:bg-zinc-100 font-semibold text-xs shadow-md transition-all"
               >
-                Get Agency BYOK
+                Get Agency Plan
               </Link>
             </div>
           </div>
