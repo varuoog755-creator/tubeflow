@@ -34,12 +34,12 @@ test("Test account: it does not leak into planFor, so no other account inherits 
   assert.equal(UNLIMITED_PLAN.id, "free");
   // A stored "free" must still resolve to the metered free plan.
   assert.notEqual(planFor("free"), UNLIMITED_PLAN);
-  assert.equal(planFor("free").monthlyRepliesLimit, 100);
-  assert.equal(planFor(undefined).monthlyRepliesLimit, 100);
+  assert.equal(planFor("free").monthlyRepliesLimit, 50);
+  assert.equal(planFor(undefined).monthlyRepliesLimit, 50);
 });
 
-test("Test account: a real free account is still capped after its 100 replies", () => {
-  const capped = monthlyAllowance(100, PLAN_CONFIGS.free.monthlyRepliesLimit);
+test("Test account: a real free account is still capped after its 50 replies", () => {
+  const capped = monthlyAllowance(50, PLAN_CONFIGS.free.monthlyRepliesLimit);
   assert.equal(capped.exhausted, true);
   assert.equal(capped.remaining, 0);
 });
@@ -56,7 +56,7 @@ test("Plan resolution: unknown or missing plan falls back to free, never to unli
 test("Plan resolution: the advertised limits are the ones a plan actually carries", () => {
   // The pricing page and PLAN_CONFIGS disagreed on every number for as long as
   // both existed. These assertions are the contract that keeps them agreeing.
-  assert.equal(PLAN_CONFIGS.free.monthlyRepliesLimit, 100);
+  assert.equal(PLAN_CONFIGS.free.monthlyRepliesLimit, 50);
   assert.equal(PLAN_CONFIGS.free.channelLimit, 1);
   assert.equal(PLAN_CONFIGS.growth.priceMonthlyInr, 499);
   assert.equal(PLAN_CONFIGS.growth.monthlyRepliesLimit, 5000);

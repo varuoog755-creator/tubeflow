@@ -39,9 +39,9 @@ export const PLAN_CONFIGS: Record<string, PlanConfig> = {
     priceMonthlyInr: 0,
     priceMonthlyInrYearly: 0,
     channelLimit: 1,
-    monthlyRepliesLimit: 100,
+    monthlyRepliesLimit: 50,
     features: [
-      "100 replies / month",
+      "50 replies / month",
       "1 YouTube channel",
       "Keyword and intent filters",
       "Official YouTube API compliance",

@@ -159,7 +159,8 @@ type DashboardTab =
   | "automations"
   | "links"
   | "conversions"
-  | "settings";
+  | "settings"
+  | "plans";
 
 type InboxFilterView =
   | "all"
@@ -1172,6 +1173,23 @@ export default function DashboardPage() {
                   <span>Channels & Setup</span>
                 </div>
               </button>
+
+              <button
+                onClick={() => setActiveTab("plans")}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === "plans"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/25"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900/60"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Crown className="w-4 h-4 text-amber-400" />
+                  <span>Pricing & Plans</span>
+                </div>
+                <span className="text-[10px] font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/20">
+                  PRO
+                </span>
+              </button>
             </nav>
           </div>
 
@@ -1185,10 +1203,10 @@ export default function DashboardPage() {
                 <span className="text-xs font-bold text-white tracking-wide">Upgrade to Pro</span>
               </div>
               <p className="text-[11px] text-zinc-300 leading-relaxed mb-3">
-                Unlock instant AI neural spintax, multi-channel polling, and unlimited conversions.
+                Unlock 5,000 replies/month, AI intent classification, multi-channel polling, and unlimited conversions.
               </p>
               <button
-                onClick={() => setActiveTab("settings")}
+                onClick={() => setActiveTab("plans")}
                 className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-1.5"
               >
                 <span>Upgrade Plan</span>
@@ -1721,6 +1739,14 @@ export default function DashboardPage() {
                                 &ldquo;{c.comment_text}&rdquo;
                               </p>
 
+                              {/* Delivered Reply Display */}
+                              {c.reply_text && (
+                                <div className="mt-1.5 p-2 rounded-lg bg-emerald-50/80 border border-emerald-100 text-[11px] text-emerald-900 flex items-start gap-1.5">
+                                  <span className="font-bold text-emerald-700 shrink-0">Replied:</span>
+                                  <span className="line-clamp-2">&ldquo;{c.reply_text}&rdquo;</span>
+                                </div>
+                              )}
+
                               {/* Bottom Action icons row */}
                               <div className="flex items-center justify-between pt-1">
                                 <span className="text-[10px] text-zinc-400 font-medium truncate max-w-[280px]">
@@ -1866,6 +1892,32 @@ export default function DashboardPage() {
                                 "YouTube API rejected the comment reply or token quota reached."}
                             </p>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Sent Reply Details */}
+                      {selectedComment.reply_text && (
+                        <div className="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 shadow-xs space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                                Sent Reply
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 border border-emerald-200 px-2 py-0.5 rounded-full">
+                              Delivered to YouTube
+                            </span>
+                          </div>
+                          <p className="text-xs text-emerald-950 font-medium leading-relaxed bg-white/90 p-3 rounded-lg border border-emerald-100 shadow-xs">
+                            &ldquo;{selectedComment.reply_text}&rdquo;
+                          </p>
+                          {selectedComment.processed_at && (
+                            <p className="text-[10px] text-emerald-700 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>Delivered: {new Date(selectedComment.processed_at).toLocaleString()}</span>
+                            </p>
+                          )}
                         </div>
                       )}
 
@@ -2633,6 +2685,58 @@ export default function DashboardPage() {
                 </button>
               </div>
 
+              {/* How Tracked Links Work & Live Status */}
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-purple-50/40 to-white border border-indigo-100 shadow-xs space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-indigo-100/60">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-xs">
+                      <LinkIcon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h2 className="font-heading font-bold text-sm text-zinc-950">
+                        How Tracked Links Work & Live Status
+                      </h2>
+                      <p className="text-[11px] text-zinc-500">
+                        URL Attribution Engine (/r/[slug]) for YouTube Comments
+                      </p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 w-fit">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Engine Status: Active & Working</span>
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-zinc-600">
+                  <div className="p-3.5 rounded-xl bg-white/90 border border-indigo-100/70 shadow-2xs space-y-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-1">
+                      <span>1. Create Short Slug</span>
+                    </div>
+                    <p className="leading-relaxed text-zinc-700">
+                      Create short, clean URLs like <span className="font-mono text-purple-700 font-bold bg-purple-50 px-1 py-0.5 rounded">bigredhub.info/r/[slug]</span> pointing to any store, affiliate product, or course link.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-white/90 border border-indigo-100/70 shadow-2xs space-y-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-1">
+                      <span>2. Embed in Replies</span>
+                    </div>
+                    <p className="leading-relaxed text-zinc-700">
+                      Include the shortlink in your Spintax campaign templates. When a viewer comments asking for price or links, BigRedHub automatically replies with your tracked link.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-white/90 border border-indigo-100/70 shadow-2xs space-y-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-1">
+                      <span>3. Track & Redirect</span>
+                    </div>
+                    <p className="leading-relaxed text-zinc-700">
+                      When clicked, our server asynchronously logs the click count, user agent, referrer, and device, then immediately forwards (HTTP 307) the buyer to the destination.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Links Table */}
               <div className="rounded-2xl border border-zinc-200/80 overflow-hidden bg-white shadow-xs">
                 <div className="overflow-x-auto">
@@ -2753,6 +2857,290 @@ export default function DashboardPage() {
                       </div>
                     ))
                   )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: PRICING & PLANS */}
+          {activeTab === "plans" && (
+            <div className="space-y-8 max-w-6xl mx-auto w-full pb-10">
+              <div className="text-center max-w-2xl mx-auto space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-700 text-xs font-bold">
+                  <Crown className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Transparent, Creator-First Pricing</span>
+                </div>
+                <h1 className="font-heading font-black text-3xl text-zinc-950 tracking-tight">
+                  Upgrade Your Conversion Engine
+                </h1>
+                <p className="text-xs text-zinc-600 leading-relaxed">
+                  Turn viewer curiosity into revenue with automated buyer-intent detection, anti-spam Spintax variations, and high-frequency comment polling.
+                </p>
+              </div>
+
+              {/* 3 Pricing Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+                {/* 1. Free Plan */}
+                <div className="flex flex-col rounded-3xl border border-zinc-200 bg-white p-6 shadow-xs hover:shadow-md transition-all">
+                  <div className="mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                      Starter
+                    </span>
+                    <h3 className="text-xl font-heading font-black text-zinc-950 mt-1">Free</h3>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      For testing automated replies on a single channel.
+                    </p>
+                  </div>
+
+                  <div className="flex items-baseline gap-1 my-4 pb-4 border-b border-zinc-100">
+                    <span className="text-3xl font-heading font-black text-zinc-950">₹0</span>
+                    <span className="text-xs text-zinc-500 font-medium">/ month</span>
+                  </div>
+
+                  <div className="space-y-3 flex-1 text-xs text-zinc-700">
+                    <div className="font-bold text-zinc-900 text-[11px] uppercase tracking-wider">
+                      Included Features:
+                    </div>
+                    <ul className="space-y-2.5">
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span><strong className="text-zinc-950">50 replies</strong> / month</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span><strong className="text-zinc-950">1</strong> YouTube channel</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>Keyword & intent triggers</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>Official YouTube API compliance</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>Community support</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-6 mt-4 border-t border-zinc-100">
+                    <button
+                      disabled
+                      className="w-full py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-500 font-bold text-xs cursor-default flex items-center justify-center gap-1.5"
+                    >
+                      <Check className="w-3.5 h-3.5 text-zinc-400" />
+                      <span>Current Active Plan</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Pro Plan (Featured) */}
+                <div className="relative flex flex-col rounded-3xl border-2 border-purple-500 bg-gradient-to-b from-purple-50/40 via-white to-white p-6 shadow-xl shadow-purple-500/10 transition-all">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-md">
+                    Most Popular
+                  </div>
+
+                  <div className="mb-4 pt-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-purple-600">
+                      Growth
+                    </span>
+                    <h3 className="text-xl font-heading font-black text-zinc-950 mt-1">Pro</h3>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      For serious creators monetizing video comments into customers.
+                    </p>
+                  </div>
+
+                  <div className="flex items-baseline gap-1 my-4 pb-4 border-b border-purple-100">
+                    <span className="text-3xl font-heading font-black text-purple-950">₹499</span>
+                    <span className="text-xs text-zinc-500 font-medium">/ month</span>
+                    <span className="ml-auto text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                      Save ₹1,200/yr
+                    </span>
+                  </div>
+
+                  <div className="space-y-3 flex-1 text-xs text-zinc-700">
+                    <div className="font-bold text-zinc-900 text-[11px] uppercase tracking-wider">
+                      Everything in Free, plus:
+                    </div>
+                    <ul className="space-y-2.5">
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                        <span><strong className="text-zinc-950">5,000 replies</strong> / month (100x capacity)</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                        <span><strong className="text-zinc-950">Up to 5</strong> YouTube channels</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                        <span>AI buyer-intent classification</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                        <span>Anti-spam Spintax variations</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                        <span>Tracked shortlinks & click attribution</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                        <span>Target specific videos & YouTube Shorts</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                        <span>Human reply delays (0s - 30s)</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-6 mt-4 border-t border-purple-100">
+                    <a
+                      href="https://wa.me/919999999999?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Pro%20Plan%20(₹499/mo)."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Zap className="w-3.5 h-3.5 fill-white" />
+                      <span>Upgrade to Pro Now</span>
+                    </a>
+                  </div>
+                </div>
+
+                {/* 3. Business Plan */}
+                <div className="flex flex-col rounded-3xl border border-zinc-200 bg-white p-6 shadow-xs hover:shadow-md transition-all">
+                  <div className="mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                      Scale
+                    </span>
+                    <h3 className="text-xl font-heading font-black text-zinc-950 mt-1">Business</h3>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      For large multi-channel networks, agencies, and e-com brands.
+                    </p>
+                  </div>
+
+                  <div className="flex items-baseline gap-1 my-4 pb-4 border-b border-zinc-100">
+                    <span className="text-3xl font-heading font-black text-zinc-950">₹1,499</span>
+                    <span className="text-xs text-zinc-500 font-medium">/ month</span>
+                    <span className="ml-auto text-[10px] font-bold text-zinc-700 bg-zinc-100 px-2 py-0.5 rounded-full">
+                      Yearly ₹1,199/mo
+                    </span>
+                  </div>
+
+                  <div className="space-y-3 flex-1 text-xs text-zinc-700">
+                    <div className="font-bold text-zinc-900 text-[11px] uppercase tracking-wider">
+                      Everything in Pro, plus:
+                    </div>
+                    <ul className="space-y-2.5">
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span><strong className="text-zinc-950">20,000 replies</strong> / month</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span><strong className="text-zinc-950">Up to 10</strong> YouTube channels</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>Multi-creator workspace management</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>Custom branded shortlink domain</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>High-frequency polling cycle</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>Dedicated priority VIP support</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-6 mt-4 border-t border-zinc-100">
+                    <a
+                      href="https://wa.me/919999999999?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Business%20Plan%20(₹1,499/mo)."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 rounded-xl border border-zinc-900 bg-zinc-900 hover:bg-black text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Crown className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Upgrade to Business</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Side-by-Side Comparison Table */}
+              <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs space-y-4">
+                <h3 className="font-heading font-bold text-base text-zinc-950">
+                  Feature Comparison Breakdown
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-zinc-200 text-zinc-500 font-bold text-[11px] uppercase tracking-wider">
+                        <th className="py-3 px-4">Feature</th>
+                        <th className="py-3 px-4">Free (₹0)</th>
+                        <th className="py-3 px-4 text-purple-700 bg-purple-50/50">Pro (₹499)</th>
+                        <th className="py-3 px-4">Business (₹1,499)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100 text-zinc-800">
+                      <tr>
+                        <td className="py-3 px-4 font-semibold text-zinc-900">Monthly Replies Allowance</td>
+                        <td className="py-3 px-4 font-bold text-zinc-700">50 replies/mo</td>
+                        <td className="py-3 px-4 font-bold text-purple-700 bg-purple-50/50">5,000 replies/mo</td>
+                        <td className="py-3 px-4 font-bold text-zinc-950">20,000 replies/mo</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-4 font-semibold text-zinc-900">Connected YouTube Channels</td>
+                        <td className="py-3 px-4">1 Channel</td>
+                        <td className="py-3 px-4 font-semibold text-purple-700 bg-purple-50/50">Up to 5 Channels</td>
+                        <td className="py-3 px-4 font-semibold">Up to 10 Channels</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-4 font-semibold text-zinc-900">AI Buyer Intent Detection</td>
+                        <td className="py-3 px-4 text-zinc-400">Basic Keywords</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold bg-purple-50/50">✓ Advanced AI Neural</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold">✓ Advanced AI Neural</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-4 font-semibold text-zinc-900">Anti-Spam Spintax Variations</td>
+                        <td className="py-3 px-4 text-zinc-400">Single Template</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold bg-purple-50/50">✓ Multi-Spintax Rotation</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold">✓ Multi-Spintax Rotation</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-4 font-semibold text-zinc-900">Tracked Links & Click Attribution</td>
+                        <td className="py-3 px-4 text-zinc-400">Standard Links</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold bg-purple-50/50">✓ /r/[slug] Attributed</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold">✓ Custom Domain + /r/</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-4 font-semibold text-zinc-900">Target Video Scope (Single / Shorts / All)</td>
+                        <td className="py-3 px-4">All Videos Only</td>
+                        <td className="py-3 px-4 text-purple-700 font-semibold bg-purple-50/50">✓ All / Single / Shorts</td>
+                        <td className="py-3 px-4 font-semibold">✓ All / Single / Shorts</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-4 font-semibold text-zinc-900">Human Delay Simulation</td>
+                        <td className="py-3 px-4">Fixed</td>
+                        <td className="py-3 px-4 text-purple-700 font-semibold bg-purple-50/50">✓ 0s to 30s Randomization</td>
+                        <td className="py-3 px-4 font-semibold">✓ Custom Delay Windows</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-4 font-semibold text-zinc-900">Support Level</td>
+                        <td className="py-3 px-4 text-zinc-500">Community</td>
+                        <td className="py-3 px-4 text-purple-700 font-semibold bg-purple-50/50">Priority Support</td>
+                        <td className="py-3 px-4 font-bold text-zinc-950">Dedicated VIP WhatsApp</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>

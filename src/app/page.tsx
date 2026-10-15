@@ -1415,7 +1415,7 @@ Example Replies
                 <ul className="space-y-3 text-xs sm:text-sm text-zinc-600 mb-8">
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>100 replies/month</span>
+                    <span>50 replies/month</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-red-600 shrink-0" />
