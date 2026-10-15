@@ -220,6 +220,14 @@ export default function DashboardPage() {
     message: string;
   } | null>(null);
 
+  // BYOK (Bring Your Own Key) Settings State
+  const [byokEnabled, setByokEnabled] = useState(false);
+  const [byokClientId, setByokClientId] = useState("");
+  const [byokClientSecret, setByokClientSecret] = useState("");
+  const [byokHasSecret, setByokHasSecret] = useState(false);
+  const [byokSaving, setByokSaving] = useState(false);
+  const [byokMessage, setByokMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   // Comment Inbox Workspace State
   const [inboxFilter, setInboxFilter] = useState<InboxFilterView>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -395,12 +403,55 @@ export default function DashboardPage() {
       } finally {
         setLoadingVideos(false);
       }
+
+      // Load BYOK Settings
+      try {
+        const byokRes = await fetch("/api/workspace/byok", { headers: getAuthHeaders() });
+        if (byokRes.ok) {
+          const byokData = await byokRes.json();
+          setByokEnabled(Boolean(byokData.byok_enabled));
+          setByokClientId(byokData.byok_client_id || "");
+          setByokHasSecret(Boolean(byokData.has_client_secret));
+        }
+      } catch {
+        // Non-blocking
+      }
     } catch (err: unknown) {
       console.error("Dashboard fetch error:", err);
       showNotification("error", "Could not sync dashboard data. Check connection.");
     } finally {
       setLoading(false);
       setIsRefreshing(false);
+    }
+  };
+
+  const handleSaveByok = async () => {
+    setByokSaving(true);
+    setByokMessage(null);
+    try {
+      const res = await fetch("/api/workspace/byok", {
+        method: "POST",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          byok_enabled: byokEnabled,
+          byok_client_id: byokClientId,
+          byok_client_secret: byokClientSecret,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setByokMessage({ type: "success", text: "BYOK Custom GCP credentials saved successfully!" });
+        setByokHasSecret(Boolean(data.has_client_secret));
+        setByokClientSecret("");
+        showNotification("success", "BYOK settings saved. All automations will now use your dedicated project quota.");
+      } else {
+        setByokMessage({ type: "error", text: data.error || "Failed to save BYOK credentials." });
+        showNotification("error", data.error || "Failed to save BYOK credentials.");
+      }
+    } catch {
+      setByokMessage({ type: "error", text: "Network error saving BYOK settings." });
+    } finally {
+      setByokSaving(false);
     }
   };
 
@@ -2859,6 +2910,141 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
+
+              {/* BYOK: Dedicated Google Cloud Project (Bring Your Own Key) */}
+              <div className="p-6 rounded-2xl border border-zinc-200/80 bg-white shadow-xs space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
+                      <Zap className="w-5 h-5 fill-white" />
+                    </div>
+                    <div>
+                      <h2 className="font-heading font-bold text-base text-zinc-950 flex items-center gap-2">
+                        <span>Dedicated Google Cloud Quota (BYOK)</span>
+                        <span className="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                          ENTERPRISE / AGENCY
+                        </span>
+                      </h2>
+                      <p className="text-xs text-zinc-500">
+                        Bring Your Own Key to run automations on your private 10,000 units/day Google quota.
+                      </p>
+                    </div>
+                  </div>
+
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${
+                      byokEnabled && byokClientId
+                        ? "bg-purple-50 text-purple-800 border-purple-200"
+                        : "bg-zinc-100 text-zinc-600 border-zinc-200"
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        byokEnabled && byokClientId ? "bg-purple-600 animate-pulse" : "bg-zinc-400"
+                      }`}
+                    />
+                    <span>
+                      {byokEnabled && byokClientId
+                        ? "BYOK Private Quota Active"
+                        : "Shared System Quota"}
+                    </span>
+                  </span>
+                </div>
+
+                {/* BYOK Toggle */}
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-50/80 border border-zinc-200/80">
+                  <div>
+                    <p className="text-xs font-bold text-zinc-900">Enable Dedicated GCP Project</p>
+                    <p className="text-[11px] text-zinc-500">
+                      Route all YouTube comment scanning and auto-replies through your personal Google Cloud credentials.
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={byokEnabled}
+                      onChange={(e) => setByokEnabled(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
+                </div>
+
+                {/* Form fields */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-800 mb-1">
+                      Google OAuth Client ID
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1234567890-abcdef.apps.googleusercontent.com"
+                      value={byokClientId}
+                      onChange={(e) => setByokClientId(e.target.value)}
+                      className="w-full text-xs font-mono p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:outline-none focus:border-purple-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-800 mb-1">
+                      Google OAuth Client Secret
+                    </label>
+                    <input
+                      type="password"
+                      placeholder={
+                        byokHasSecret
+                          ? "•••••••••••••••••••••••••••••••• (Secret Saved & Encrypted)"
+                          : "Paste your Google Client Secret"
+                      }
+                      value={byokClientSecret}
+                      onChange={(e) => setByokClientSecret(e.target.value)}
+                      className="w-full text-xs font-mono p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:outline-none focus:border-purple-600"
+                    />
+                  </div>
+
+                  {/* Setup Guide */}
+                  <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-100 text-xs text-indigo-950 space-y-1.5">
+                    <p className="font-bold text-[11px] uppercase tracking-wider text-indigo-800">
+                      Setup Instructions (3 Minutes):
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-[11px] text-zinc-700">
+                      <li>Go to Google Cloud Console $\rightarrow$ APIs & Services $\rightarrow$ Credentials.</li>
+                      <li>Create an OAuth 2.0 Client ID with application type <strong>Web Application</strong>.</li>
+                      <li>
+                        Add Authorized redirect URI:{" "}
+                        <code className="font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-indigo-200 text-indigo-900">
+                          https://bigredhub.info/api/auth/callback/google
+                        </code>
+                      </li>
+                      <li>Enable <strong>YouTube Data API v3</strong> in your Google Cloud Project.</li>
+                    </ol>
+                  </div>
+
+                  {byokMessage && (
+                    <div
+                      className={`p-3 rounded-xl text-xs font-medium ${
+                        byokMessage.type === "success"
+                          ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+                          : "bg-rose-50 text-rose-900 border border-rose-200"
+                      }`}
+                    >
+                      {byokMessage.text}
+                    </div>
+                  )}
+
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={handleSaveByok}
+                      disabled={byokSaving}
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 disabled:opacity-50 transition-all flex items-center gap-1.5"
+                    >
+                      {byokSaving && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                      <span>{byokSaving ? "Saving..." : "Save BYOK Configuration"}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -2878,8 +3064,8 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              {/* 3 Pricing Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+              {/* 4 Pricing Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
                 {/* 1. Free Plan */}
                 <div className="flex flex-col rounded-3xl border border-zinc-200 bg-white p-6 shadow-xs hover:shadow-md transition-all">
                   <div className="mb-4">
@@ -2892,7 +3078,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-baseline gap-1 my-4 pb-4 border-b border-zinc-100">
+                  <div className="flex items-baseline gap-1 my-3 pb-3 border-b border-zinc-100">
                     <span className="text-3xl font-heading font-black text-zinc-950">₹0</span>
                     <span className="text-xs text-zinc-500 font-medium">/ month</span>
                   </div>
@@ -2901,31 +3087,27 @@ export default function DashboardPage() {
                     <div className="font-bold text-zinc-900 text-[11px] uppercase tracking-wider">
                       Included Features:
                     </div>
-                    <ul className="space-y-2.5">
-                      <li className="flex items-start gap-2.5">
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                         <span><strong className="text-zinc-950">50 replies</strong> / month</span>
                       </li>
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                         <span><strong className="text-zinc-950">1</strong> YouTube channel</span>
                       </li>
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                         <span>Keyword & intent triggers</span>
                       </li>
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>Official YouTube API compliance</span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>Community support</span>
+                        <span>Official API compliance</span>
                       </li>
                     </ul>
                   </div>
 
-                  <div className="pt-6 mt-4 border-t border-zinc-100">
+                  <div className="pt-5 mt-4 border-t border-zinc-100">
                     <button
                       disabled
                       className="w-full py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-500 font-bold text-xs cursor-default flex items-center justify-center gap-1.5"
@@ -2948,55 +3130,44 @@ export default function DashboardPage() {
                     </span>
                     <h3 className="text-xl font-heading font-black text-zinc-950 mt-1">Pro</h3>
                     <p className="text-xs text-zinc-500 mt-1">
-                      For serious creators monetizing video comments into customers.
+                      For serious creators monetizing video comments.
                     </p>
                   </div>
 
-                  <div className="flex items-baseline gap-1 my-4 pb-4 border-b border-purple-100">
+                  <div className="flex items-baseline gap-1 my-3 pb-3 border-b border-purple-100">
                     <span className="text-3xl font-heading font-black text-purple-950">₹499</span>
                     <span className="text-xs text-zinc-500 font-medium">/ month</span>
-                    <span className="ml-auto text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
-                      Save ₹1,200/yr
-                    </span>
                   </div>
 
                   <div className="space-y-3 flex-1 text-xs text-zinc-700">
                     <div className="font-bold text-zinc-900 text-[11px] uppercase tracking-wider">
                       Everything in Free, plus:
                     </div>
-                    <ul className="space-y-2.5">
-                      <li className="flex items-start gap-2.5">
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                        <span><strong className="text-zinc-950">5,000 replies</strong> / month (100x capacity)</span>
+                        <span><strong className="text-zinc-950">500 replies</strong> / month (Sustainable)</span>
                       </li>
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                        <span><strong className="text-zinc-950">Up to 5</strong> YouTube channels</span>
+                        <span><strong className="text-zinc-950">Up to 2</strong> YouTube channels</span>
                       </li>
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
                         <span>AI buyer-intent classification</span>
                       </li>
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
                         <span>Anti-spam Spintax variations</span>
                       </li>
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                        <span>Tracked shortlinks & click attribution</span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                        <span>Target specific videos & YouTube Shorts</span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                        <span>Human reply delays (0s - 30s)</span>
+                        <span>Tracked shortlinks & attribution</span>
                       </li>
                     </ul>
                   </div>
 
-                  <div className="pt-6 mt-4 border-t border-purple-100">
+                  <div className="pt-5 mt-4 border-t border-purple-100">
                     <a
                       href="https://wa.me/919999999999?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Pro%20Plan%20(₹499/mo)."
                       target="_blank"
@@ -3004,72 +3175,122 @@ export default function DashboardPage() {
                       className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-1.5"
                     >
                       <Zap className="w-3.5 h-3.5 fill-white" />
-                      <span>Upgrade to Pro Now</span>
+                      <span>Upgrade to Pro</span>
                     </a>
                   </div>
                 </div>
 
-                {/* 3. Business Plan */}
+                {/* 3. Scale Plan */}
                 <div className="flex flex-col rounded-3xl border border-zinc-200 bg-white p-6 shadow-xs hover:shadow-md transition-all">
                   <div className="mb-4">
                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                       Scale
                     </span>
-                    <h3 className="text-xl font-heading font-black text-zinc-950 mt-1">Business</h3>
+                    <h3 className="text-xl font-heading font-black text-zinc-950 mt-1">Scale</h3>
                     <p className="text-xs text-zinc-500 mt-1">
-                      For large multi-channel networks, agencies, and e-com brands.
+                      For active creators with multiple videos.
                     </p>
                   </div>
 
-                  <div className="flex items-baseline gap-1 my-4 pb-4 border-b border-zinc-100">
-                    <span className="text-3xl font-heading font-black text-zinc-950">₹1,499</span>
+                  <div className="flex items-baseline gap-1 my-3 pb-3 border-b border-zinc-100">
+                    <span className="text-3xl font-heading font-black text-zinc-950">₹999</span>
                     <span className="text-xs text-zinc-500 font-medium">/ month</span>
-                    <span className="ml-auto text-[10px] font-bold text-zinc-700 bg-zinc-100 px-2 py-0.5 rounded-full">
-                      Yearly ₹1,199/mo
-                    </span>
                   </div>
 
                   <div className="space-y-3 flex-1 text-xs text-zinc-700">
                     <div className="font-bold text-zinc-900 text-[11px] uppercase tracking-wider">
                       Everything in Pro, plus:
                     </div>
-                    <ul className="space-y-2.5">
-                      <li className="flex items-start gap-2.5">
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span><strong className="text-zinc-950">20,000 replies</strong> / month</span>
+                        <span><strong className="text-zinc-950">2,000 replies</strong> / month</span>
                       </li>
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span><strong className="text-zinc-950">Up to 10</strong> YouTube channels</span>
+                        <span><strong className="text-zinc-950">Up to 5</strong> YouTube channels</span>
                       </li>
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>Multi-creator workspace management</span>
+                        <span>5-minute priority polling</span>
                       </li>
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>Custom branded shortlink domain</span>
+                        <span>Custom shortlink domain</span>
                       </li>
-                      <li className="flex items-start gap-2.5">
+                      <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>High-frequency polling cycle</span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>Dedicated priority VIP support</span>
+                        <span>Priority email & chat support</span>
                       </li>
                     </ul>
                   </div>
 
-                  <div className="pt-6 mt-4 border-t border-zinc-100">
+                  <div className="pt-5 mt-4 border-t border-zinc-100">
                     <a
-                      href="https://wa.me/919999999999?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Business%20Plan%20(₹1,499/mo)."
+                      href="https://wa.me/919999999999?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Scale%20Plan%20(₹999/mo)."
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full py-2.5 rounded-xl border border-zinc-900 bg-zinc-900 hover:bg-black text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5"
                     >
-                      <Crown className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Upgrade to Business</span>
+                      <span>Upgrade to Scale</span>
+                    </a>
+                  </div>
+                </div>
+
+                {/* 4. Agency BYOK Plan */}
+                <div className="flex flex-col rounded-3xl border border-purple-500/50 bg-gradient-to-b from-zinc-900 via-zinc-950 to-black p-6 shadow-xl text-white transition-all">
+                  <div className="mb-4">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300 bg-purple-500/20 px-2.5 py-0.5 rounded-md border border-purple-500/30">
+                      BYOK Engine
+                    </span>
+                    <h3 className="text-xl font-heading font-black text-white mt-1">Agency BYOK</h3>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      Bring Your Own Key for unlimited quota.
+                    </p>
+                  </div>
+
+                  <div className="flex items-baseline gap-1 my-3 pb-3 border-b border-zinc-800">
+                    <span className="text-3xl font-heading font-black text-white">₹1,999</span>
+                    <span className="text-xs text-zinc-400 font-medium">/ month</span>
+                  </div>
+
+                  <div className="space-y-3 flex-1 text-xs text-zinc-300">
+                    <div className="font-bold text-white text-[11px] uppercase tracking-wider">
+                      BYOK Dedicated Engine:
+                    </div>
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-2">
+                        <Check className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                        <span><strong className="text-white">Unlimited replies</strong> (BYOK Quota)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                        <span><strong className="text-white">Up to 10</strong> YouTube channels</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                        <span>Private 10,000 units/day quota</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                        <span>Zero shared server rate-limits</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                        <span>VIP Dedicated WhatsApp support</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-5 mt-4 border-t border-zinc-800">
+                    <a
+                      href="https://wa.me/919999999999?text=Hi%20BigRedHub,%20I%20want%20to%20activate%20Agency%20BYOK%20Plan%20(₹1,999/mo)."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/30 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Crown className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Get Agency BYOK</span>
                     </a>
                   </div>
                 </div>
@@ -3087,57 +3308,66 @@ export default function DashboardPage() {
                         <th className="py-3 px-4">Feature</th>
                         <th className="py-3 px-4">Free (₹0)</th>
                         <th className="py-3 px-4 text-purple-700 bg-purple-50/50">Pro (₹499)</th>
-                        <th className="py-3 px-4">Business (₹1,499)</th>
+                        <th className="py-3 px-4">Scale (₹999)</th>
+                        <th className="py-3 px-4 font-bold text-purple-900 bg-purple-50/80">Agency BYOK (₹1,999)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100 text-zinc-800">
                       <tr>
                         <td className="py-3 px-4 font-semibold text-zinc-900">Monthly Replies Allowance</td>
                         <td className="py-3 px-4 font-bold text-zinc-700">50 replies/mo</td>
-                        <td className="py-3 px-4 font-bold text-purple-700 bg-purple-50/50">5,000 replies/mo</td>
-                        <td className="py-3 px-4 font-bold text-zinc-950">20,000 replies/mo</td>
+                        <td className="py-3 px-4 font-bold text-purple-700 bg-purple-50/50">500 replies/mo</td>
+                        <td className="py-3 px-4 font-bold text-zinc-950">2,000 replies/mo</td>
+                        <td className="py-3 px-4 font-bold text-purple-900 bg-purple-50/80">Unlimited (BYOK)</td>
                       </tr>
                       <tr>
                         <td className="py-3 px-4 font-semibold text-zinc-900">Connected YouTube Channels</td>
                         <td className="py-3 px-4">1 Channel</td>
-                        <td className="py-3 px-4 font-semibold text-purple-700 bg-purple-50/50">Up to 5 Channels</td>
-                        <td className="py-3 px-4 font-semibold">Up to 10 Channels</td>
+                        <td className="py-3 px-4 font-semibold text-purple-700 bg-purple-50/50">Up to 2 Channels</td>
+                        <td className="py-3 px-4 font-semibold">Up to 5 Channels</td>
+                        <td className="py-3 px-4 font-bold text-purple-900 bg-purple-50/80">Up to 10 Channels</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-4 font-semibold text-zinc-900">Dedicated Quota (BYOK)</td>
+                        <td className="py-3 px-4 text-zinc-400">Shared Pool</td>
+                        <td className="py-3 px-4 text-zinc-400 bg-purple-50/50">Shared Pool</td>
+                        <td className="py-3 px-4 text-zinc-400">Shared Pool</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold bg-purple-50/80">✓ Private 10k/day GCP</td>
                       </tr>
                       <tr>
                         <td className="py-3 px-4 font-semibold text-zinc-900">AI Buyer Intent Detection</td>
                         <td className="py-3 px-4 text-zinc-400">Basic Keywords</td>
                         <td className="py-3 px-4 text-emerald-600 font-bold bg-purple-50/50">✓ Advanced AI Neural</td>
                         <td className="py-3 px-4 text-emerald-600 font-bold">✓ Advanced AI Neural</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold bg-purple-50/80">✓ Advanced AI Neural</td>
                       </tr>
                       <tr>
                         <td className="py-3 px-4 font-semibold text-zinc-900">Anti-Spam Spintax Variations</td>
                         <td className="py-3 px-4 text-zinc-400">Single Template</td>
-                        <td className="py-3 px-4 text-emerald-600 font-bold bg-purple-50/50">✓ Multi-Spintax Rotation</td>
-                        <td className="py-3 px-4 text-emerald-600 font-bold">✓ Multi-Spintax Rotation</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold bg-purple-50/50">✓ Multi-Spintax</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold">✓ Multi-Spintax</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold bg-purple-50/80">✓ Multi-Spintax Rotation</td>
                       </tr>
                       <tr>
-                        <td className="py-3 px-4 font-semibold text-zinc-900">Tracked Links & Click Attribution</td>
+                        <td className="py-3 px-4 font-semibold text-zinc-900">Tracked Links & Click Stats</td>
                         <td className="py-3 px-4 text-zinc-400">Standard Links</td>
                         <td className="py-3 px-4 text-emerald-600 font-bold bg-purple-50/50">✓ /r/[slug] Attributed</td>
                         <td className="py-3 px-4 text-emerald-600 font-bold">✓ Custom Domain + /r/</td>
+                        <td className="py-3 px-4 text-emerald-600 font-bold bg-purple-50/80">✓ Custom Domain + /r/</td>
                       </tr>
                       <tr>
-                        <td className="py-3 px-4 font-semibold text-zinc-900">Target Video Scope (Single / Shorts / All)</td>
-                        <td className="py-3 px-4">All Videos Only</td>
-                        <td className="py-3 px-4 text-purple-700 font-semibold bg-purple-50/50">✓ All / Single / Shorts</td>
-                        <td className="py-3 px-4 font-semibold">✓ All / Single / Shorts</td>
-                      </tr>
-                      <tr>
-                        <td className="py-3 px-4 font-semibold text-zinc-900">Human Delay Simulation</td>
-                        <td className="py-3 px-4">Fixed</td>
-                        <td className="py-3 px-4 text-purple-700 font-semibold bg-purple-50/50">✓ 0s to 30s Randomization</td>
-                        <td className="py-3 px-4 font-semibold">✓ Custom Delay Windows</td>
+                        <td className="py-3 px-4 font-semibold text-zinc-900">Polling Interval</td>
+                        <td className="py-3 px-4">30 Minutes</td>
+                        <td className="py-3 px-4 text-purple-700 bg-purple-50/50">10 Minutes</td>
+                        <td className="py-3 px-4 font-semibold">5 Minutes</td>
+                        <td className="py-3 px-4 font-bold text-purple-900 bg-purple-50/80">Instant Real-time</td>
                       </tr>
                       <tr>
                         <td className="py-3 px-4 font-semibold text-zinc-900">Support Level</td>
                         <td className="py-3 px-4 text-zinc-500">Community</td>
-                        <td className="py-3 px-4 text-purple-700 font-semibold bg-purple-50/50">Priority Support</td>
-                        <td className="py-3 px-4 font-bold text-zinc-950">Dedicated VIP WhatsApp</td>
+                        <td className="py-3 px-4 text-purple-700 bg-purple-50/50">Priority Support</td>
+                        <td className="py-3 px-4 font-semibold">Priority Email & Chat</td>
+                        <td className="py-3 px-4 font-bold text-zinc-950 bg-purple-50/80">VIP Dedicated WhatsApp</td>
                       </tr>
                     </tbody>
                   </table>

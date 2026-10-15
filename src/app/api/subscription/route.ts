@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     if (!plan || !PLAN_CONFIGS[plan.toLowerCase()]) {
       return NextResponse.json(
-        { error: "Invalid plan. Choose 'free', 'growth', or 'scale'." },
+        { error: "Invalid plan. Choose 'free', 'growth', 'scale', or 'agency'." },
         { status: 400 }
       );
     }

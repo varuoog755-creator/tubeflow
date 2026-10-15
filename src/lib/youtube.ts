@@ -7,11 +7,18 @@ export function getAppUrl(): string {
   return "https://bigredhub.info";
 }
 
-export function getOAuth2Client(redirectUri?: string) {
+export interface CustomGcpCredentials {
+  clientId?: string | null;
+  clientSecret?: string | null;
+}
+
+export function getOAuth2Client(redirectUri?: string, customCreds?: CustomGcpCredentials) {
   const uri = redirectUri || `${getAppUrl()}/api/auth/callback/google`;
+  const clientId = customCreds?.clientId?.trim() || process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = customCreds?.clientSecret?.trim() || process.env.GOOGLE_CLIENT_SECRET;
   return new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
+    clientId,
+    clientSecret,
     uri
   );
 }
@@ -26,8 +33,8 @@ export const YOUTUBE_SCOPES = [
   "https://www.googleapis.com/auth/youtube.readonly",
 ];
 
-export function getAuthUrl(redirectUri?: string) {
-  const client = getOAuth2Client(redirectUri);
+export function getAuthUrl(redirectUri?: string, customCreds?: CustomGcpCredentials) {
+  const client = getOAuth2Client(redirectUri, customCreds);
   return client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
@@ -36,10 +43,12 @@ export function getAuthUrl(redirectUri?: string) {
   });
 }
 
-export function getYoutubeClient(accessToken: string, refreshToken?: string) {
+export function getYoutubeClient(accessToken: string, refreshToken?: string, customCreds?: CustomGcpCredentials) {
+  const clientId = customCreds?.clientId?.trim() || process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = customCreds?.clientSecret?.trim() || process.env.GOOGLE_CLIENT_SECRET;
   const client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET
+    clientId,
+    clientSecret
   );
 
   client.setCredentials({
@@ -65,7 +74,7 @@ export interface ChannelTokenData {
  * the access token via the stored refresh token if the current token has expired
  * or is within 3 minutes of expiry. Persists refreshed tokens in Supabase.
  */
-export async function getValidYoutubeClient(channel: ChannelTokenData) {
+export async function getValidYoutubeClient(channel: ChannelTokenData, customCreds?: CustomGcpCredentials) {
   let activeAccessToken = channel.access_token;
   const now = Date.now();
   const expiryTime = channel.token_expiry ? new Date(channel.token_expiry).getTime() : 0;
@@ -73,9 +82,11 @@ export async function getValidYoutubeClient(channel: ChannelTokenData) {
 
   if (isExpiringSoon && channel.refresh_token) {
     try {
+      const clientId = customCreds?.clientId?.trim() || process.env.GOOGLE_CLIENT_ID;
+      const clientSecret = customCreds?.clientSecret?.trim() || process.env.GOOGLE_CLIENT_SECRET;
       const client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET
+        clientId,
+        clientSecret
       );
       client.setCredentials({ refresh_token: channel.refresh_token });
       const { credentials } = await client.refreshAccessToken();
@@ -103,7 +114,7 @@ export async function getValidYoutubeClient(channel: ChannelTokenData) {
     }
   }
 
-  return getYoutubeClient(activeAccessToken, channel.refresh_token || undefined);
+  return getYoutubeClient(activeAccessToken, channel.refresh_token || undefined, customCreds);
 }
 
 export function isYoutubeQuotaError(error: unknown): boolean {

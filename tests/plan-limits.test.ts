@@ -59,11 +59,14 @@ test("Plan resolution: the advertised limits are the ones a plan actually carrie
   assert.equal(PLAN_CONFIGS.free.monthlyRepliesLimit, 50);
   assert.equal(PLAN_CONFIGS.free.channelLimit, 1);
   assert.equal(PLAN_CONFIGS.growth.priceMonthlyInr, 499);
-  assert.equal(PLAN_CONFIGS.growth.monthlyRepliesLimit, 5000);
-  assert.equal(PLAN_CONFIGS.growth.channelLimit, 5);
-  assert.equal(PLAN_CONFIGS.scale.priceMonthlyInr, 1499);
-  assert.equal(PLAN_CONFIGS.scale.monthlyRepliesLimit, 20000);
-  assert.equal(PLAN_CONFIGS.scale.channelLimit, 10);
+  assert.equal(PLAN_CONFIGS.growth.monthlyRepliesLimit, 500);
+  assert.equal(PLAN_CONFIGS.growth.channelLimit, 2);
+  assert.equal(PLAN_CONFIGS.scale.priceMonthlyInr, 999);
+  assert.equal(PLAN_CONFIGS.scale.monthlyRepliesLimit, 2000);
+  assert.equal(PLAN_CONFIGS.scale.channelLimit, 5);
+  assert.equal(PLAN_CONFIGS.agency.priceMonthlyInr, 1999);
+  assert.equal(PLAN_CONFIGS.agency.monthlyRepliesLimit, 100000);
+  assert.equal(PLAN_CONFIGS.agency.channelLimit, 10);
 });
 
 test("Monthly window: starts on the 1st in UTC and ends on the next 1st", () => {

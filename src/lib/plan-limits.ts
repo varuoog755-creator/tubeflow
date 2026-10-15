@@ -20,7 +20,7 @@
 // Note: nothing enforces these limits yet (issue #13). They are the advertised
 // allowance and are reported back to the dashboard, not a gate.
 export interface PlanConfig {
-  id: "free" | "growth" | "scale";
+  id: "free" | "growth" | "scale" | "agency";
   name: string;
   tagline: string;
   priceMonthlyInr: number;
@@ -43,7 +43,7 @@ export const PLAN_CONFIGS: Record<string, PlanConfig> = {
     features: [
       "50 replies / month",
       "1 YouTube channel",
-      "Keyword and intent filters",
+      "Keyword and intent triggers",
       "Official YouTube API compliance",
       "Community support",
     ],
@@ -54,12 +54,12 @@ export const PLAN_CONFIGS: Record<string, PlanConfig> = {
     tagline: "For growing creators",
     priceMonthlyInr: 499,
     priceMonthlyInrYearly: 399,
-    channelLimit: 5,
-    monthlyRepliesLimit: 5000,
+    channelLimit: 2,
+    monthlyRepliesLimit: 500,
     popular: true,
     features: [
-      "5,000 replies / month",
-      "Up to 5 YouTube channels",
+      "500 high-intent replies / month",
+      "Up to 2 YouTube channels",
       "AI buyer-intent classification",
       "Anti-spam Spintax variations",
       "Tracked shortlinks and conversion attribution",
@@ -69,20 +69,37 @@ export const PLAN_CONFIGS: Record<string, PlanConfig> = {
   },
   scale: {
     id: "scale",
-    name: "Business",
-    tagline: "For large channels",
-    priceMonthlyInr: 1499,
-    priceMonthlyInrYearly: 1199,
-    channelLimit: 10,
-    monthlyRepliesLimit: 20000,
+    name: "Scale",
+    tagline: "For active selling channels",
+    priceMonthlyInr: 999,
+    priceMonthlyInrYearly: 799,
+    channelLimit: 5,
+    monthlyRepliesLimit: 2000,
     features: [
-      "20,000 replies / month",
-      "Up to 10 YouTube channels",
+      "2,000 high-intent replies / month",
+      "Up to 5 YouTube channels",
       "Everything in Pro",
       "Multi-creator workspace management",
       "Custom branded shortlink domain",
-      "High-frequency polling cycle",
-      "Priority support",
+      "High-frequency 5-min polling cycle",
+      "Priority email & chat support",
+    ],
+  },
+  agency: {
+    id: "agency",
+    name: "Agency BYOK",
+    tagline: "Unlimited quota with custom GCP project",
+    priceMonthlyInr: 1999,
+    priceMonthlyInrYearly: 1599,
+    channelLimit: 10,
+    monthlyRepliesLimit: 100000,
+    features: [
+      "Unlimited replies (BYOK Dedicated Quota)",
+      "Up to 10 YouTube channels",
+      "Bring Your Own GCP Key (10,000 units/day private)",
+      "Zero shared pool rate limits",
+      "Real-time instant polling",
+      "Dedicated VIP WhatsApp support",
     ],
   },
 };

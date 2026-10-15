@@ -63,13 +63,30 @@ export async function GET(request: NextRequest) {
       }
 
       try {
-        // Authenticate with automatic token refresh if expired
+        // Check if workspace uses dedicated BYOK credentials
+        let customCreds: { clientId?: string; clientSecret?: string } | undefined = undefined;
+        if (channel.workspace_id) {
+          const { data: ws } = await supabaseAdmin
+            .from("workspaces")
+            .select("byok_enabled, byok_client_id, byok_client_secret")
+            .eq("id", channel.workspace_id)
+            .maybeSingle();
+
+          if (ws?.byok_enabled && ws?.byok_client_id && ws?.byok_client_secret) {
+            customCreds = {
+              clientId: ws.byok_client_id,
+              clientSecret: ws.byok_client_secret,
+            };
+          }
+        }
+
+        // Authenticate with automatic token refresh if expired (using BYOK if configured)
         const youtube = await getValidYoutubeClient({
           id: channel.id,
           access_token: channel.access_token,
           refresh_token: channel.refresh_token,
           token_expiry: channel.token_expiry,
-        });
+        }, customCreds);
 
         // Fetch latest published comment threads from the channel
         const commentsRes = await youtube.commentThreads.list({

@@ -1399,119 +1399,186 @@ Example Replies
             </div>
           </div>
 
-          {/* 3 Pricing Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+          {/* 4 Pricing Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             {/* Plan 1: Free */}
-            <div className="bg-white rounded-2xl border border-zinc-200 p-7 shadow-sm flex flex-col justify-between">
+            <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm flex flex-col justify-between">
               <div>
                 <h3 className="font-heading font-bold text-lg text-zinc-950">Free</h3>
                 <p className="text-xs text-zinc-500 mt-0.5 mb-5">For small creators</p>
 
                 <div className="mb-6 flex items-baseline">
-                  <span className="font-heading font-extrabold text-4xl text-zinc-950">₹0</span>
+                  <span className="font-heading font-extrabold text-3xl text-zinc-950">₹0</span>
                   <span className="text-xs text-zinc-500 ml-1">/month</span>
                 </div>
 
-                <ul className="space-y-3 text-xs sm:text-sm text-zinc-600 mb-8">
+                <ul className="space-y-2.5 text-xs text-zinc-600 mb-8">
                   <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>50 replies/month</span>
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>50 replies</strong>/month</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>1 channel</span>
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>1 YouTube channel</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>Basic features</span>
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Keyword & intent triggers</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Official API compliance</span>
                   </li>
                 </ul>
               </div>
 
               <Link
                 href="/login"
-                className="w-full text-center py-2.5 rounded-xl border border-zinc-300 hover:border-zinc-400 font-semibold text-xs sm:text-sm text-zinc-800 hover:bg-zinc-50 transition-colors"
+                className="w-full text-center py-2.5 rounded-xl border border-zinc-300 hover:border-zinc-400 font-semibold text-xs text-zinc-800 hover:bg-zinc-50 transition-colors"
               >
                 Get started
               </Link>
             </div>
 
             {/* Plan 2: Pro (Most popular highlighted) */}
-            <div className="bg-white rounded-2xl border-2 border-red-500 p-7 shadow-xl shadow-red-500/10 flex flex-col justify-between relative">
-              {/* Most Popular Badge */}
-              <div className="absolute -top-3.5 right-6 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
+            <div className="bg-white rounded-2xl border-2 border-red-500 p-6 shadow-xl shadow-red-500/10 flex flex-col justify-between relative">
+              <div className="absolute -top-3.5 right-4 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full shadow-md">
                 Most popular
               </div>
 
               <div>
                 <h3 className="font-heading font-bold text-lg text-zinc-950">Pro</h3>
-                <p className="text-xs text-zinc-500 mt-0.5 mb-5">For growing creators</p>
+                <p className="text-xs text-zinc-500 mt-0.5 mb-5">For growing channels</p>
 
                 <div className="mb-6 flex items-baseline">
-                  <span className="font-heading font-extrabold text-4xl text-zinc-950">
+                  <span className="font-heading font-extrabold text-3xl text-zinc-950">
                     {pricingPeriod === "monthly" ? "₹499" : "₹399"}
                   </span>
                   <span className="text-xs text-zinc-500 ml-1">/month</span>
                 </div>
 
-                <ul className="space-y-3 text-xs sm:text-sm text-zinc-600 mb-8">
+                <ul className="space-y-2.5 text-xs text-zinc-600 mb-8">
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span className="font-medium text-zinc-900">5,000 replies/month</span>
+                    <span className="font-medium text-zinc-900"><strong>500 replies</strong>/month</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span className="font-medium text-zinc-900">5 channels</span>
+                    <span className="font-medium text-zinc-900">Up to 2 channels</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span className="font-medium text-zinc-900">Advanced features</span>
+                    <span>AI buyer-intent classification</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>Anti-spam Spintax variations</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>Tracked links & click stats</span>
                   </li>
                 </ul>
               </div>
 
               <Link
                 href="/login"
-                className="w-full text-center py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 font-semibold text-xs sm:text-sm text-white shadow-lg shadow-red-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="w-full text-center py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 font-semibold text-xs text-white shadow-lg shadow-red-600/30 transition-all"
               >
                 Start free
               </Link>
             </div>
 
-            {/* Plan 3: Business */}
-            <div className="bg-white rounded-2xl border border-zinc-200 p-7 shadow-sm flex flex-col justify-between">
+            {/* Plan 3: Scale */}
+            <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm flex flex-col justify-between">
               <div>
-                <h3 className="font-heading font-bold text-lg text-zinc-950">Business</h3>
-                <p className="text-xs text-zinc-500 mt-0.5 mb-5">For large channels</p>
+                <h3 className="font-heading font-bold text-lg text-zinc-950">Scale</h3>
+                <p className="text-xs text-zinc-500 mt-0.5 mb-5">For active creators</p>
 
                 <div className="mb-6 flex items-baseline">
-                  <span className="font-heading font-extrabold text-4xl text-zinc-950">
-                    {pricingPeriod === "monthly" ? "₹1,499" : "₹1,199"}
+                  <span className="font-heading font-extrabold text-3xl text-zinc-950">
+                    {pricingPeriod === "monthly" ? "₹999" : "₹799"}
                   </span>
                   <span className="text-xs text-zinc-500 ml-1">/month</span>
                 </div>
 
-                <ul className="space-y-3 text-xs sm:text-sm text-zinc-600 mb-8">
+                <ul className="space-y-2.5 text-xs text-zinc-600 mb-8">
                   <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>20,000 replies/month</span>
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>2,000 replies</strong>/month</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>10 channels</span>
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Up to 5 channels</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>Priority support</span>
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Everything in Pro</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Custom shortlink domain</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>5-minute priority polling</span>
                   </li>
                 </ul>
               </div>
 
               <Link
                 href="/login"
-                className="w-full text-center py-2.5 rounded-xl border border-zinc-300 hover:border-zinc-400 font-semibold text-xs sm:text-sm text-zinc-800 hover:bg-zinc-50 transition-colors"
+                className="w-full text-center py-2.5 rounded-xl border border-zinc-300 hover:border-zinc-400 font-semibold text-xs text-zinc-800 hover:bg-zinc-50 transition-colors"
               >
                 Get started
+              </Link>
+            </div>
+
+            {/* Plan 4: Agency BYOK */}
+            <div className="bg-gradient-to-b from-zinc-900 to-black text-white rounded-2xl border border-zinc-800 p-6 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="inline-block bg-purple-500/20 text-purple-300 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md border border-purple-500/30 mb-2">
+                  BYOK Engine
+                </div>
+                <h3 className="font-heading font-bold text-lg text-white">Agency BYOK</h3>
+                <p className="text-xs text-zinc-400 mt-0.5 mb-5">Unlimited via your own GCP key</p>
+
+                <div className="mb-6 flex items-baseline">
+                  <span className="font-heading font-extrabold text-3xl text-white">
+                    {pricingPeriod === "monthly" ? "₹1,999" : "₹1,599"}
+                  </span>
+                  <span className="text-xs text-zinc-400 ml-1">/month</span>
+                </div>
+
+                <ul className="space-y-2.5 text-xs text-zinc-300 mb-8">
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-purple-400 shrink-0" />
+                    <span><strong className="text-white">Unlimited replies</strong> (BYOK)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-purple-400 shrink-0" />
+                    <span>Up to 10 channels</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-purple-400 shrink-0" />
+                    <span>Own GCP 10k/day quota</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-purple-400 shrink-0" />
+                    <span>Zero shared rate limits</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-purple-400 shrink-0" />
+                    <span>VIP WhatsApp priority</span>
+                  </li>
+                </ul>
+              </div>
+
+              <Link
+                href="/login"
+                className="w-full text-center py-2.5 rounded-xl bg-white text-zinc-950 hover:bg-zinc-100 font-semibold text-xs shadow-md transition-all"
+              >
+                Get Agency BYOK
               </Link>
             </div>
           </div>
