@@ -2551,6 +2551,34 @@ export default function DashboardPage() {
                 </div>
               </div>
 
+              {/* Art of Suggestion: Anti-Spam Safety Advice */}
+              <div className="p-4 rounded-2xl border border-sky-200/80 bg-gradient-to-r from-sky-50/70 via-white to-indigo-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-heading font-bold text-xs text-sky-950 flex items-center gap-1.5">
+                      <span>Pro Suggestion: How to Keep Your Replies 100% Ban-Proof</span>
+                      <span className="text-[10px] text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full font-semibold">
+                        Zero Spam Flag
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-zinc-600 mt-0.5">
+                      Always include Spintax variations like <code className="text-sky-800 bg-sky-50 px-1 py-0.5 rounded font-mono">&#123;Hey|Hi&#125;</code> and target commercial keywords. YouTube algorithm views varied, buyer-intent replies as natural creator engagement.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-sky-800 shrink-0">
+                  <span className="bg-white border border-sky-200 px-2.5 py-1 rounded-lg shadow-2xs">
+                    ✓ Anti-Spam Rotation
+                  </span>
+                  <span className="bg-white border border-sky-200 px-2.5 py-1 rounded-lg shadow-2xs">
+                    ✓ Buyer Intent Only
+                  </span>
+                </div>
+              </div>
+
               {/* Rules List with Campaign Performance Metrics */}
               <div className="space-y-4">
                 {rules.length === 0 ? (
@@ -2860,6 +2888,38 @@ export default function DashboardPage() {
                 <p className="text-xs text-zinc-500 mt-1">
                   Manage authorized Google OAuth2 channels and comment polling preferences.
                 </p>
+              </div>
+
+              {/* Trust & Channel Safety Assurance Banner */}
+              <div className="p-4 rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-emerald-50/70 via-white to-teal-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                    <ShieldCheck className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-heading font-bold text-xs text-emerald-950">
+                        100% YouTube Compliant & Channel Safe Guarantee
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-200">
+                        Official Google OAuth2
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-zinc-600 mt-0.5">
+                      BigRedHub never asks for your password. Auto-replies run under YouTube Data API v3 strictly on your own videos with anti-spam Spintax variations.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-800 shrink-0">
+                  <span className="inline-flex items-center gap-1 bg-white border border-emerald-200 px-2.5 py-1 rounded-lg shadow-2xs">
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    Zero Ban Risk
+                  </span>
+                  <span className="inline-flex items-center gap-1 bg-white border border-emerald-200 px-2.5 py-1 rounded-lg shadow-2xs">
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    No Password Stored
+                  </span>
+                </div>
               </div>
 
               {/* Connected Channels List */}
@@ -3803,6 +3863,14 @@ export default function DashboardPage() {
                   onChange={(e) => setRuleTemplates(e.target.value)}
                   className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 font-mono text-[11px] focus:outline-none focus:border-red-600 leading-relaxed"
                 />
+
+                {/* Anti-Ban Engine Guard Trust Pill */}
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-[11px] text-emerald-950">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    <strong>Anti-Ban Engine Guard:</strong> Spintax randomizes phrasing on every reply so YouTube views it as natural creator interaction, keeping your channel 100% safe.
+                  </span>
+                </div>
 
                 {/* Spintax Live Test Preview Box */}
                 {spintaxPreviewSamples.length > 0 && (

@@ -1354,6 +1354,72 @@ Example Replies
       </section>
 
       {/* ========================================================= */}
+      {/* 7. TRUST & SAFETY GUARANTEE (Anti-Ban Architecture)      */}
+      {/* ========================================================= */}
+      <section className="py-20 lg:py-24 bg-gradient-to-b from-white via-zinc-50/70 to-white border-y border-zinc-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-14">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold mb-3 shadow-2xs">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>100% Channel Safe & Anti-Ban Architecture</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-zinc-950 tracking-tight">
+              Built on Official Google Tech. Zero Ban Risk.
+            </h2>
+            <p className="text-zinc-600 text-sm sm:text-base mt-3 leading-relaxed">
+              We never use unauthorized scrapers, bot scripts, or password sharing. Here is how BigRedHub keeps your YouTube channel 100% compliant and protected.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Card 1 */}
+            <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-700 font-bold">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <h3 className="font-heading font-bold text-base text-zinc-950">Official Google OAuth 2.0</h3>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                You never give us your password. Authorization happens securely via Google&apos;s official OAuth screen. You can revoke access in 1-click anytime.
+              </p>
+            </div>
+
+            {/* Card 2 */}
+            <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-700 font-bold">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <h3 className="font-heading font-bold text-base text-zinc-950">Anti-Spam Spintax Rotation</h3>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                No two replies are ever identical. Spintax randomizes greetings and sentences so YouTube algorithm sees natural creator engagement.
+              </p>
+            </div>
+
+            {/* Card 3 */}
+            <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <h3 className="font-heading font-bold text-base text-zinc-950">Buyer-Intent Filtering Only</h3>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                Zero cold spamming. BigRedHub only triggers replies when viewers actively ask for links, price, or product recommendations.
+              </p>
+            </div>
+
+            {/* Card 4 */}
+            <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-700 font-bold">
+                <Users className="w-5 h-5" />
+              </div>
+              <h3 className="font-heading font-bold text-base text-zinc-950">Own Videos, Own Audience</h3>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                YouTube explicitly encourages creators to reply to their own viewers. Replying to comments on your own videos violates zero guidelines.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================= */}
       {/* 8. SIMPLE & TRANSPARENT PRICING                           */}
       {/* ========================================================= */}
       <section id="pricing" className="py-20 lg:py-28 bg-zinc-50/60">
