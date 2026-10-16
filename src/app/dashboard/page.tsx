@@ -55,6 +55,7 @@ import {
   Calendar,
   MessageCircle,
   ArrowRight,
+  LifeBuoy,
 } from "lucide-react";
 
 // Single source of truth for links we hand to customers. Previously the
@@ -235,6 +236,21 @@ export default function DashboardPage() {
   const [channelTermsError, setChannelTermsError] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [byokCopiedField, setByokCopiedField] = useState<string | null>(null);
+
+  // Customer Help Desk State
+  const [showHelpDeskModal, setShowHelpDeskModal] = useState(false);
+  const [customerTickets, setCustomerTickets] = useState<any[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+  const [showNewTicketForm, setShowNewTicketForm] = useState(false);
+  const [ticketSubject, setTicketSubject] = useState("");
+  const [ticketCategory, setTicketCategory] = useState("channel_connection");
+  const [ticketPriority, setTicketPriority] = useState("normal");
+  const [ticketMessage, setTicketMessage] = useState("");
+  const [creatingTicket, setCreatingTicket] = useState(false);
+  const [viewingTicket, setViewingTicket] = useState<any | null>(null);
+  const [ticketThread, setTicketThread] = useState<any[]>([]);
+  const [customerReplyText, setCustomerReplyText] = useState("");
+  const [sendingCustomerReply, setSendingCustomerReply] = useState(false);
 
   const handleCopyByokField = (text: string, fieldId: string) => {
     navigator.clipboard.writeText(text);
@@ -520,6 +536,98 @@ export default function DashboardPage() {
       showNotification("error", "Network error saving BYOK settings.");
     } finally {
       setByokSaving(false);
+    }
+  };
+
+  const fetchCustomerTickets = async () => {
+    setLoadingTickets(true);
+    try {
+      const res = await fetch("/api/support/tickets", { headers: getAuthHeaders() });
+      const json = await res.json();
+      if (json.success) {
+        setCustomerTickets(json.tickets || []);
+      }
+    } catch (err) {
+      console.error("Fetch tickets error:", err);
+    } finally {
+      setLoadingTickets(false);
+    }
+  };
+
+  const handleOpenHelpDesk = () => {
+    setShowHelpDeskModal(true);
+    fetchCustomerTickets();
+  };
+
+  const handleCreateCustomerTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ticketSubject.trim() || !ticketMessage.trim()) {
+      showNotification("error", "Please provide a subject and details.");
+      return;
+    }
+    setCreatingTicket(true);
+    try {
+      const res = await fetch("/api/support/tickets", {
+        method: "POST",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          subject: ticketSubject.trim(),
+          category: ticketCategory,
+          priority: ticketPriority,
+          message: ticketMessage.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        showNotification("success", "Ticket submitted! Our support team will assist you shortly.");
+        setTicketSubject("");
+        setTicketMessage("");
+        setShowNewTicketForm(false);
+        fetchCustomerTickets();
+      } else {
+        showNotification("error", json.error || "Failed to create ticket.");
+      }
+    } catch {
+      showNotification("error", "Network error submitting ticket.");
+    } finally {
+      setCreatingTicket(false);
+    }
+  };
+
+  const handleOpenTicketThread = async (ticket: any) => {
+    setViewingTicket(ticket);
+    try {
+      const res = await fetch(`/api/support/tickets/${ticket.id}`, { headers: getAuthHeaders() });
+      const json = await res.json();
+      if (json.success) {
+        setTicketThread(json.messages || []);
+      }
+    } catch (err) {
+      console.error("Fetch ticket thread error:", err);
+    }
+  };
+
+  const handleSendCustomerReply = async () => {
+    if (!viewingTicket || !customerReplyText.trim()) return;
+    setSendingCustomerReply(true);
+    try {
+      const res = await fetch(`/api/support/tickets/${viewingTicket.id}/messages`, {
+        method: "POST",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ message: customerReplyText.trim() }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setTicketThread((prev) => [...prev, json.message]);
+        setCustomerReplyText("");
+        fetchCustomerTickets();
+      } else {
+        showNotification("error", json.error || "Failed to send message.");
+      }
+    } catch {
+      showNotification("error", "Network error sending message.");
+    } finally {
+      setSendingCustomerReply(false);
     }
   };
 
@@ -1335,15 +1443,29 @@ export default function DashboardPage() {
 
             {/* Quick Links */}
             <div className="pt-2 border-t border-zinc-800/80 space-y-1 text-xs text-zinc-400">
-              <a
-                href="https://t.me"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-zinc-900 hover:text-zinc-200 transition-colors"
+              <button
+                type="button"
+                onClick={handleOpenHelpDesk}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-zinc-900 hover:text-zinc-200 transition-colors text-left cursor-pointer"
               >
-                <HelpCircle className="w-4 h-4 text-zinc-500" />
-                <span>Help & Support</span>
-              </a>
+                <LifeBuoy className="w-4 h-4 text-zinc-500" />
+                <span>Help Desk & Tickets</span>
+              </button>
+
+              {(profile?.email === "varuoog755@gmail.com" || profile?.email?.includes("admin")) && (
+                <Link
+                  href="/admin"
+                  target="_blank"
+                  className="flex items-center justify-between px-3 py-2 rounded-lg text-red-400 hover:bg-red-950/30 hover:text-red-300 transition-colors font-semibold"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Shield className="w-4 h-4 text-red-500" />
+                    <span>Admin Console</span>
+                  </span>
+                  <ExternalLink className="w-3 h-3 text-red-400" />
+                </Link>
+              )}
+
               <Link
                 href="/api/auth/logout"
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-rose-400/90 hover:bg-rose-950/30 hover:text-rose-300 transition-colors"
@@ -2325,8 +2447,8 @@ export default function DashboardPage() {
                   </div>
                   <p className="text-xs text-zinc-600 leading-relaxed">
                     {byokEnabled
-                      ? "Running on your dedicated Google Cloud project quota (10,000 units/day) for high-speed private comment processing."
-                      : "Running on BigRedHub automated engine. Connect your own Google Cloud key (BYOK) anytime for dedicated private quota."}
+                      ? "Running on your dedicated private Google Cloud credentials for private high volume comment automation."
+                      : "Running smoothly on BigRedHub Cloud Engine with active comment monitoring and auto-replies."}
                   </p>
                   <div className="pt-1 flex items-center justify-between text-xs text-zinc-600 border-t border-zinc-100">
                     <span>Replies today:</span>
@@ -3174,7 +3296,7 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Agencies or power senders can connect personal Google Cloud credentials for dedicated 10,000 units/day quota.
+                        Agencies or power senders can connect personal Google Cloud credentials for dedicated high volume automation.
                       </p>
                     </div>
                   </div>
@@ -3237,7 +3359,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="text-xs font-bold text-zinc-900">Enable Dedicated GCP Project</p>
                         <p className="text-[11px] text-zinc-500">
-                          Route all YouTube comment scanning and auto-replies through your personal Google Cloud credentials (10,000 units/day private quota).
+                          Route all YouTube comment scanning and auto-replies through your personal Google Cloud credentials.
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -4486,7 +4608,7 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            {/* Option 1: Direct YouTube Connect (Fast & Simple) */}
+            {/* Option 1: Direct YouTube Connect (Free Tier - Zero Setup) */}
             <div className="p-4 rounded-2xl border border-zinc-200 hover:border-red-300 bg-zinc-50/70 space-y-3 transition-all">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
@@ -4495,11 +4617,14 @@ export default function DashboardPage() {
                       1
                     </span>
                     <h3 className="font-heading font-bold text-sm text-zinc-900">
-                      Connect YouTube Channel Directly
+                      Connect YouTube Channel (Free Tier)
                     </h3>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      Zero Technical Setup
+                    </span>
                   </div>
-                  <p className="text-xs text-zinc-500 pl-7">
-                    Instant 1-click connect. Authorize your channel to scan comments and send automated link replies immediately.
+                  <p className="text-xs text-zinc-500 pl-7 leading-relaxed">
+                    Powered by BigRedHub cloud engine. 1-click connect to start scanning buyer intent comments and sending automated replies immediately (10 replies/month included).
                   </p>
                 </div>
                 <button
@@ -4516,7 +4641,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Option 2: Dedicated Google Cloud Quota (BYOK - 10,000 units/day) */}
+            {/* Option 2: Dedicated Custom Credentials (BYOK - Optional for Pro & Agency) */}
             <div className="p-4 rounded-2xl border border-indigo-200 bg-indigo-50/30 space-y-3.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
@@ -4525,14 +4650,14 @@ export default function DashboardPage() {
                       2
                     </span>
                     <h3 className="font-heading font-bold text-sm text-indigo-950">
-                      Use Dedicated Google Cloud Quota (BYOK)
+                      Dedicated Custom Credentials (BYOK)
                     </h3>
                     <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100/70 border border-indigo-200 px-2 py-0.5 rounded-full">
-                      Recommended for Agency / High Volume
+                      Pro & Agency Scale
                     </span>
                   </div>
                   <p className="text-xs text-zinc-600 pl-7 leading-relaxed">
-                    Provide your own Google OAuth Client ID & Secret to get a private <strong>10,000 units/day</strong> quota and eliminate unverified app warnings.
+                    Provide your own Google OAuth Client ID & Secret for high volume automation and private dedicated routing.
                   </p>
                 </div>
                 <button
@@ -4540,7 +4665,7 @@ export default function DashboardPage() {
                   onClick={() => setShowByokGuideModal(true)}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold shadow-xs transition-all shrink-0 cursor-pointer"
                 >
-                  <span>3-Min Guide</span>
+                  <span>Setup Guide</span>
                   <ExternalLink className="w-3 h-3" />
                 </button>
               </div>
@@ -4615,6 +4740,277 @@ export default function DashboardPage() {
                 Setup Later (Skip for Now)
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOMER HELP DESK & SUPPORT TICKETS MODAL */}
+      {showHelpDeskModal && (
+        <div className="fixed inset-0 z-50 bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl bg-white rounded-3xl border border-zinc-200 shadow-2xl p-6 sm:p-7 space-y-5 max-h-[92vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-3 border-b border-zinc-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+                    Customer Help Desk
+                  </span>
+                  <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full">
+                    24/7 Priority Support
+                  </span>
+                </div>
+                <h2 className="font-heading font-black text-xl text-zinc-950 mt-1">
+                  Help Desk & Support Tickets
+                </h2>
+                <p className="text-xs text-zinc-500">
+                  Raise a ticket for any issue or question. Our engineering team responds promptly.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowHelpDeskModal(false);
+                  setShowNewTicketForm(false);
+                  setViewingTicket(null);
+                }}
+                className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Actions Bar */}
+            {!showNewTicketForm && !viewingTicket && (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-zinc-700">
+                  Your Support Tickets ({customerTickets.length})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowNewTicketForm(true)}
+                  className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Raise New Ticket</span>
+                </button>
+              </div>
+            )}
+
+            {/* Mode 1: New Ticket Form */}
+            {showNewTicketForm && (
+              <form onSubmit={handleCreateCustomerTicket} className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
+                  <h3 className="font-heading font-bold text-sm text-zinc-900">Raise a Support Ticket</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewTicketForm(false)}
+                    className="text-xs text-zinc-500 hover:text-zinc-800 underline cursor-pointer"
+                  >
+                    ← Back to tickets
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-zinc-700 block mb-1">Issue Category</label>
+                    <select
+                      value={ticketCategory}
+                      onChange={(e) => setTicketCategory(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-900 focus:outline-none focus:border-red-500"
+                    >
+                      <option value="channel_connection">YouTube Channel Connection</option>
+                      <option value="replies_automation">Comment Automation & Replies</option>
+                      <option value="billing_plan">Plans & Subscription</option>
+                      <option value="bug_report">Bug Report / System Error</option>
+                      <option value="feature_request">Feature Request</option>
+                      <option value="other">Other Inquiry</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-zinc-700 block mb-1">Priority</label>
+                    <select
+                      value={ticketPriority}
+                      onChange={(e) => setTicketPriority(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-900 focus:outline-none focus:border-red-500"
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-zinc-700 block mb-1">Subject / Summary</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Briefly describe the issue (e.g. Comments not polling on Shorts)"
+                    value={ticketSubject}
+                    onChange={(e) => setTicketSubject(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-900 focus:outline-none focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-zinc-700 block mb-1">Describe Problem in Detail</label>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder="Provide details about the issue, video URL, or error message you encountered..."
+                    value={ticketMessage}
+                    onChange={(e) => setTicketMessage(e.target.value)}
+                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-900 focus:outline-none focus:border-red-500 resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewTicketForm(false)}
+                    className="px-4 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creatingTicket || !ticketSubject.trim() || !ticketMessage.trim()}
+                    className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 disabled:opacity-50 transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {creatingTicket && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                    <span>{creatingTicket ? "Submitting..." : "Submit Ticket"}</span>
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Mode 2: View Ticket Conversation Thread */}
+            {viewingTicket && (
+              <div className="flex-1 overflow-hidden flex flex-col space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-red-600">{viewingTicket.ticket_number}</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 uppercase">
+                        {viewingTicket.status.replace("_", " ")}
+                      </span>
+                    </div>
+                    <h3 className="font-heading font-bold text-sm text-zinc-950 mt-0.5">{viewingTicket.subject}</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setViewingTicket(null)}
+                    className="text-xs text-zinc-500 hover:text-zinc-800 underline cursor-pointer"
+                  >
+                    ← All Tickets
+                  </button>
+                </div>
+
+                {/* Messages List */}
+                <div className="flex-1 overflow-y-auto space-y-3 p-3 rounded-2xl bg-zinc-50 border border-zinc-200 max-h-[300px]">
+                  {ticketThread.map((msg: any) => (
+                    <div
+                      key={msg.id}
+                      className={`p-3 rounded-2xl text-xs space-y-1 max-w-[85%] ${
+                        msg.sender_type === "admin"
+                          ? "ml-auto bg-red-50 border border-red-200 text-zinc-900"
+                          : "mr-auto bg-white border border-zinc-200 text-zinc-800 shadow-2xs"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3 text-[10px] text-zinc-500">
+                        <span className="font-bold">{msg.sender_type === "admin" ? "🛡️ BigRedHub Support" : "👤 You"}</span>
+                        <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
+                      <p className="leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Reply Input */}
+                <div className="space-y-2 pt-2 border-t border-zinc-100">
+                  <textarea
+                    rows={2}
+                    placeholder="Type a follow-up reply or question..."
+                    value={customerReplyText}
+                    onChange={(e) => setCustomerReplyText(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-900 focus:outline-none focus:border-red-500 resize-none"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleSendCustomerReply}
+                      disabled={sendingCustomerReply || !customerReplyText.trim()}
+                      className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 disabled:opacity-50 transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {sendingCustomerReply && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                      <span>{sendingCustomerReply ? "Sending..." : "Send Reply"}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mode 3: Tickets List */}
+            {!showNewTicketForm && !viewingTicket && (
+              <div className="flex-1 overflow-y-auto space-y-2.5 max-h-[400px]">
+                {customerTickets.map((t) => (
+                  <div
+                    key={t.id}
+                    onClick={() => handleOpenTicketThread(t)}
+                    className="p-4 rounded-2xl border border-zinc-200 hover:border-red-300 bg-white hover:bg-zinc-50/50 transition-all cursor-pointer space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-red-600">{t.ticket_number}</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 capitalize">
+                          {t.category.replace("_", " ")}
+                        </span>
+                      </div>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          t.status === "open"
+                            ? "bg-amber-50 text-amber-700 border border-amber-200"
+                            : t.status === "in_progress"
+                            ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                            : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        }`}
+                      >
+                        {t.status.replace("_", " ")}
+                      </span>
+                    </div>
+                    <h4 className="font-heading font-bold text-xs text-zinc-950">{t.subject}</h4>
+                    <p className="text-[11px] text-zinc-500 line-clamp-1">{t.message}</p>
+                    <div className="text-[10px] text-zinc-400 pt-1 border-t border-zinc-100 flex items-center justify-between">
+                      <span>Submitted: {new Date(t.created_at).toLocaleDateString()}</span>
+                      <span className="text-red-600 font-semibold flex items-center gap-1">
+                        View conversation →
+                      </span>
+                    </div>
+                  </div>
+                ))}
+
+                {customerTickets.length === 0 && !loadingTickets && (
+                  <div className="p-8 text-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 space-y-3">
+                    <LifeBuoy className="w-8 h-8 text-zinc-400 mx-auto" />
+                    <div>
+                      <h4 className="font-heading font-bold text-sm text-zinc-900">No Support Tickets</h4>
+                      <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+                        Need help with your YouTube channel connection, automation rules, or custom setup? Raise a ticket anytime.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewTicketForm(true)}
+                      className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Raise First Ticket</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

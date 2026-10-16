@@ -113,6 +113,8 @@ const jsonLd = {
   ],
 };
 
+import { VisitorTracker } from "@/components/VisitorTracker";
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -125,7 +127,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <VisitorTracker />
+        {children}
+      </body>
     </html>
   );
 }

