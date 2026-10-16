@@ -36,8 +36,7 @@ export async function POST(request: NextRequest) {
 
     const country = request.headers.get("x-vercel-ip-country") || request.headers.get("cf-ipcountry") || "IN";
 
-    // Non-blocking insert
-    void supabaseAdmin.from("visitor_events").insert({
+    const { error: insErr } = await supabaseAdmin.from("visitor_events").insert({
       path: path.slice(0, 200),
       referrer: (referrer || "").slice(0, 300),
       user_agent: userAgent.slice(0, 300),
@@ -46,6 +45,9 @@ export async function POST(request: NextRequest) {
       country,
       created_at: new Date().toISOString(),
     });
+    if (insErr) {
+      console.error("visitor_events insert error:", insErr);
+    }
 
     return NextResponse.json({ ok: true });
   } catch {
