@@ -233,6 +233,7 @@ export default function DashboardPage() {
   const [showChannelAuthModal, setShowChannelAuthModal] = useState(false);
   const [channelTermsAccepted, setChannelTermsAccepted] = useState(false);
   const [channelTermsError, setChannelTermsError] = useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [byokCopiedField, setByokCopiedField] = useState<string | null>(null);
 
   const handleCopyByokField = (text: string, fieldId: string) => {
@@ -353,8 +354,18 @@ export default function DashboardPage() {
       }
 
       setProfile(data.profile);
-      setChannels(data.channels || []);
+      const userChannels = data.channels || [];
+      setChannels(userChannels);
       setRules(data.rules || []);
+
+      // If user has no connected channel and hasn't skipped onboarding, show the Quick Setup modal
+      if (typeof window !== "undefined") {
+        const isJustLoggedIn = window.location.search.includes("authenticated=true");
+        const hasSkipped = localStorage.getItem("brh_onboarding_skipped");
+        if ((isJustLoggedIn || !hasSkipped) && userChannels.length === 0) {
+          setShowOnboardingModal(true);
+        }
+      }
 
       // Notices the server raised for this workspace - plan limits, quota
       // warnings, channels refused by a channel limit. These rows were being
@@ -463,6 +474,50 @@ export default function DashboardPage() {
       }
     } catch {
       setByokMessage({ type: "error", text: "Network error saving BYOK settings." });
+    } finally {
+      setByokSaving(false);
+    }
+  };
+
+  const handleSkipOnboarding = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("brh_onboarding_skipped", "true");
+    }
+    setShowOnboardingModal(false);
+  };
+
+  const handleSaveByokOnboarding = async () => {
+    if (!byokClientId.trim() || !byokClientSecret.trim()) {
+      showNotification("error", "Please enter both Google Client ID and Client Secret.");
+      return;
+    }
+    setByokSaving(true);
+    try {
+      const res = await fetch("/api/workspace/byok", {
+        method: "POST",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          byok_enabled: true,
+          byok_client_id: byokClientId.trim(),
+          byok_client_secret: byokClientSecret.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setByokEnabled(true);
+        setByokHasSecret(true);
+        setByokClientSecret("");
+        showNotification("success", "Dedicated GCP credentials saved successfully!");
+        if (typeof window !== "undefined") {
+          localStorage.setItem("brh_onboarding_skipped", "true");
+        }
+        setShowOnboardingModal(false);
+        setShowChannelAuthModal(true);
+      } else {
+        showNotification("error", data.error || "Failed to save BYOK credentials.");
+      }
+    } catch {
+      showNotification("error", "Network error saving BYOK settings.");
     } finally {
       setByokSaving(false);
     }
@@ -1186,7 +1241,7 @@ export default function DashboardPage() {
                   <span>Channel & Videos</span>
                 </div>
                 <span className="text-[10px] font-medium text-zinc-400 px-1.5 py-0.5 rounded bg-zinc-800">
-                  {channelVideos.length || 52}
+                  {channelVideos.length}
                 </span>
               </button>
 
@@ -1306,15 +1361,40 @@ export default function DashboardPage() {
         {/* TOP LIGHT HEADER - Exactly matching mockup */}
         <header className="h-18 bg-white border-b border-zinc-200/80 shrink-0 px-6 py-4 flex items-center justify-between z-10">
           <div>
-            <h1 className="font-heading font-black text-xl text-zinc-950 tracking-tight flex items-center gap-2">
-              <span>{channels[0]?.channel_title || "dream aura"}</span>
-              <span className="text-xs font-semibold text-zinc-500 font-sans tracking-normal hidden sm:inline">
-                ({channels[0]?.custom_url || "@dreamaura"})
-              </span>
-            </h1>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Live automated buyer intent conversion & YouTube comment management
-            </p>
+            {channels.length > 0 ? (
+              <>
+                <h1 className="font-heading font-black text-xl text-zinc-950 tracking-tight flex items-center gap-2">
+                  <span>{channels[0].channel_title}</span>
+                  {channels[0].custom_url && (
+                    <span className="text-xs font-semibold text-zinc-500 font-sans tracking-normal hidden sm:inline">
+                      ({channels[0].custom_url})
+                    </span>
+                  )}
+                </h1>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Live automated buyer intent conversion & YouTube comment management
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="font-heading font-black text-xl text-zinc-950 tracking-tight flex items-center gap-2">
+                  <span>{profile?.full_name || profile?.email?.split("@")[0] || "My Workspace"}</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                    No channel connected
+                  </span>
+                </h1>
+                <p className="text-xs text-zinc-500 mt-0.5 flex items-center gap-2">
+                  <span>Connect your YouTube channel to start automatic comment replies</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowChannelAuthModal(true)}
+                    className="text-red-600 font-semibold underline hover:text-red-700 cursor-pointer"
+                  >
+                    + Connect Now
+                  </button>
+                </p>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -1322,19 +1402,25 @@ export default function DashboardPage() {
             <div className="flex items-center bg-zinc-50 border border-zinc-200/90 rounded-xl p-1 gap-1">
               <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-zinc-700">
                 <div className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 font-bold text-[10px] flex items-center justify-center shrink-0">
-                  {channels[0]?.channel_title?.charAt(0) || "D"}
+                  {channels[0]?.channel_title?.charAt(0) || profile?.email?.charAt(0).toUpperCase() || "U"}
                 </div>
                 <select
                   value={activeChannelId}
                   onChange={(e) => setActiveChannelId(e.target.value)}
                   className="bg-transparent text-xs font-semibold text-zinc-900 focus:outline-none cursor-pointer max-w-[140px] truncate"
                 >
-                  <option value="ALL">All Channels</option>
-                  {channels.map((ch) => (
-                    <option key={ch.id} value={ch.id}>
-                      {ch.channel_title}
-                    </option>
-                  ))}
+                  {channels.length === 0 ? (
+                    <option value="ALL">No channels</option>
+                  ) : (
+                    <>
+                      <option value="ALL">All Channels ({channels.length})</option>
+                      {channels.map((ch) => (
+                        <option key={ch.id} value={ch.id}>
+                          {ch.channel_title}
+                        </option>
+                      ))}
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -1424,11 +1510,11 @@ export default function DashboardPage() {
                   </div>
                   <div className="mt-2">
                     <p className="text-xl font-heading font-black text-zinc-950">
-                      {channelVideos.reduce((acc, v) => acc + (v.commentCount || 0), 0) || 52}
+                      {channelVideos.reduce((acc, v) => acc + (v.commentCount || 0), 0)}
                     </p>
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-[10px] text-emerald-600 font-bold flex items-center">
-                        ↑ 23%
+                      <span className="text-[10px] text-zinc-500 font-medium">
+                        {channelVideos.length > 0 ? `${channelVideos.length} synced videos` : "0 videos"}
                       </span>
                       {/* Micro Sparkline Wave */}
                       <svg className="w-12 h-4 text-emerald-500 stroke-current fill-none stroke-[1.5]" viewBox="0 0 48 16">
@@ -1454,8 +1540,8 @@ export default function DashboardPage() {
                       {comments.length}
                     </p>
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-[10px] text-emerald-600 font-bold flex items-center">
-                        ↑ 12%
+                      <span className="text-[10px] text-zinc-500 font-medium">
+                        {comments.length > 0 ? "Scanned" : "0 scanned"}
                       </span>
                       <span className="text-[10px] text-zinc-400">Total scan</span>
                     </div>
@@ -1513,7 +1599,7 @@ export default function DashboardPage() {
                     </p>
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-[10px] text-purple-600 font-bold">
-                        ↑ 50%
+                        {comments.filter(c => c.detected_intent && c.detected_intent !== "OTHER" && c.reply_status !== "spam").length} matches
                       </span>
                       <span className="text-[10px] text-zinc-400">Buyers</span>
                     </div>
@@ -1581,7 +1667,9 @@ export default function DashboardPage() {
                     </p>
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-[10px] text-zinc-400">Protected</span>
-                      <span className="text-[10px] text-zinc-500 font-semibold">100% clean</span>
+                      <span className="text-[10px] text-zinc-500 font-semibold">
+                        {comments.filter((c) => c.reply_status === "spam").length > 0 ? "Spam filtered" : "Zero spam"}
+                      </span>
                     </div>
                   </div>
                 </button>
@@ -1593,9 +1681,11 @@ export default function DashboardPage() {
                     <p className="text-xl font-heading font-black text-zinc-950 mt-1">
                       {stats.repliesDelivered + stats.failedReplies > 0
                         ? `${stats.replySuccessRate}%`
-                        : "100%"}
+                        : "0%"}
                     </p>
-                    <span className="text-[10px] text-emerald-600 font-medium">Optimal rate</span>
+                    <span className="text-[10px] text-zinc-500 font-medium">
+                      {stats.repliesDelivered > 0 ? "Active rate" : "0 replies"}
+                    </span>
                   </div>
                   {/* Circular Radial Gauge */}
                   <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
@@ -1608,8 +1698,8 @@ export default function DashboardPage() {
                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       />
                       <path
-                        className="text-purple-600"
-                        strokeDasharray="100, 100"
+                        className={stats.repliesDelivered > 0 ? "text-purple-600" : "text-zinc-200"}
+                        strokeDasharray={stats.repliesDelivered + stats.failedReplies > 0 ? `${stats.replySuccessRate}, 100` : "0, 100"}
                         strokeWidth="3.5"
                         strokeLinecap="round"
                         stroke="currentColor"
@@ -1617,7 +1707,9 @@ export default function DashboardPage() {
                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       />
                     </svg>
-                    <span className="absolute text-[9px] font-bold text-zinc-800">100</span>
+                    <span className="absolute text-[9px] font-bold text-zinc-800">
+                      {stats.repliesDelivered + stats.failedReplies > 0 ? `${stats.replySuccessRate}` : "0"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -2128,7 +2220,9 @@ export default function DashboardPage() {
                       {stats.commentsMonitored}
                     </p>
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-[10px] text-emerald-600 font-bold">↑ 100% active</span>
+                      <span className="text-[10px] text-zinc-500 font-semibold">
+                        {stats.commentsMonitored > 0 ? "Real-time sync" : "0 scanned"}
+                      </span>
                       <svg className="w-12 h-4 text-emerald-500 stroke-current fill-none stroke-[1.5]" viewBox="0 0 48 16">
                         <path d="M0,12 Q12,2 24,10 T48,4" />
                       </svg>
@@ -2164,10 +2258,10 @@ export default function DashboardPage() {
                       {stats.repliesDelivered}
                     </p>
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-[10px] text-emerald-700 font-bold">
+                      <span className="text-[10px] text-zinc-500 font-semibold">
                         {stats.repliesDelivered + stats.failedReplies > 0
                           ? `${stats.replySuccessRate}% success`
-                          : "100% ready"}
+                          : "0 replies sent"}
                       </span>
                       <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     </div>
@@ -2205,7 +2299,9 @@ export default function DashboardPage() {
                       <span className="text-[10px] text-emerald-700 font-semibold">
                         {stats.conversions} direct orders
                       </span>
-                      <span className="text-[10px] font-bold text-emerald-600">ROI 14x</span>
+                      <span className="text-[10px] font-semibold text-emerald-700">
+                        {stats.conversions > 0 ? "Tracked sales" : "0 conversions"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -2216,23 +2312,34 @@ export default function DashboardPage() {
                 <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-xs space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-zinc-900 uppercase tracking-wider flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-purple-600" />
-                      <span>YouTube API Quota</span>
+                      <Zap className="w-4 h-4 text-amber-500" />
+                      <span>Daily Automation Capacity</span>
                     </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Optimal
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      byokEnabled
+                        ? "bg-purple-50 text-purple-700 border-purple-200"
+                        : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    }`}>
+                      {byokEnabled ? "BYOK Active" : "Standard Engine"}
                     </span>
                   </div>
                   <p className="text-xs text-zinc-600 leading-relaxed">
-                    Standard tier (10,000 units/day) with intelligent token auto-refresh before expiry.
+                    {byokEnabled
+                      ? "Running on your dedicated Google Cloud project quota (10,000 units/day) for high-speed private comment processing."
+                      : "Running on BigRedHub automated engine. Connect your own Google Cloud key (BYOK) anytime for dedicated private quota."}
                   </p>
-                  <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full w-[12%]" />
+                  <div className="pt-1 flex items-center justify-between text-xs text-zinc-600 border-t border-zinc-100">
+                    <span>Replies today:</span>
+                    <span className="font-bold text-zinc-900">{stats.repliesDelivered} sent</span>
                   </div>
-                  <div className="flex justify-between text-[11px] text-zinc-500 font-mono">
-                    <span>Used: 1,200</span>
-                    <span>Remaining: 8,800</span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowByokGuideModal(true)}
+                    className="w-full text-center py-1.5 px-3 rounded-xl bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-xs font-semibold text-zinc-700 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-500" />
+                    <span>{byokEnabled ? "Manage BYOK Credentials" : "Setup Dedicated Quota (BYOK)"}</span>
+                  </button>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-xs space-y-3">
@@ -2282,24 +2389,45 @@ export default function DashboardPage() {
               {/* Channel Overview Banner */}
               <div className="p-6 rounded-2xl border border-zinc-200/80 bg-white shadow-xs space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center font-bold shadow-md shadow-purple-600/20 shrink-0">
-                      <Video className="w-6 h-6 fill-white" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h1 className="font-heading font-black text-lg text-zinc-950">
-                          {channels[0]?.channel_title || "dream aura"}
-                        </h1>
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                          Connected & Synced
-                        </span>
+                  {channels.length > 0 ? (
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center font-bold shadow-md shadow-purple-600/20 shrink-0">
+                        <Video className="w-6 h-6 fill-white" />
                       </div>
-                      <p className="text-xs text-zinc-500 mt-0.5">
-                        {channels[0]?.custom_url || "@dreamauraperfume"} • Channel ID: {channels[0]?.channel_id || "UC_dreamaura"}
-                      </p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h1 className="font-heading font-black text-lg text-zinc-950">
+                            {channels[0].channel_title}
+                          </h1>
+                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            Connected & Synced
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-500 mt-0.5">
+                          {channels[0].custom_url || `@${channels[0].channel_id}`} • Channel ID: {channels[0].channel_id}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-zinc-100 text-zinc-400 flex items-center justify-center font-bold shrink-0">
+                        <Video className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h1 className="font-heading font-black text-lg text-zinc-900">
+                            No Channel Connected
+                          </h1>
+                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                            Pending Connection
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-500 mt-0.5">
+                          Connect your YouTube channel to monitor comments and track buyer intent.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <button
                     type="button"
@@ -2311,7 +2439,7 @@ export default function DashboardPage() {
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-200 hover:border-zinc-300 bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-800 shadow-xs transition-all shrink-0 cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5 text-zinc-600" />
-                    <span>Connect / Switch Channel</span>
+                    <span>{channels.length > 0 ? "Switch / Reconnect Channel" : "Connect YouTube Channel"}</span>
                   </button>
                 </div>
 
@@ -2320,33 +2448,33 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-xl bg-zinc-50/80 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Subscribers</span>
                     <span className="text-xl font-heading font-black text-zinc-950 mt-1 block">
-                      {(channels[0]?.subscriber_count ?? 0).toLocaleString()}
+                      {channels[0]?.subscriber_count ? channels[0].subscriber_count.toLocaleString() : "0"}
                     </span>
-                    <span className="text-[10px] text-emerald-600 font-bold">Verified Audience</span>
+                    <span className="text-[10px] text-zinc-500 font-medium">Audience</span>
                   </div>
 
                   <div className="p-4 rounded-xl bg-zinc-50/80 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Total Videos</span>
                     <span className="text-xl font-heading font-black text-zinc-950 mt-1 block">
-                      {videoStatsSummary.totalVideos || channelVideos.length || 0}
+                      {channels.length > 0 ? (videoStatsSummary.totalVideos || channelVideos.length || 0) : 0}
                     </span>
-                    <span className="text-[10px] text-zinc-500 font-medium">Long-form & Shorts</span>
+                    <span className="text-[10px] text-zinc-500 font-medium">Synced Videos</span>
                   </div>
 
                   <div className="p-4 rounded-xl bg-zinc-50/80 border border-zinc-200/80">
                     <span className="text-[11px] font-semibold text-zinc-500 block">Total Views</span>
                     <span className="text-xl font-heading font-black text-zinc-950 mt-1 block">
-                      {(videoStatsSummary.totalViews ?? 0).toLocaleString()}
+                      {channels.length > 0 ? (videoStatsSummary.totalViews ?? 0).toLocaleString() : "0"}
                     </span>
-                    <span className="text-[10px] text-zinc-500 font-medium">All-time Impressions</span>
+                    <span className="text-[10px] text-zinc-500 font-medium">Video Impressions</span>
                   </div>
 
                   <div className="p-4 rounded-xl bg-purple-50/50 border border-purple-200/80">
                     <span className="text-[11px] font-bold text-purple-900 block">Total Comments</span>
                     <span className="text-xl font-heading font-black text-purple-700 mt-1 block">
-                      {(videoStatsSummary.totalComments ?? 0).toLocaleString()}
+                      {channels.length > 0 ? (videoStatsSummary.totalComments ?? 0).toLocaleString() : "0"}
                     </span>
-                    <span className="text-[10px] text-purple-600 font-bold">Buyer Intent Pool</span>
+                    <span className="text-[10px] text-purple-600 font-bold">Scanned Comments</span>
                   </div>
                 </div>
               </div>
@@ -2362,7 +2490,7 @@ export default function DashboardPage() {
                         : "bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-950"
                     }`}
                   >
-                    All Videos ({channelVideos.length || 5})
+                    All Videos ({channelVideos.length})
                   </button>
                   <button
                     onClick={() => setVideoFormatFilter("long")}
@@ -2372,7 +2500,7 @@ export default function DashboardPage() {
                         : "bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-950"
                     }`}
                   >
-                    🎥 Long-form ({channelVideos.filter((v) => !v.isShort).length || 3})
+                    🎥 Long-form ({channelVideos.filter((v) => !v.isShort).length})
                   </button>
                   <button
                     onClick={() => setVideoFormatFilter("shorts")}
@@ -2382,7 +2510,7 @@ export default function DashboardPage() {
                         : "bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-950"
                     }`}
                   >
-                    ⚡ Shorts Only ({channelVideos.filter((v) => v.isShort).length || 2})
+                    ⚡ Shorts Only ({channelVideos.filter((v) => v.isShort).length})
                   </button>
                 </div>
 
@@ -2502,6 +2630,32 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   ))}
+
+                {channelVideos.length === 0 && (
+                  <div className="p-10 text-center rounded-2xl border border-dashed border-zinc-200 bg-white space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto">
+                      <Video className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-heading font-bold text-sm text-zinc-900">No Videos Synced Yet</h3>
+                      <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                        {channels.length > 0
+                          ? "Click 'Poll Channel' at the top to fetch your latest YouTube videos and scan audience comments."
+                          : "Connect your YouTube channel to sync your videos, monitor comments, and automate link replies."}
+                      </p>
+                    </div>
+                    {channels.length === 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowChannelAuthModal(true)}
+                        className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 transition-all cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Connect YouTube Channel</span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -4294,6 +4448,171 @@ export default function DashboardPage() {
                 className="px-4 py-1.5 rounded-xl bg-red-600 text-white text-xs font-semibold"
               >
                 {confirmDialog.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ONBOARDING / QUICK SETUP MODAL (ON LOGIN) */}
+      {showOnboardingModal && (
+        <div className="fixed inset-0 z-50 bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-xl bg-white rounded-3xl border border-zinc-200 shadow-2xl p-6 sm:p-7 space-y-6 max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-zinc-100">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+                    Welcome to BigRedHub
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    Quick Start
+                  </span>
+                </div>
+                <h2 className="font-heading font-black text-xl text-zinc-950">
+                  Channel & Quota Setup
+                </h2>
+                <p className="text-xs text-zinc-500">
+                  Choose how you want to connect your YouTube channel and run automated comment replies.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleSkipOnboarding}
+                className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all cursor-pointer"
+                title="Skip for now"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Option 1: Direct YouTube Connect (Fast & Simple) */}
+            <div className="p-4 rounded-2xl border border-zinc-200 hover:border-red-300 bg-zinc-50/70 space-y-3 transition-all">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-red-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">
+                      1
+                    </span>
+                    <h3 className="font-heading font-bold text-sm text-zinc-900">
+                      Connect YouTube Channel Directly
+                    </h3>
+                  </div>
+                  <p className="text-xs text-zinc-500 pl-7">
+                    Instant 1-click connect. Authorize your channel to scan comments and send automated link replies immediately.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowOnboardingModal(false);
+                    setShowChannelAuthModal(true);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-600/20 transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>Connect Channel</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Option 2: Dedicated Google Cloud Quota (BYOK - 10,000 units/day) */}
+            <div className="p-4 rounded-2xl border border-indigo-200 bg-indigo-50/30 space-y-3.5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-indigo-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">
+                      2
+                    </span>
+                    <h3 className="font-heading font-bold text-sm text-indigo-950">
+                      Use Dedicated Google Cloud Quota (BYOK)
+                    </h3>
+                    <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100/70 border border-indigo-200 px-2 py-0.5 rounded-full">
+                      Recommended for Agency / High Volume
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-600 pl-7 leading-relaxed">
+                    Provide your own Google OAuth Client ID & Secret to get a private <strong>10,000 units/day</strong> quota and eliminate unverified app warnings.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowByokGuideModal(true)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold shadow-xs transition-all shrink-0 cursor-pointer"
+                >
+                  <span>3-Min Guide</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+
+              {/* Input Fields */}
+              <div className="pl-7 space-y-2.5">
+                <div>
+                  <label className="text-[11px] font-bold text-zinc-700 block mb-1">
+                    Google OAuth Client ID
+                  </label>
+                  <input
+                    type="text"
+                    value={byokClientId}
+                    onChange={(e) => setByokClientId(e.target.value)}
+                    placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+                    className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-zinc-700 block mb-1">
+                    Google OAuth Client Secret
+                  </label>
+                  <input
+                    type="password"
+                    value={byokClientSecret}
+                    onChange={(e) => setByokClientSecret(e.target.value)}
+                    placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx"
+                    className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-white border border-indigo-100 text-[11px] space-y-1">
+                  <div className="flex items-center justify-between text-zinc-600">
+                    <span>Authorized redirect URI for Google Console:</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyByokField("https://bigredhub.info/api/auth/callback/google", "onboarding_redirect")}
+                      className="px-2 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center gap-1 border border-indigo-200 cursor-pointer"
+                    >
+                      {byokCopiedField === "onboarding_redirect" ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-indigo-600" />}
+                      <span>{byokCopiedField === "onboarding_redirect" ? "Copied" : "Copy"}</span>
+                    </button>
+                  </div>
+                  <div className="font-mono text-indigo-900 font-semibold truncate text-[10px]">
+                    https://bigredhub.info/api/auth/callback/google
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSaveByokOnboarding}
+                  disabled={byokSaving || !byokClientId.trim() || !byokClientSecret.trim()}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {byokSaving && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{byokSaving ? "Saving Credentials..." : "Save Credentials & Connect Channel"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Skip / Setup Later Action */}
+            <div className="pt-3 border-t border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <span className="text-[11px] text-zinc-500">
+                You can configure or change this anytime under Settings.
+              </span>
+              <button
+                type="button"
+                onClick={handleSkipOnboarding}
+                className="px-4 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 transition-colors cursor-pointer text-center"
+              >
+                Setup Later (Skip for Now)
               </button>
             </div>
           </div>
