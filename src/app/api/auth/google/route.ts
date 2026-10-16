@@ -10,7 +10,8 @@ export async function GET(request: NextRequest) {
     const redirectUri = `${getAppUrl()}/api/auth/callback/google`;
     const { searchParams } = new URL(request.url);
     const requestedMode = searchParams.get("mode") || "login";
-    const mode = requestedMode === "connect_youtube" ? "connect_youtube" : "login";
+    const isChannelConnect = requestedMode === "connect_youtube" || requestedMode === "channel";
+    const mode = isChannelConnect ? "connect_youtube" : "login";
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -20,17 +21,27 @@ export async function GET(request: NextRequest) {
 
     const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
     const state = randomBytes(32).toString("hex");
-    const scopes = [
+
+    // Basic identity scopes for sign-in: 100% non-sensitive, completely eliminates the
+    // "Google hasn't verified this app" warning screen during user login.
+    const basicScopes = [
       "openid",
       "https://www.googleapis.com/auth/userinfo.email",
       "https://www.googleapis.com/auth/userinfo.profile",
+    ];
+
+    // Sensitive YouTube scopes requested ONLY when the user is explicitly connecting a YouTube channel.
+    const channelScopes = [
+      ...basicScopes,
       "https://www.googleapis.com/auth/youtube.force-ssl",
       "https://www.googleapis.com/auth/youtube.readonly",
     ];
 
+    const scopes = isChannelConnect ? channelScopes : basicScopes;
+
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "offline",
-      prompt: "consent",
+      prompt: isChannelConnect ? "consent" : "select_account",
       scope: scopes,
       include_granted_scopes: true,
       state,

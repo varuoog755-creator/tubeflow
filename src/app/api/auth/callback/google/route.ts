@@ -55,11 +55,29 @@ export async function GET(request: NextRequest) {
     let workspaceId: string;
     if (mode === "connect_youtube") {
       const session = await getSession();
-      if (!session) {
-        return clearOAuthCookies(NextResponse.redirect(`${origin}/login?auth_error=session_required`));
+      if (session) {
+        userId = session.userId;
+        workspaceId = session.workspaceId;
+      } else {
+        // Fallback: match by verified Google email if session cookie was cleared
+        const { data: existingProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .eq("email", email)
+          .maybeSingle();
+
+        if (existingProfile) {
+          userId = existingProfile.id;
+          const { data: ws } = await supabaseAdmin
+            .from("workspaces")
+            .select("id")
+            .eq("owner_id", userId)
+            .maybeSingle();
+          workspaceId = ws?.id || crypto.randomUUID();
+        } else {
+          return clearOAuthCookies(NextResponse.redirect(`${origin}/login?auth_error=session_required`));
+        }
       }
-      userId = session.userId;
-      workspaceId = session.workspaceId;
     } else {
       // 3. Upsert Creator Profile in Supabase
   
@@ -139,8 +157,8 @@ export async function GET(request: NextRequest) {
   
     }
 
-    // 5. Fetch and upsert YouTube channel info whenever tokens.access_token is present
-    if (tokens.access_token) {
+    // 5. Fetch and upsert YouTube channel info when in channel connect mode
+    if (mode === "connect_youtube" && tokens.access_token) {
       try {
         const youtube = getYoutubeClient(tokens.access_token, tokens.refresh_token || "");
         const channelRes = await youtube.channels.list({
@@ -236,21 +254,18 @@ export async function GET(request: NextRequest) {
     }
 
     // 6. Issue secure Signed JWT Session Cookie
-    let redirectUrl = `${origin}/dashboard?authenticated=true`;
-    if (mode !== "connect_youtube") {
-      const sessionToken = await createSessionToken({
-        userId,
-        email,
-        fullName: name,
-        avatarUrl: avatar,
-        workspaceId,
-      });
-      redirectUrl = `${origin}/dashboard?authenticated=true&token=${sessionToken}`;
-      const response = NextResponse.redirect(redirectUrl);
-      setSessionCookie(response, sessionToken);
-      return clearOAuthCookies(response);
-    }
+    const sessionToken = await createSessionToken({
+      userId,
+      email,
+      fullName: name,
+      avatarUrl: avatar,
+      workspaceId,
+    });
+    const redirectUrl = mode === "connect_youtube"
+      ? `${origin}/dashboard?channel_connected=true&token=${sessionToken}`
+      : `${origin}/dashboard?authenticated=true&token=${sessionToken}`;
     const response = NextResponse.redirect(redirectUrl);
+    setSessionCookie(response, sessionToken);
     return clearOAuthCookies(response);
   } catch (err: unknown) {
     console.error("OAuth Callback failed:", err);
