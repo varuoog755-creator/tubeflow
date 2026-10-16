@@ -1,0 +1,26 @@
+name: Background YouTube Comment Poller
+
+on:
+  schedule:
+    # Runs every 10 minutes, 24/7 across all active channels
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  poll-comments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger BigRedHub Comment Poller
+        run: |
+          echo "Triggering BigRedHub Background Comment Poller..."
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "https://bigredhub.info/api/cron/poll-comments?key=bigredhub_cron_poll_2026")
+          HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
+          BODY=$(echo "$RESPONSE" | sed -e 's/HTTP_STATUS:.*//g')
+          echo "Status: $HTTP_STATUS"
+          echo "Response: $BODY"
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Failed to poll comments. HTTP status: $HTTP_STATUS"
+            exit 1
+          fi
