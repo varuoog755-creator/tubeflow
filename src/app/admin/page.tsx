@@ -131,10 +131,21 @@ export default function AdminDashboardPage() {
   const [sendingReply, setSendingReply] = useState(false);
   const [updatingPlanUserId, setUpdatingPlanUserId] = useState<string | null>(null);
 
+  const getAuthHeaders = (customHeaders: Record<string, string> = {}) => {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("brh_session_token") || localStorage.getItem("tf_session_token")
+        : null;
+    return {
+      ...customHeaders,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/overview");
+      const res = await fetch("/api/admin/overview", { headers: getAuthHeaders() });
       if (res.status === 403 || res.status === 401) {
         setAccessDenied(true);
         setLoading(false);
@@ -160,7 +171,7 @@ export default function AdminDashboardPage() {
   const openTicketDetail = async (ticket: SupportTicket) => {
     setSelectedTicket(ticket);
     try {
-      const res = await fetch(`/api/support/tickets/${ticket.id}`);
+      const res = await fetch(`/api/support/tickets/${ticket.id}`, { headers: getAuthHeaders() });
       const json = await res.json();
       if (json.success) {
         setTicketMessages(json.messages || []);
@@ -176,7 +187,7 @@ export default function AdminDashboardPage() {
     try {
       const res = await fetch(`/api/support/tickets/${selectedTicket.id}/messages`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ message: adminReplyText.trim() }),
       });
       const json = await res.json();
@@ -198,7 +209,7 @@ export default function AdminDashboardPage() {
     try {
       const res = await fetch(`/api/support/tickets/${ticketId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: newStatus }),
       });
       const json = await res.json();
@@ -218,7 +229,7 @@ export default function AdminDashboardPage() {
     try {
       const res = await fetch("/api/admin/users/plan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ workspaceId, newPlan }),
       });
       const json = await res.json();
