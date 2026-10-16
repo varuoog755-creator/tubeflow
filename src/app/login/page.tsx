@@ -16,6 +16,8 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [loggingIn, setLoggingIn] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsError, setTermsError] = useState(false);
   const errorParam = searchParams.get("auth_error") || searchParams.get("error");
 
   useEffect(() => {
@@ -61,6 +63,13 @@ function LoginForm() {
   }, [searchParams]);
 
   const handleGoogleLogin = () => {
+    if (!termsAccepted) {
+      setTermsError(true);
+      return;
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem("brh_terms_accepted_v1", new Date().toISOString());
+    }
     setLoggingIn(true);
     window.location.href = "/api/auth/google?mode=login";
   };
@@ -125,13 +134,66 @@ function LoginForm() {
               </div>
             )}
 
+            {/* Mandatory Terms & Platform Disclaimer Selection Checkbox */}
+            <div
+              className={`mb-5 p-3.5 rounded-2xl border transition-all ${
+                termsError
+                  ? "bg-red-50/90 border-red-300 ring-2 ring-red-500/20"
+                  : termsAccepted
+                  ? "bg-emerald-50/40 border-emerald-200"
+                  : "bg-zinc-50 border-zinc-200/90"
+              }`}
+            >
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => {
+                    setTermsAccepted(e.target.checked);
+                    if (e.target.checked) setTermsError(false);
+                  }}
+                  className="mt-0.5 w-4 h-4 rounded border-zinc-300 text-red-600 focus:ring-red-500 cursor-pointer shrink-0 accent-red-600"
+                />
+                <span className="text-[11px] leading-relaxed text-zinc-600">
+                  I agree to the{" "}
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    className="font-semibold text-zinc-900 underline hover:text-red-600"
+                  >
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="font-semibold text-zinc-900 underline hover:text-red-600"
+                  >
+                    Privacy Policy
+                  </Link>
+                  . I certify that I own/manage my YouTube channel and accept 100% sole responsibility for all automated replies, links, and YouTube policy compliance.
+                </span>
+              </label>
+
+              {termsError && (
+                <div className="mt-2.5 pt-2 border-t border-red-200 flex items-center gap-1.5 text-red-700 text-[11px] font-semibold animate-pulse">
+                  <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-red-600" />
+                  <span>Please check this box to accept the Terms before continuing.</span>
+                </div>
+              )}
+            </div>
+
             {/* Google Login Button */}
             <div className="space-y-4">
               <button
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={loggingIn || checkingAuth}
-                className="w-full py-3 px-4 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white font-semibold text-xs flex items-center justify-center gap-2.5 transition-all shadow-md shadow-zinc-950/10 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className={`w-full py-3 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2.5 transition-all shadow-md cursor-pointer ${
+                  termsAccepted
+                    ? "bg-zinc-950 hover:bg-zinc-800 text-white shadow-zinc-950/10"
+                    : "bg-zinc-800 text-zinc-300 hover:bg-zinc-950 hover:text-white"
+                } disabled:opacity-60 disabled:cursor-not-allowed`}
               >
                 {/* Official Google G Logo SVG */}
                 <svg className="w-4 h-4 shrink-0 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
@@ -166,7 +228,6 @@ function LoginForm() {
                 <Lock className="w-3 h-3 text-zinc-600" />
                 <span>Encrypted Google OAuth2 session</span>
               </div>
-
             </div>
 
             {/* Feature bullets */}

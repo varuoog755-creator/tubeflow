@@ -54,6 +54,7 @@ import {
   HelpCircle,
   Calendar,
   MessageCircle,
+  ArrowRight,
 } from "lucide-react";
 
 // Single source of truth for links we hand to customers. Previously the
@@ -229,6 +230,9 @@ export default function DashboardPage() {
   const [byokMessage, setByokMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showByokSection, setShowByokSection] = useState(false);
   const [showByokGuideModal, setShowByokGuideModal] = useState(false);
+  const [showChannelAuthModal, setShowChannelAuthModal] = useState(false);
+  const [channelTermsAccepted, setChannelTermsAccepted] = useState(false);
+  const [channelTermsError, setChannelTermsError] = useState(false);
   const [byokCopiedField, setByokCopiedField] = useState<string | null>(null);
 
   const handleCopyByokField = (text: string, fieldId: string) => {
@@ -2297,13 +2301,18 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <a
-                    href="/api/auth/google?mode=channel"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-200 hover:border-zinc-300 bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-800 shadow-xs transition-all shrink-0"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChannelTermsAccepted(false);
+                      setChannelTermsError(false);
+                      setShowChannelAuthModal(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-200 hover:border-zinc-300 bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-800 shadow-xs transition-all shrink-0 cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5 text-zinc-600" />
                     <span>Connect / Switch Channel</span>
-                  </a>
+                  </button>
                 </div>
 
                 {/* 4 Stat Cards */}
@@ -2933,13 +2942,18 @@ export default function DashboardPage() {
                       Channels granted with comment auto-reply permissions.
                     </p>
                   </div>
-                  <a
-                    href="/api/auth/google?mode=channel"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChannelTermsAccepted(false);
+                      setChannelTermsError(false);
+                      setShowChannelAuthModal(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Connect New YouTube Channel</span>
-                  </a>
+                  </button>
                 </div>
 
                 <div className="space-y-3 pt-1">
@@ -4484,6 +4498,147 @@ export default function DashboardPage() {
                 className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all"
               >
                 I Understand, Let's Setup!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHANNEL AUTHORIZATION & TERMS COMPLIANCE MODAL */}
+      {showChannelAuthModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-zinc-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                  <Video className="w-5 h-5 fill-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-bold text-base text-zinc-950">
+                    Authorize YouTube Channel
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Mandatory Terms of Service & Compliance Agreement
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowChannelAuthModal(false)}
+                className="text-zinc-400 hover:text-zinc-700 p-1.5 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Compliance Guidelines */}
+            <div className="space-y-3.5 text-xs text-zinc-600">
+              <p className="leading-relaxed">
+                Before connecting your channel to BigRedHub, please confirm that you understand and agree to the platform safety terms:
+              </p>
+
+              <div className="space-y-2.5 p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200">
+                <div className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">
+                    <strong className="text-zinc-900">Authorized Channel Ownership:</strong> You certify that you own or are authorized to manage comments and links on this YouTube channel.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">
+                    <strong className="text-zinc-900">Platform Policy Compliance:</strong> You agree that all automated replies and links will adhere to YouTube Community Guidelines. You accept sole responsibility for all content posted from your channel.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">
+                    <strong className="text-zinc-900">Zero Liability Disclaimer:</strong> BigRedHub is an independent software tool. BigRedHub and its operators bear no liability for platform strikes, comment bans, quota suspensions, or algorithmic actions taken by YouTube or Google.
+                  </span>
+                </div>
+              </div>
+
+              {/* Mandatory Agreement Checkbox */}
+              <div
+                className={`p-3.5 rounded-2xl border transition-all ${
+                  channelTermsError
+                    ? "bg-red-50/90 border-red-300 ring-2 ring-red-500/20"
+                    : channelTermsAccepted
+                    ? "bg-emerald-50/50 border-emerald-300"
+                    : "bg-zinc-50/80 border-zinc-200"
+                }`}
+              >
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={channelTermsAccepted}
+                    onChange={(e) => {
+                      setChannelTermsAccepted(e.target.checked);
+                      if (e.target.checked) setChannelTermsError(false);
+                    }}
+                    className="mt-0.5 w-4 h-4 rounded border-zinc-300 text-red-600 focus:ring-red-500 cursor-pointer shrink-0 accent-red-600"
+                  />
+                  <span className="text-[11px] leading-relaxed text-zinc-700">
+                    I have read and agree to BigRedHub's{" "}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-red-600 underline hover:text-red-700"
+                    >
+                      Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-red-600 underline hover:text-red-700"
+                    >
+                      Privacy Policy
+                    </a>
+                    . I accept 100% responsibility for my channel's automated replies and compliance.
+                  </span>
+                </label>
+
+                {channelTermsError && (
+                  <p className="mt-2 text-[11px] font-semibold text-red-600 flex items-center gap-1">
+                    ⚠️ You must check the box to agree to the Terms of Service to proceed.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-100">
+              <button
+                type="button"
+                onClick={() => setShowChannelAuthModal(false)}
+                className="px-4 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!channelTermsAccepted) {
+                    setChannelTermsError(true);
+                    return;
+                  }
+                  if (typeof window !== "undefined") {
+                    localStorage.setItem("brh_channel_terms_accepted_v1", new Date().toISOString());
+                  }
+                  window.location.href = "/api/auth/google?mode=channel";
+                }}
+                className={`px-5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                  channelTermsAccepted
+                    ? "bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/20"
+                    : "bg-zinc-200 text-zinc-500 hover:bg-zinc-300"
+                }`}
+              >
+                <span>Authorize via Google</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
