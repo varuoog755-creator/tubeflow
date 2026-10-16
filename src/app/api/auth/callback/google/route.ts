@@ -18,10 +18,12 @@ export async function GET(request: NextRequest) {
 
   const expectedState = request.cookies.get("tf_oauth_state")?.value;
   const requestedMode = request.cookies.get("tf_oauth_mode")?.value;
+  const isByok = request.cookies.get("tf_oauth_byok")?.value === "true";
   const mode = requestedMode === "connect_youtube" ? "connect_youtube" : "login";
   const clearOAuthCookies = (response: NextResponse) => {
     response.cookies.delete("tf_oauth_state");
     response.cookies.delete("tf_oauth_mode");
+    response.cookies.delete("tf_oauth_byok");
     return response;
   };
 
@@ -35,8 +37,24 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // 1. Exchange code for access & refresh tokens
-    const authClient = getOAuth2Client(redirectUri);
+    // 1. Exchange code for access & refresh tokens (using custom BYOK credentials if active, or system key)
+    let customCreds = undefined;
+    if (isByok) {
+      const session = await getSession(request);
+      if (session?.workspaceId) {
+        const { data: ws } = await supabaseAdmin
+          .from("workspaces")
+          .select("byok_client_id, byok_client_secret")
+          .eq("id", session.workspaceId)
+          .maybeSingle();
+
+        if (ws?.byok_client_id?.trim() && ws?.byok_client_secret?.trim()) {
+          customCreds = { clientId: ws.byok_client_id.trim(), clientSecret: ws.byok_client_secret.trim() };
+        }
+      }
+    }
+
+    const authClient = getOAuth2Client(redirectUri, customCreds);
     const { tokens } = await authClient.getToken(code);
     authClient.setCredentials(tokens);
 

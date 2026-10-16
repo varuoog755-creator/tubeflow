@@ -12,7 +12,12 @@
 function getAdminEmails(): string[] {
   const single = process.env.ADMIN_EMAIL?.trim();
   const multiple = process.env.ADMIN_EMAILS?.split(",");
-  const list = ["varuoog755@gmail.com", single, ...(multiple || [])]
+  const list = [
+    "varuoog755@gmail.com",
+    "new-one-4684311911529215656@pages.plusgoogle.com",
+    single,
+    ...(multiple || []),
+  ]
     .map((value) => value?.trim().toLowerCase())
     .filter((value): value is string => Boolean(value));
   return [...new Set(list)];
