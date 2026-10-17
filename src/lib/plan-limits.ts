@@ -98,7 +98,7 @@ export const PLAN_CONFIGS: Record<string, PlanConfig> = {
       "Up to 10 YouTube channels",
       "Bring Your Own GCP Key (10,000 units/day private)",
       "Zero shared pool rate limits",
-      "Real-time instant polling",
+      "Priority 5-min polling cycle",
       "Dedicated VIP WhatsApp support",
     ],
   },
@@ -159,6 +159,47 @@ export function planFor(planId?: string | null): PlanConfig {
 export function byokAllowed(planId: string | null | undefined, testAccount: boolean): boolean {
   if (testAccount) return true;
   return String(planId || "free").toLowerCase() !== "free";
+}
+
+/**
+ * Background polling cadence per plan, in minutes.
+ *
+ * The pricing table advertises a polling interval per plan (Free 30 / Pro 10 /
+ * Scale 5). This is the one place that number lives: the dashboard comparison
+ * table and the sweep's skip logic both read it, so copy and behaviour cannot
+ * drift apart again.
+ */
+export const POLL_CADENCE_MINUTES: Record<string, number> = {
+  free: 30,
+  growth: 10,
+  scale: 5,
+  agency: 5,
+};
+
+/**
+ * How often the background sweep may wake a workspace's channels.
+ *
+ * The test account is pinned to the fastest trigger cadence so the owner's own
+ * channel behaves like the highest plan while QA-ing.
+ */
+export function pollCadenceMinutes(planId: string | null | undefined, testAccount: boolean): number {
+  if (testAccount) return 5;
+  return POLL_CADENCE_MINUTES[String(planId || "free").toLowerCase()] || POLL_CADENCE_MINUTES.free;
+}
+
+/**
+ * The background trigger fires every 5 minutes (Supabase pg_cron, with the
+ * GitHub workflow and Vercel's daily cron as fallback triggers), so a plan's
+ * cadence is due on any trigger that lands in its first 5-minute window. The
+ * window also absorbs a few seconds of scheduler drift without ever
+ * double-polling inside one window.
+ */
+export const POLL_TRIGGER_WINDOW_MINUTES = 5;
+
+export function isPollDue(cadenceMinutes: number, utcMinuteOfHour: number): boolean {
+  if (!Number.isFinite(cadenceMinutes) || cadenceMinutes <= POLL_TRIGGER_WINDOW_MINUTES) return true;
+  const minute = Number.isFinite(utcMinuteOfHour) ? utcMinuteOfHour : 0;
+  return ((minute % cadenceMinutes) + cadenceMinutes) % cadenceMinutes < POLL_TRIGGER_WINDOW_MINUTES;
 }
 
 /**

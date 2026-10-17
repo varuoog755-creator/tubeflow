@@ -10,6 +10,8 @@ import {
   PLAN_CONFIGS,
   UNLIMITED_PLAN,
   byokAllowed,
+  pollCadenceMinutes,
+  isPollDue,
 } from "../src/lib/plan-limits.ts";
 
 // These rules were added in the limits PR and shipped with no test coverage,
@@ -257,4 +259,41 @@ test("Rule guard: garbage counters cannot unlock a capped rule", () => {
     minutesSinceLastReply: -10,
   });
   assert.equal(notYet.allowed, false);
+});
+
+test("Polling cadence: every plan polls on the interval it advertises", () => {
+  // The dashboard comparison table renders these values, so this map is what
+  // the pricing copy promises.
+  assert.equal(pollCadenceMinutes("free", false), 30);
+  assert.equal(pollCadenceMinutes(undefined, false), 30);
+  assert.equal(pollCadenceMinutes(null, false), 30);
+  assert.equal(pollCadenceMinutes("enterprise", false), 30);
+  assert.equal(pollCadenceMinutes("growth", false), 10);
+  assert.equal(pollCadenceMinutes("GROWTH", false), 10);
+  assert.equal(pollCadenceMinutes("scale", false), 5);
+  assert.equal(pollCadenceMinutes("agency", false), 5);
+  // The owner's test account may QA on the fastest trigger cadence.
+  assert.equal(pollCadenceMinutes("free", true), 5);
+});
+
+test("Polling cadence: a trigger run is due only inside its plan's window", () => {
+  // The scheduler fires every 5 minutes, so due windows start every cadence
+  // and last 5 minutes.
+  assert.equal(isPollDue(30, 0), true);
+  assert.equal(isPollDue(30, 4), true);
+  assert.equal(isPollDue(30, 5), false);
+  assert.equal(isPollDue(30, 29), false);
+  assert.equal(isPollDue(30, 30), true);
+  assert.equal(isPollDue(30, 34), true);
+
+  assert.equal(isPollDue(10, 0), true);
+  assert.equal(isPollDue(10, 14), true);
+  assert.equal(isPollDue(10, 15), false);
+
+  // Scale/Agency fire on every trigger run.
+  assert.equal(isPollDue(5, 0), true);
+  assert.equal(isPollDue(5, 59), true);
+
+  // Garbage input must mean "poll", never "silently stop the automation".
+  assert.equal(isPollDue(Number.NaN, 12), true);
 });

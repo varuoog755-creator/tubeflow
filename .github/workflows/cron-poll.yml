@@ -1,8 +1,18 @@
-name: Background YouTube Comment Poller
+name: Background YouTube Comment Poller (backup tick)
+
+# The primary 5-minute heartbeat is a Supabase pg_cron job (see
+# supabase/migrations/*_add_comment_poll_cron.sql). This workflow is a backup
+# tick: the poll endpoint throttles ticks to once per few minutes, so a hit
+# that lands on an already-swept window is a harmless no-op, and if the
+# database scheduler is ever down this keeps a 10-minute attempt alive.
+#
+# No ?key= here: the endpoint's tick throttle makes a shared secret
+# unnecessary, and this repository is public.
 
 on:
   schedule:
-    # Runs every 10 minutes, 24/7 across all active channels
+    # Attempted every 10 minutes; GitHub may delay scheduled runs, which is
+    # exactly why it is only the backup and not the primary trigger.
     - cron: '*/10 * * * *'
   workflow_dispatch:
 
@@ -15,7 +25,7 @@ jobs:
       - name: Trigger BigRedHub Comment Poller
         run: |
           echo "Triggering BigRedHub Background Comment Poller..."
-          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "https://bigredhub.info/api/cron/poll-comments?key=bigredhub_cron_poll_2026")
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "https://bigredhub.info/api/cron/poll-comments")
           HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
           BODY=$(echo "$RESPONSE" | sed -e 's/HTTP_STATUS:.*//g')
           echo "Status: $HTTP_STATUS"

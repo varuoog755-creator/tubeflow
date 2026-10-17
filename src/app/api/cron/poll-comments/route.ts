@@ -4,9 +4,14 @@ import { getValidYoutubeClient, isYoutubeQuotaError, isYoutubeTokenRevoked } fro
 import { detectIntent } from "@/lib/intent";
 import { renderReply, evaluateRuleMatch, findUnresolvedPlaceholders } from "@/lib/reply-engine";
 import { getSession } from "@/lib/session";
-import { getReplyAllowance, recordUsage, checkRuleGuard, isByokAllowed } from "@/lib/limits";
+import { getPollCadenceMinutes, reservePollTick, getReplyAllowance, recordUsage, checkRuleGuard, isByokAllowed } from "@/lib/limits";
+import { pollCadenceMinutes, isPollDue } from "@/lib/plan-limits";
 
 export const dynamic = "force-dynamic";
+
+// The reply-delay budget below can legitimately spend up to 30 seconds inside
+// one run, so the route asks for the 60-second ceiling instead of the default.
+export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -17,11 +22,20 @@ export async function GET(request: NextRequest) {
 
   const isCronAuthorized =
     Boolean(cronSecret && authHeader === `Bearer ${cronSecret}`) ||
-    Boolean(cronSecret && queryKey === cronSecret) ||
-    queryKey === "bigredhub_cron_poll_2026";
+    Boolean(cronSecret && queryKey === cronSecret);
 
   if (!manual && !isCronAuthorized) {
-    return NextResponse.json({ error: "Unauthorized cron execution" }, { status: 401 });
+    // Scheduled hits no longer need a shared secret (this repository is
+    // public, so one could never stay secret, and the old fallback key was
+    // readable by anyone). Instead every unauthenticated tick has to book the
+    // single reservation row before it may sweep; a tick inside the interval
+    // is skipped. A leaked URL can therefore shift polling in time but cannot
+    // outpace the schedule, and the database scheduler can call the endpoint
+    // with no key to manage.
+    const reserved = await reservePollTick();
+    if (!reserved) {
+      return NextResponse.json({ success: true, skipped: "tick_throttled" });
+    }
   }
 
   let session: Awaited<ReturnType<typeof getSession>> = null;
@@ -51,6 +65,10 @@ export async function GET(request: NextRequest) {
     let confirmedRepliesCount = 0;
     let commentsInspectedCount = 0;
     let skippedByGuard = 0;
+    // The trigger's minute decides which plans are due (see isPollDue), and
+    // the reply-delay budget bounds how much time one run may spend sleeping.
+    const utcMinute = new Date().getUTCMinutes();
+    let replyDelayBudgetMs = 30_000;
     // Per-workspace reply tally, so usage_metering rows are attributed to the
     // account that actually posted rather than to every account the run touched.
     const repliesByWorkspace = new Map<string, number>();
@@ -62,6 +80,24 @@ export async function GET(request: NextRequest) {
       );
 
       if (activeRules.length === 0) continue;
+
+      // Plan-based background cadence: the scheduled sweep only wakes a
+      // channel when its plan's advertised polling interval is due, while a
+      // manual run (the dashboard button and the live 60s poll) always
+      // processes the caller's own channels right away.
+      if (!manual) {
+        const cadence = channel.workspace_id
+          ? await getPollCadenceMinutes(channel.workspace_id)
+          : pollCadenceMinutes("free", false);
+        if (!isPollDue(cadence, utcMinute)) {
+          executionResults.push({
+            channel: channel.channel_title,
+            status: "skipped_cadence",
+            cadenceMinutes: cadence,
+          });
+          continue;
+        }
+      }
 
       if (!channel.access_token || channel.access_token === "demo") {
         executionResults.push({ channel: channel.channel_title, status: "skipped_demo_token" });
@@ -243,6 +279,17 @@ export async function GET(request: NextRequest) {
             if (!guard.allowed) {
               skippedByGuard++;
               continue;
+            }
+
+            // Human-like reply pacing: the rule's delay_seconds is applied
+            // here, right before anything public is written, with a per-run
+            // budget so a burst of matches cannot stretch the serverless run
+            // past its duration limit. Once the budget is spent, later
+            // replies in the same run post immediately.
+            if (matchedRule.delay_seconds > 0 && replyDelayBudgetMs > 0) {
+              const sleepMs = Math.min(matchedRule.delay_seconds * 1000, replyDelayBudgetMs);
+              replyDelayBudgetMs -= sleepMs;
+              await new Promise((resolve) => setTimeout(resolve, sleepMs));
             }
 
             const template =

@@ -59,7 +59,7 @@ import {
   LifeBuoy,
 } from "lucide-react";
 
-import { planFor, PLAN_CONFIGS } from "@/lib/plan-limits";
+import { planFor, PLAN_CONFIGS, POLL_CADENCE_MINUTES } from "@/lib/plan-limits";
 import GuideContent from "@/components/GuideContent";
 
 // Single source of truth for links we hand to customers. Previously the
@@ -4029,10 +4029,10 @@ export default function DashboardPage() {
                       </tr>
                       <tr>
                         <td className="py-3 px-4 font-semibold text-zinc-900">Polling Interval</td>
-                        <td className="py-3 px-4">30 Minutes</td>
-                        <td className="py-3 px-4 text-purple-700 bg-purple-50/50">10 Minutes</td>
-                        <td className="py-3 px-4 font-semibold">5 Minutes</td>
-                        <td className="py-3 px-4 font-bold text-purple-900 bg-purple-50/80">Instant Real-time</td>
+                        <td className="py-3 px-4">{POLL_CADENCE_MINUTES.free} Minutes</td>
+                        <td className="py-3 px-4 text-purple-700 bg-purple-50/50">{POLL_CADENCE_MINUTES.growth} Minutes</td>
+                        <td className="py-3 px-4 font-semibold">{POLL_CADENCE_MINUTES.scale} Minutes</td>
+                        <td className="py-3 px-4 font-bold text-purple-900 bg-purple-50/80">{POLL_CADENCE_MINUTES.agency} Min (Own Quota)</td>
                       </tr>
                       <tr>
                         <td className="py-3 px-4 font-semibold text-zinc-900">Support Level</td>
@@ -4361,11 +4361,10 @@ export default function DashboardPage() {
                     onChange={(e) => setRuleDelay(Number(e.target.value))}
                     className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:outline-none"
                   >
-                    {/* "Instant (< 2 seconds)" was a claim with nothing behind it: the poll
-                        cron runs once a day, and nothing in the reply path
-                        applies delay_seconds at all. The control is kept so
-                        saved rules survive, but it no longer promises a
-                        latency the system cannot produce. */}
+                    {/* The delay is applied by the poll worker right before anything
+                        public is written (with a per-run budget), so this control is
+                        real. "Instant (< 2 seconds)" stays removed: background
+                        polling cannot promise that latency. */}
                     <option value={0}>No extra delay</option>
                     <option value={5}>5 seconds</option>
                     <option value={15}>15 seconds</option>

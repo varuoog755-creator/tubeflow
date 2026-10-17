@@ -416,8 +416,11 @@ export default function GuideContent() {
         <ul className="space-y-2.5 text-xs sm:text-sm">
           <li>
             <strong className="text-zinc-900">How fast are replies posted?</strong>{" "}
-            The background polling engine posts them; timing depends on the current polling
-            schedule, and every reply appears in your dashboard log the moment it goes out.
+            The background engine checks your channel on your plan&apos;s schedule — every
+            30 minutes on Free, 10 minutes on Pro, and 5 minutes on Scale and Agency — your
+            dashboard also live-polls every minute while it is open, and the
+            &quot;Poll Channel&quot; button is instant. Every reply appears in your dashboard
+            log the moment it goes out.
           </li>
           <li>
             <strong className="text-zinc-900">What happens when the daily quota runs out?</strong>{" "}

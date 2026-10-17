@@ -9,12 +9,13 @@ import {
   channelAllowance,
   decideRuleGuard,
   byokAllowed,
+  pollCadenceMinutes,
   UNLIMITED_PLAN,
   type Allowance,
   type RuleGuardVerdict,
 } from "@/lib/plan-limits";
 
-export { planFor, monthWindowStart, monthWindowEnd, decideRuleGuard, UNLIMITED_PLAN, byokAllowed };
+export { planFor, monthWindowStart, monthWindowEnd, decideRuleGuard, UNLIMITED_PLAN, byokAllowed, pollCadenceMinutes };
 export type { Allowance, PlanConfig, RuleGuardVerdict };
 
 /**
@@ -230,6 +231,61 @@ export async function isByokAllowed(workspaceId: string): Promise<boolean> {
   }
 
   return byokAllowed(data?.plan, testAccount);
+}
+
+/**
+ * The background polling cadence this workspace's plan is entitled to.
+ *
+ * Same resolution order as isByokAllowed: stored plan first, test-account
+ * exemption applied, then the pure decision in plan-limits.ts.
+ */
+export async function getPollCadenceMinutes(workspaceId: string): Promise<number> {
+  const { data } = await supabaseAdmin
+    .from("workspaces")
+    .select("plan, owner_id")
+    .eq("id", workspaceId)
+    .maybeSingle();
+
+  let testAccount = false;
+  if (data?.owner_id) {
+    const { data: owner } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", data.owner_id)
+      .maybeSingle();
+    testAccount = isTestAccount(owner?.email);
+  }
+
+  return pollCadenceMinutes(data?.plan, testAccount);
+}
+
+/**
+ * The minimum spacing between two background sweeps, enforced by the poll
+ * endpoint itself.
+ *
+ * The endpoint is callable without a shared secret exactly because of this
+ * reservation: a tick that lands within the interval is skipped, so a leaked
+ * or guessed URL can shift polling in time but can never run the sweep more
+ * often than the schedule does. Fails open - if the state row cannot be read
+ * (for example during a first deploy before the migration lands), polling
+ * keeps working and the throttle simply does not apply.
+ */
+export const POLL_MIN_INTERVAL_MS = 4 * 60 * 1000;
+
+export async function reservePollTick(now: Date = new Date()): Promise<boolean> {
+  const cutoff = new Date(now.getTime() - POLL_MIN_INTERVAL_MS).toISOString();
+  const { data, error } = await supabaseAdmin
+    .from("comment_poll_ticks")
+    .update({ last_tick_at: now.toISOString() })
+    .eq("id", 1)
+    .lt("last_tick_at", cutoff)
+    .select("id");
+
+  if (error) {
+    console.warn("poll tick reservation failed; continuing without throttle:", error.message);
+    return true;
+  }
+  return Boolean(data && data.length > 0);
 }
 
 export async function queueNotice(

@@ -157,3 +157,33 @@ test("dashboard does not gate admin UI on a hardcoded address", () => {
     "dashboard must use the isAdmin flag from /api/dashboard, not a literal email"
   );
 });
+
+/**
+ * Polling promises must stay deliverable. YouTube has no push feed for
+ * comments, so no plan may advertise "real-time" scanning; the sweep must
+ * enforce the per-plan cadence the comparison table renders, apply the Pro
+ * reply-delay feature it sells, and carry no guessable shared secret now that
+ * this repository is public.
+ */
+test("polling promises match what the shipped poll worker does", () => {
+  const cron = read("src/app/api/cron/poll-comments/route.ts");
+
+  assert.ok(/getPollCadenceMinutes/.test(cron), "the sweep must apply the per-plan cadence");
+  assert.ok(/isPollDue/.test(cron), "the sweep must check the due window");
+  assert.ok(/delay_seconds/.test(cron), "the Pro reply-delay feature must be applied in the reply path");
+
+  assert.ok(
+    !/bigredhub_cron_poll_2026/.test(cron),
+    "the cron route must not embed a guessable fallback key"
+  );
+  assert.ok(
+    !/bigredhub_cron_poll_2026/.test(read(".github/workflows/cron-poll.yml")),
+    "the backup workflow must not embed a guessable fallback key"
+  );
+
+  const advertised = JSON.stringify(PLAN_CONFIGS);
+  assert.ok(
+    !/real-?time/i.test(advertised),
+    "no plan may advertise real-time comment scanning; it is not deliverable"
+  );
+});
