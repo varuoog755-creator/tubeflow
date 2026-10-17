@@ -58,6 +58,8 @@ import {
   LifeBuoy,
 } from "lucide-react";
 
+import { planFor, PLAN_CONFIGS } from "@/lib/plan-limits";
+
 // Single source of truth for links we hand to customers. Previously the
 // shortlink base was hardcoded to the old preview domain
 // (tubeflow-nine.vercel.app), so every tracked link pasted into a reply pointed
@@ -216,6 +218,16 @@ export default function DashboardPage() {
     revenue: 0,
   });
 
+  // The signed-in plan and admin flag, both resolved by /api/dashboard.
+  // The plan badge, the upgrade card and the per-card CTAs used to be
+  // hardcoded ("PRO", a 5,000-reply promise, "Current Active Plan" on the
+  // Free card) no matter what the workspace actually pays for.
+  const [workspacePlan, setWorkspacePlan] = useState("free");
+  const [isAdminUser, setIsAdminUser] = useState(false);
+
+  // Header date-range pill: the stats window is a rolling 30 days. This
+  // previously rendered a frozen date range that never changed.
+
   // Notifications / Feedback Banner
   const [notification, setNotification] = useState<{
     type: "success" | "error" | "info";
@@ -370,6 +382,8 @@ export default function DashboardPage() {
       }
 
       setProfile(data.profile);
+      setIsAdminUser(Boolean(data.isAdmin));
+      setWorkspacePlan(String(data.workspace?.plan || "free").toLowerCase());
       const userChannels = data.channels || [];
       setChannels(userChannels);
       setRules(data.rules || []);
@@ -1414,7 +1428,7 @@ export default function DashboardPage() {
                   <span>Pricing & Plans</span>
                 </div>
                 <span className="text-[10px] font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/20">
-                  PRO
+                  {planFor(workspacePlan).name.split(" ")[0].toUpperCase()}
                 </span>
               </button>
             </nav>
@@ -1422,7 +1436,9 @@ export default function DashboardPage() {
 
           {/* Bottom Sidebar: Upgrade Card & System Links */}
           <div className="space-y-4 pt-4">
-            {/* Upgrade to Pro Card */}
+            {/* Upgrade to Pro Card - only rendered while the workspace is on the
+                Free plan. */}
+            {planFor(workspacePlan).id === "free" && (
             <div className="relative overflow-hidden bg-gradient-to-br from-indigo-950/80 via-slate-900 to-purple-950/70 border border-indigo-500/30 rounded-2xl p-4 shadow-lg">
               <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl pointer-events-none" />
               <div className="flex items-center gap-2 mb-2">
@@ -1430,7 +1446,7 @@ export default function DashboardPage() {
                 <span className="text-xs font-bold text-white tracking-wide">Upgrade to Pro</span>
               </div>
               <p className="text-[11px] text-zinc-300 leading-relaxed mb-3">
-                Unlock 5,000 replies/month, AI intent classification, multi-channel polling, and unlimited conversions.
+                Unlock {PLAN_CONFIGS.growth.monthlyRepliesLimit.toLocaleString()} replies/month, AI intent classification, multi-channel polling, and unlimited conversions.
               </p>
               <button
                 onClick={() => setActiveTab("plans")}
@@ -1440,6 +1456,7 @@ export default function DashboardPage() {
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
+            )}
 
             {/* Quick Links */}
             <div className="pt-2 border-t border-zinc-800/80 space-y-1 text-xs text-zinc-400">
@@ -1452,7 +1469,7 @@ export default function DashboardPage() {
                 <span>Help Desk & Tickets</span>
               </button>
 
-              {(profile?.email === "varuoog755@gmail.com" || profile?.email?.includes("admin")) && (
+              {isAdminUser && (
                 <Link
                   href="/admin"
                   target="_blank"
@@ -1570,7 +1587,7 @@ export default function DashboardPage() {
             {/* Date Range Selector Pill */}
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-700">
               <Calendar className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Oct 8, 2026 - Oct 15, 2026</span>
+              <span>Last 30 days</span>
             </div>
 
             {/* Bell & User Avatar */}
@@ -2490,16 +2507,12 @@ export default function DashboardPage() {
                       <span>Spam Shield</span>
                     </span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      100% Protected
+                      Active
                     </span>
                   </div>
                   <p className="text-xs text-zinc-600 leading-relaxed">
                     {stats.spamBlocked} crypto bots and scam comments successfully blocked without replying.
                   </p>
-                  <div className="pt-2 flex items-center justify-between text-xs text-zinc-600">
-                    <span>False positive rate:</span>
-                    <span className="font-semibold text-emerald-600">&lt; 0.1%</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -2588,7 +2601,7 @@ export default function DashboardPage() {
                     <span className="text-xl font-heading font-black text-zinc-950 mt-1 block">
                       {channels.length > 0 ? (videoStatsSummary.totalViews ?? 0).toLocaleString() : "0"}
                     </span>
-                    <span className="text-[10px] text-zinc-500 font-medium">Video Impressions</span>
+                    <span className="text-[10px] text-zinc-500 font-medium">Across synced videos</span>
                   </div>
 
                   <div className="p-4 rounded-xl bg-purple-50/50 border border-purple-200/80">
@@ -3606,7 +3619,7 @@ export default function DashboardPage() {
                     <ul className="space-y-2">
                       <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span><strong className="text-zinc-950">50 replies</strong> / month</span>
+                        <span><strong className="text-zinc-950">{PLAN_CONFIGS.free.monthlyRepliesLimit} replies</strong> / month</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -3623,15 +3636,17 @@ export default function DashboardPage() {
                     </ul>
                   </div>
 
-                  <div className="pt-5 mt-4 border-t border-zinc-100">
-                    <button
-                      disabled
-                      className="w-full py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-500 font-bold text-xs cursor-default flex items-center justify-center gap-1.5"
-                    >
-                      <Check className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>Current Active Plan</span>
-                    </button>
-                  </div>
+                  {planFor(workspacePlan).id === "free" && (
+                    <div className="pt-5 mt-4 border-t border-zinc-100">
+                      <button
+                        disabled
+                        className="w-full py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-500 font-bold text-xs cursor-default flex items-center justify-center gap-1.5"
+                      >
+                        <Check className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>Current Active Plan</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* 2. Pro Plan (Featured) */}
@@ -3662,7 +3677,7 @@ export default function DashboardPage() {
                     <ul className="space-y-2">
                       <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                        <span><strong className="text-zinc-950">500 replies</strong> / month (Sustainable)</span>
+                        <span><strong className="text-zinc-950">{PLAN_CONFIGS.growth.monthlyRepliesLimit.toLocaleString()} replies</strong> / month (Sustainable)</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
@@ -3684,15 +3699,25 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="pt-5 mt-4 border-t border-purple-100">
-                    <a
-                      href="https://wa.me/919896374239?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Pro%20Plan%20(₹499/mo)."
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <Zap className="w-3.5 h-3.5 fill-white" />
-                      <span>Upgrade to Pro</span>
-                    </a>
+                    {planFor(workspacePlan).id === "growth" ? (
+                      <button
+                        disabled
+                        className="w-full py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-500 font-bold text-xs cursor-default flex items-center justify-center gap-1.5"
+                      >
+                        <Check className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>Current Active Plan</span>
+                      </button>
+                    ) : (
+                      <a
+                        href="https://wa.me/919896374239?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Pro%20Plan%20(₹499/mo)."
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Zap className="w-3.5 h-3.5 fill-white" />
+                        <span>Upgrade to Pro</span>
+                      </a>
+                    )}
                   </div>
                 </div>
 
@@ -3720,7 +3745,7 @@ export default function DashboardPage() {
                     <ul className="space-y-2">
                       <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span><strong className="text-zinc-950">2,000 replies</strong> / month</span>
+                        <span><strong className="text-zinc-950">{PLAN_CONFIGS.scale.monthlyRepliesLimit.toLocaleString()} replies</strong> / month</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -3742,14 +3767,24 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="pt-5 mt-4 border-t border-zinc-100">
-                    <a
-                      href="https://wa.me/919896374239?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Scale%20Plan%20(₹999/mo)."
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-2.5 rounded-xl border border-zinc-900 bg-zinc-900 hover:bg-black text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <span>Upgrade to Scale</span>
-                    </a>
+                    {planFor(workspacePlan).id === "scale" ? (
+                      <button
+                        disabled
+                        className="w-full py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-500 font-bold text-xs cursor-default flex items-center justify-center gap-1.5"
+                      >
+                        <Check className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>Current Active Plan</span>
+                      </button>
+                    ) : (
+                      <a
+                        href="https://wa.me/919896374239?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Scale%20Plan%20(₹999/mo)."
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2.5 rounded-xl border border-zinc-900 bg-zinc-900 hover:bg-black text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <span>Upgrade to Scale</span>
+                      </a>
+                    )}
                   </div>
                 </div>
 
@@ -3799,15 +3834,25 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="pt-5 mt-4 border-t border-zinc-800">
-                    <a
-                      href="https://wa.me/919896374239?text=Hi%20BigRedHub,%20I%20want%20to%20activate%20Agency%20Plan%20(₹1,999/mo)."
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/30 transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <Crown className="w-3.5 h-3.5 text-amber-300" />
-                      <span>Get Agency Plan</span>
-                    </a>
+                    {planFor(workspacePlan).id === "agency" ? (
+                      <button
+                        disabled
+                        className="w-full py-2.5 rounded-xl border border-zinc-700 bg-zinc-900 text-zinc-400 font-bold text-xs cursor-default flex items-center justify-center gap-1.5"
+                      >
+                        <Check className="w-3.5 h-3.5 text-zinc-500" />
+                        <span>Current Active Plan</span>
+                      </button>
+                    ) : (
+                      <a
+                        href="https://wa.me/919896374239?text=Hi%20BigRedHub,%20I%20want%20to%20activate%20Agency%20Plan%20(₹1,999/mo)."
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/30 transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Crown className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Get Agency Plan</span>
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -3831,9 +3876,9 @@ export default function DashboardPage() {
                     <tbody className="divide-y divide-zinc-100 text-zinc-800">
                       <tr>
                         <td className="py-3 px-4 font-semibold text-zinc-900">Monthly Replies Allowance</td>
-                        <td className="py-3 px-4 font-bold text-zinc-700">50 replies/mo</td>
-                        <td className="py-3 px-4 font-bold text-purple-700 bg-purple-50/50">500 replies/mo</td>
-                        <td className="py-3 px-4 font-bold text-zinc-950">2,000 replies/mo</td>
+                        <td className="py-3 px-4 font-bold text-zinc-700">{PLAN_CONFIGS.free.monthlyRepliesLimit} replies/mo</td>
+                        <td className="py-3 px-4 font-bold text-purple-700 bg-purple-50/50">{PLAN_CONFIGS.growth.monthlyRepliesLimit.toLocaleString()} replies/mo</td>
+                        <td className="py-3 px-4 font-bold text-zinc-950">{PLAN_CONFIGS.scale.monthlyRepliesLimit.toLocaleString()} replies/mo</td>
                         <td className="py-3 px-4 font-bold text-purple-900 bg-purple-50/80">Unlimited</td>
                       </tr>
                       <tr>
@@ -4756,7 +4801,7 @@ export default function DashboardPage() {
                     Customer Help Desk
                   </span>
                   <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full">
-                    24/7 Priority Support
+                    Priority Support
                   </span>
                 </div>
                 <h2 className="font-heading font-black text-xl text-zinc-950 mt-1">

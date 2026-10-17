@@ -946,10 +946,10 @@ Example Replies
               </p>
             </div>
             <a
-              href="#features"
+              href="#example-replies"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-zinc-300 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-50 font-medium text-xs sm:text-sm transition-colors self-start md:self-auto"
             >
-              <span>View all features</span>
+              <span>See example replies</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </a>
           </div>

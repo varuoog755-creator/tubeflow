@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
 import { publicChannel } from "@/lib/safe-channel";
+import { isAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -114,10 +115,16 @@ export async function GET(request: NextRequest) {
     let spamBlocked = 0;
 
     if (channelIds.length > 0) {
+      // The dashboard labels these figures "Last 30 Days". Counting every row
+      // ever made that label a lie; the same window is applied to both
+      // queries below.
+      const windowStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
       const { data: recentLogs, count } = await supabaseAdmin
         .from("processed_comments")
         .select("*, trigger_rules(name)", { count: "exact" })
         .in("channel_id", channelIds)
+        .gte("created_at", windowStart)
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -128,7 +135,8 @@ export async function GET(request: NextRequest) {
       const { data: statsLogs } = await supabaseAdmin
         .from("processed_comments")
         .select("reply_status, matched_rule_id, youtube_reply_id")
-        .in("channel_id", channelIds);
+        .in("channel_id", channelIds)
+        .gte("created_at", windowStart);
 
       if (statsLogs) {
         repliesSent = statsLogs.filter(
@@ -186,6 +194,9 @@ const totalAttempts = repliesSent + failedReplies;
     return NextResponse.json({
       authenticated: true,
       profile,
+      // Computed server-side from the env-configured admin allowlist; the
+      // client never needs to know anyone's address.
+      isAdmin: isAdmin(email),
       workspace,
       // Stripped via the shared helper. This endpoint is the busiest signed-in
       // response in the product - it is what the dashboard calls on every load -
