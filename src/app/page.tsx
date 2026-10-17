@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, MouseEvent } from "react";
+import { useState, useRef, useEffect, MouseEvent } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -131,6 +131,39 @@ export default function Home() {
   const handleMouseEnter = () => {
     setIsHovered(true);
   };
+
+  // Homepage motion: the page adds `brh-anim` to <html> only after mount, so
+  // with JS disabled every section stays fully visible; the CSS then reveals
+  // blocks as they scroll into view. data-reveal-delay staggers cards so the
+  // eye is led across them in order.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add("brh-anim");
+    const els = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      els.forEach((el) => el.classList.add("is-visible"));
+      return () => root.classList.remove("brh-anim");
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const el = entry.target as HTMLElement;
+          const delay = el.dataset.revealDelay;
+          if (delay) el.style.transitionDelay = delay + "ms";
+          el.classList.add("is-visible");
+          io.unobserve(el);
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -48px 0px" }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => {
+      io.disconnect();
+      root.classList.remove("brh-anim");
+    };
+  }, []);
 
   // Comments dataset for the dashboard mockup
   const comments = [
@@ -265,6 +298,12 @@ export default function Home() {
             >
               Pricing
             </a>
+            <Link
+              href="/guide"
+              className="hover:text-white transition-colors"
+            >
+              Guide
+            </Link>
 
             {/* Resources Dropdown */}
             <div
@@ -288,6 +327,13 @@ export default function Home() {
               {resourcesOpen && (
                 <div className="absolute top-full left-0 pt-1 w-56 z-50">
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl p-2 text-xs">
+                    <Link
+                      href="/guide"
+                      onClick={() => setResourcesOpen(false)}
+                      className="block px-3 py-2 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-colors"
+                    >
+                      Complete Setup Guide
+                    </Link>
                     <a
                       href="#action"
                       onClick={() => setResourcesOpen(false)}
@@ -383,6 +429,13 @@ className="block px-3 py-2 rounded-lg text-base font-medium text-zinc-200 hover:
 >
 Example Replies
 </a>
+<Link
+href="/guide"
+onClick={() => setMobileMenuOpen(false)}
+className="block px-3 py-2 rounded-lg text-base font-medium text-zinc-200 hover:bg-zinc-800"
+>
+Guide
+</Link>
             <div className="pt-3 border-t border-zinc-800 flex flex-col gap-2">
               <Link
                 href="/login"
@@ -416,8 +469,11 @@ Example Replies
             {/* Left Hero Column: Copy & CTAs */}
             <div className="lg:col-span-6 flex flex-col items-start text-left">
               {/* Top Pill Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-white/10 text-xs sm:text-sm text-zinc-300 shadow-inner mb-6 backdrop-blur-sm">
-                <span className="w-4 h-4 rounded-full bg-red-600 flex items-center justify-center text-white shrink-0">
+              <div
+                className="hero-anim inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-white/10 text-xs sm:text-sm text-zinc-300 shadow-inner mb-6 backdrop-blur-sm"
+                style={{ animationDelay: "0.04s" }}
+              >
+                <span className="live-dot w-4 h-4 rounded-full bg-red-600 flex items-center justify-center text-white shrink-0">
                   <Play className="w-2.5 h-2.5 fill-white" />
                 </span>
                 <span className="font-medium text-white">YouTube Comment Automation</span>
@@ -427,23 +483,44 @@ Example Replies
 
               {/* Main Headline */}
               <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-heading font-extrabold tracking-tight text-white leading-[1.08] mb-6">
-                Turn YouTube <br />
-                Comments Into <br />
-                <span className="bg-gradient-to-r from-red-500 via-rose-500 to-amber-500 bg-clip-text text-transparent">
-                  Real Conversations
+                <span className="hero-line">
+                  <span className="hero-line-inner" style={{ animationDelay: "0.08s" }}>
+                    Turn YouTube
+                  </span>
+                </span>
+                <br />
+                <span className="hero-line">
+                  <span className="hero-line-inner" style={{ animationDelay: "0.2s" }}>
+                    Comments Into
+                  </span>
+                </span>
+                <br />
+                <span className="hero-line">
+                  <span
+                    className="hero-line-grad bg-gradient-to-r from-red-500 via-rose-500 to-amber-500 bg-clip-text text-transparent"
+                    style={{ animationDelay: "0.32s" }}
+                  >
+                    Real Conversations
+                  </span>
                 </span>
               </h1>
 
               {/* Subheadline */}
-              <p className="text-zinc-400 text-base sm:text-lg leading-relaxed max-w-xl mb-8 font-normal">
+              <p
+                className="hero-anim text-zinc-400 text-base sm:text-lg leading-relaxed max-w-xl mb-8 font-normal"
+                style={{ animationDelay: "0.44s" }}
+              >
                 Automate replies, engage your audience, and grow your channel with AI-powered, rule-based YouTube comment automation — while you stay in control.
               </p>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4 mb-8">
+              <div
+                className="hero-anim flex flex-wrap items-center gap-4 mb-8"
+                style={{ animationDelay: "0.54s" }}
+              >
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-semibold text-white bg-gradient-to-r from-red-600 via-rose-600 to-red-500 hover:from-red-500 hover:to-rose-500 shadow-xl shadow-red-600/35 hover:scale-[1.03] active:scale-[0.98] transition-all"
+                  className="btn-sheen inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-semibold text-white bg-gradient-to-r from-red-600 via-rose-600 to-red-500 hover:from-red-500 hover:to-rose-500 shadow-xl shadow-red-600/35 hover:scale-[1.03] active:scale-[0.98] transition-all"
                 >
                   <span>Start free</span>
                   <ArrowRight className="w-4.5 h-4.5" />
@@ -460,7 +537,10 @@ Example Replies
               </div>
 
               {/* Trust Checkmarks */}
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm text-zinc-400">
+              <div
+                className="hero-anim flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm text-zinc-400"
+                style={{ animationDelay: "0.64s" }}
+              >
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                   <span>Official YouTube Data API</span>
@@ -474,10 +554,24 @@ Example Replies
                   <span>No spam. You stay in control</span>
                 </div>
               </div>
+
+              {/* Art of suggestion: a soft scroll cue */}
+              <div
+                className="hero-anim mt-10 hidden lg:flex items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-zinc-500"
+                style={{ animationDelay: "0.9s" }}
+              >
+                <span className="relative w-5 h-9 rounded-full border border-zinc-700 flex items-start justify-center pt-1.5">
+                  <span className="scroll-cue-dot w-1.5 h-2.5 rounded-full bg-red-500" />
+                </span>
+                <span>Scroll to explore</span>
+              </div>
             </div>
 
             {/* Right Hero Column: 3D Isometric BigRedHub Dashboard Mockup */}
-            <div className="lg:col-span-6 relative perspective-2000">
+            <div
+              className="hero-anim lg:col-span-6 relative perspective-2000"
+              style={{ animationDelay: "0.28s" }}
+            >
               {/* Floating 3D Red YouTube Icon */}
               <div className="absolute -top-7 right-14 z-30 animate-float pointer-events-none">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-red-600 to-rose-500 shadow-xl shadow-red-600/50 flex items-center justify-center transform rotate-12 border border-red-400/40">
@@ -487,7 +581,7 @@ Example Replies
 
               {/* Hand-drawn curved glow arrow */}
               <div className="absolute -top-3 right-36 z-20 hidden sm:block pointer-events-none">
-                <svg width="70" height="50" viewBox="0 0 70 50" fill="none" className="text-red-500/80 stroke-current">
+                <svg width="70" height="50" viewBox="0 0 70 50" fill="none" className="arrow-draw text-red-500/80 stroke-current">
                   <path d="M10 40 C 25 15, 50 10, 65 30" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="3 3" />
                   <path d="M58 32 L65 30 L64 22" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -849,7 +943,7 @@ Example Replies
       <section id="how-it-works" className="py-20 lg:py-28 bg-zinc-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <div className="text-center max-w-2xl mx-auto mb-16">
+          <div data-reveal className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-xs font-bold tracking-wider uppercase text-red-600 mb-2 block">
               HOW IT WORKS
             </span>
@@ -864,7 +958,7 @@ Example Replies
           {/* 3 Step Cards Connected with Arrows */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative items-stretch">
             {/* Step 01 */}
-            <div className="bg-white rounded-2xl border border-zinc-200/80 p-7 shadow-sm hover:shadow-md transition-shadow relative flex flex-col justify-between">
+            <div data-reveal data-reveal-delay="0" className="bg-white rounded-2xl border border-zinc-200/80 p-7 shadow-sm hover:shadow-md transition-shadow relative flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-5">
                   <span className="font-heading font-black text-2xl text-red-600/90">01</span>
@@ -887,7 +981,7 @@ Example Replies
             </div>
 
             {/* Step 02 */}
-            <div className="bg-white rounded-2xl border border-zinc-200/80 p-7 shadow-sm hover:shadow-md transition-shadow relative flex flex-col justify-between">
+            <div data-reveal data-reveal-delay="120" className="bg-white rounded-2xl border border-zinc-200/80 p-7 shadow-sm hover:shadow-md transition-shadow relative flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-5">
                   <span className="font-heading font-black text-2xl text-red-600/90">02</span>
@@ -910,7 +1004,7 @@ Example Replies
             </div>
 
             {/* Step 03 */}
-            <div className="bg-white rounded-2xl border border-zinc-200/80 p-7 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+            <div data-reveal data-reveal-delay="240" className="bg-white rounded-2xl border border-zinc-200/80 p-7 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-5">
                   <span className="font-heading font-black text-2xl text-red-600/90">03</span>
@@ -936,7 +1030,7 @@ Example Replies
       <section id="features" className="py-20 lg:py-28 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header with "View all features" pill button */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-6">
+          <div data-reveal className="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-6">
             <div>
               <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-zinc-950 tracking-tight">
                 Powerful Features for YouTube Creators
@@ -957,7 +1051,7 @@ Example Replies
           {/* 8 Feature Cards Grid (4 columns x 2 rows) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Feature 1: Keyword Rules */}
-            <div className="p-6 rounded-2xl border border-zinc-200/70 hover:border-red-200 bg-white hover:bg-red-50/20 transition-all group">
+            <div data-reveal data-reveal-delay="0" className="p-6 rounded-2xl border border-zinc-200/70 hover:border-red-200 bg-white hover:bg-red-50/20 transition-all group">
               <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Search className="w-5 h-5" />
               </div>
@@ -970,7 +1064,7 @@ Example Replies
             </div>
 
             {/* Feature 2: Spintax Templates */}
-            <div className="p-6 rounded-2xl border border-zinc-200/70 hover:border-red-200 bg-white hover:bg-red-50/20 transition-all group">
+            <div data-reveal data-reveal-delay="90" className="p-6 rounded-2xl border border-zinc-200/70 hover:border-red-200 bg-white hover:bg-red-50/20 transition-all group">
               <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <FileText className="w-5 h-5" />
               </div>
@@ -983,7 +1077,7 @@ Example Replies
             </div>
 
             {/* Feature 3: Negative Filters */}
-            <div className="p-6 rounded-2xl border border-zinc-200/70 hover:border-red-200 bg-white hover:bg-red-50/20 transition-all group">
+            <div data-reveal data-reveal-delay="180" className="p-6 rounded-2xl border border-zinc-200/70 hover:border-red-200 bg-white hover:bg-red-50/20 transition-all group">
               <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Ban className="w-5 h-5" />
               </div>
@@ -996,7 +1090,7 @@ Example Replies
             </div>
 
             {/* Feature 4: Multi-Channel Support */}
-            <div className="p-6 rounded-2xl border border-zinc-200/70 hover:border-blue-200 bg-white hover:bg-blue-50/20 transition-all group">
+            <div data-reveal data-reveal-delay="270" className="p-6 rounded-2xl border border-zinc-200/70 hover:border-blue-200 bg-white hover:bg-blue-50/20 transition-all group">
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Layers className="w-5 h-5" />
               </div>
@@ -1009,7 +1103,7 @@ Example Replies
             </div>
 
             {/* Feature 5: Analytics & Insights */}
-            <div className="p-6 rounded-2xl border border-zinc-200/70 hover:border-emerald-200 bg-white hover:bg-emerald-50/20 transition-all group">
+            <div data-reveal data-reveal-delay="0" className="p-6 rounded-2xl border border-zinc-200/70 hover:border-emerald-200 bg-white hover:bg-emerald-50/20 transition-all group">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <TrendingUp className="w-5 h-5" />
               </div>
@@ -1022,7 +1116,7 @@ Example Replies
             </div>
 
             {/* Feature 6: Human-Like Replies */}
-            <div className="p-6 rounded-2xl border border-zinc-200/70 hover:border-sky-200 bg-white hover:bg-sky-50/20 transition-all group">
+            <div data-reveal data-reveal-delay="90" className="p-6 rounded-2xl border border-zinc-200/70 hover:border-sky-200 bg-white hover:bg-sky-50/20 transition-all group">
               <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Smile className="w-5 h-5" />
               </div>
@@ -1035,7 +1129,7 @@ Example Replies
             </div>
 
             {/* Feature 7: Safe & Compliant */}
-            <div className="p-6 rounded-2xl border border-zinc-200/70 hover:border-emerald-200 bg-white hover:bg-emerald-50/20 transition-all group">
+            <div data-reveal data-reveal-delay="180" className="p-6 rounded-2xl border border-zinc-200/70 hover:border-emerald-200 bg-white hover:bg-emerald-50/20 transition-all group">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <ShieldCheck className="w-5 h-5" />
               </div>
@@ -1048,7 +1142,7 @@ Example Replies
             </div>
 
             {/* Feature 8: Easy to Use */}
-            <div className="p-6 rounded-2xl border border-zinc-200/70 hover:border-rose-200 bg-white hover:bg-rose-50/20 transition-all group">
+            <div data-reveal data-reveal-delay="270" className="p-6 rounded-2xl border border-zinc-200/70 hover:border-rose-200 bg-white hover:bg-rose-50/20 transition-all group">
               <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Sparkles className="w-5 h-5" />
               </div>
@@ -1067,13 +1161,13 @@ Example Replies
       {/* 6. SEE BIGREDHUB IN ACTION (Composite Showcase Section)   */}
       {/* ========================================================= */}
       <section id="action" className="py-16 lg:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="bg-[#080d19] text-white rounded-3xl p-6 sm:p-10 lg:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden">
+        <div data-reveal className="bg-[#080d19] text-white rounded-3xl p-6 sm:p-10 lg:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden">
           {/* Subtle background glow */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/10 rounded-full blur-[100px] pointer-events-none" />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-center">
             {/* Left 4 cols: Video Player Mockup with doodle note */}
-            <div className="lg:col-span-4 relative group">
+            <div data-reveal data-reveal-delay="0" className="lg:col-span-4 relative group">
               <div
                 onClick={() => setVideoModalOpen(true)}
                 className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-zinc-900 border border-zinc-700/80 shadow-2xl cursor-pointer"
@@ -1120,7 +1214,7 @@ Example Replies
             </div>
 
             {/* Middle 4 cols: Live YouTube Auto-Reply Simulation (White card) */}
-            <div className="lg:col-span-4 bg-white rounded-2xl p-4 sm:p-5 text-zinc-900 shadow-xl space-y-4">
+            <div data-reveal data-reveal-delay="120" className="lg:col-span-4 bg-white rounded-2xl p-4 sm:p-5 text-zinc-900 shadow-xl space-y-4">
               {/* Comment 1 */}
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -1177,7 +1271,7 @@ Example Replies
             </div>
 
             {/* Right 4 cols: Value Pitch & Growth Stats */}
-            <div className="lg:col-span-4 flex flex-col justify-between h-full">
+            <div data-reveal data-reveal-delay="240" className="lg:col-span-4 flex flex-col justify-between h-full">
               <div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold mb-4">
                   <span>⚡ FOR CREATORS & TEAMS</span>
@@ -1228,10 +1322,10 @@ Example Replies
 
                 {/* 3D red bar chart ascending graphic */}
                 <div className="flex items-end gap-1.5 h-10">
-                  <div className="w-2.5 h-3 bg-red-600/40 rounded-t" />
-                  <div className="w-2.5 h-5 bg-red-600/60 rounded-t" />
-                  <div className="w-2.5 h-7 bg-red-600/80 rounded-t" />
-                  <div className="w-2.5 h-10 bg-gradient-to-t from-red-600 to-rose-500 rounded-t shadow-md shadow-red-600/40" />
+                  <div className="bar-grow w-2.5 h-3 bg-red-600/40 rounded-t" style={{ transitionDelay: "0ms" }} />
+                  <div className="bar-grow w-2.5 h-5 bg-red-600/60 rounded-t" style={{ transitionDelay: "100ms" }} />
+                  <div className="bar-grow w-2.5 h-7 bg-red-600/80 rounded-t" style={{ transitionDelay: "200ms" }} />
+                  <div className="bar-grow w-2.5 h-10 bg-gradient-to-t from-red-600 to-rose-500 rounded-t shadow-md shadow-red-600/40" style={{ transitionDelay: "300ms" }} />
                 </div>
               </div>
             </div>
@@ -1253,7 +1347,7 @@ Example Replies
           claim nothing about who is using it. */}
       <section id="example-replies" className="py-20 lg:py-28 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+          <div data-reveal className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-zinc-950 tracking-tight">
               What an Automated Reply Looks Like
             </h2>
@@ -1265,7 +1359,7 @@ Example Replies
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Example 1 - price request */}
-            <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+            <div data-reveal data-reveal-delay="0" className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-11 h-11 rounded-full bg-amber-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
@@ -1294,7 +1388,7 @@ Example Replies
             </div>
 
             {/* Example 2 - explicit link request */}
-            <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+            <div data-reveal data-reveal-delay="120" className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-11 h-11 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
@@ -1323,7 +1417,7 @@ Example Replies
             </div>
 
             {/* Example 3 - filtered out */}
-            <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+            <div data-reveal data-reveal-delay="240" className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-11 h-11 rounded-full bg-rose-500 text-white font-bold flex items-center justify-center text-sm shadow-sm">
@@ -1358,7 +1452,7 @@ Example Replies
       {/* ========================================================= */}
       <section className="py-20 lg:py-24 bg-gradient-to-b from-white via-zinc-50/70 to-white border-y border-zinc-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-14">
+          <div data-reveal className="text-center max-w-3xl mx-auto mb-14">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold mb-3 shadow-2xs">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span>100% Channel Safe & Anti-Ban Architecture</span>
@@ -1373,7 +1467,7 @@ Example Replies
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Card 1 */}
-            <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
+            <div data-reveal data-reveal-delay="0" className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-700 font-bold">
                 <ShieldCheck className="w-5 h-5" />
               </div>
@@ -1384,7 +1478,7 @@ Example Replies
             </div>
 
             {/* Card 2 */}
-            <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
+            <div data-reveal data-reveal-delay="90" className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
               <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-700 font-bold">
                 <Sparkles className="w-5 h-5" />
               </div>
@@ -1395,7 +1489,7 @@ Example Replies
             </div>
 
             {/* Card 3 */}
-            <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
+            <div data-reveal data-reveal-delay="180" className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
@@ -1406,7 +1500,7 @@ Example Replies
             </div>
 
             {/* Card 4 */}
-            <div className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
+            <div data-reveal data-reveal-delay="270" className="p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all space-y-3">
               <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-700 font-bold">
                 <Users className="w-5 h-5" />
               </div>
@@ -1425,7 +1519,7 @@ Example Replies
       <section id="pricing" className="py-20 lg:py-28 bg-zinc-50/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header & Monthly / Yearly Toggle */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+          <div data-reveal className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
             <div>
               <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-zinc-950 tracking-tight">
                 Simple & Transparent Pricing
@@ -1468,7 +1562,7 @@ Example Replies
           {/* 4 Pricing Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             {/* Plan 1: Free */}
-            <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm flex flex-col justify-between">
+            <div data-reveal data-reveal-delay="0" className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm flex flex-col justify-between">
               <div>
                 <h3 className="font-heading font-bold text-lg text-zinc-950">Free</h3>
                 <p className="text-xs text-zinc-500 mt-0.5 mb-5">For small creators</p>
@@ -1507,7 +1601,7 @@ Example Replies
             </div>
 
             {/* Plan 2: Pro (Most popular highlighted) */}
-            <div className="bg-white rounded-2xl border-2 border-red-500 p-6 shadow-xl shadow-red-500/10 flex flex-col justify-between relative">
+            <div data-reveal data-reveal-delay="90" className="bg-white rounded-2xl border-2 border-red-500 p-6 shadow-xl shadow-red-500/10 flex flex-col justify-between relative">
               <div className="absolute -top-3.5 right-4 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full shadow-md">
                 Most popular
               </div>
@@ -1556,7 +1650,7 @@ Example Replies
             </div>
 
             {/* Plan 3: Scale */}
-            <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm flex flex-col justify-between">
+            <div data-reveal data-reveal-delay="180" className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm flex flex-col justify-between">
               <div>
                 <h3 className="font-heading font-bold text-lg text-zinc-950">Scale</h3>
                 <p className="text-xs text-zinc-500 mt-0.5 mb-5">For active creators</p>
@@ -1601,7 +1695,7 @@ Example Replies
             </div>
 
             {/* Plan 4: Agency Unlimited */}
-            <div className="bg-gradient-to-b from-zinc-900 to-black text-white rounded-2xl border border-zinc-800 p-6 shadow-xl flex flex-col justify-between">
+            <div data-reveal data-reveal-delay="270" className="bg-gradient-to-b from-zinc-900 to-black text-white rounded-2xl border border-zinc-800 p-6 shadow-xl flex flex-col justify-between">
               <div>
                 <div className="inline-block bg-purple-500/20 text-purple-300 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md border border-purple-500/30 mb-2">
                   High Volume
@@ -1727,8 +1821,8 @@ Product Tour
 </a>
 </li>
 <li>
-<a href="#how-it-works" className="hover:text-white transition-colors">
-YouTube Guide
+<a href="/guide" className="hover:text-white transition-colors">
+Setup Guide
 </a>
 </li>
 </ul>

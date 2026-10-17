@@ -119,6 +119,33 @@ test("admin and test-account allowlists never contain addresses in source", () =
 });
 
 /**
+ * BYOK (the customer's own Google Cloud credentials) is a paid-plan
+ * capability: the free trial runs on BigRedHub's shared quota. The decision
+ * has to hold server-side too - a dashboard-only lock would still let a free
+ * workspace switch itself onto personal credentials with a direct POST, or
+ * keep running an old credential through the OAuth flow and the cron.
+ */
+test("BYOK gating is enforced in the API routes, not only in the UI", () => {
+  const byokRoute = read("src/app/api/workspace/byok/route.ts");
+  assert.ok(
+    /byokAllowed/.test(byokRoute),
+    "POST /api/workspace/byok must refuse enabling BYOK on the free plan"
+  );
+
+  const googleStart = read("src/app/api/auth/google/route.ts");
+  assert.ok(
+    /isByokAllowed/.test(googleStart),
+    "OAuth start must ignore stored BYOK credentials when the plan does not allow them"
+  );
+
+  const cron = read("src/app/api/cron/poll-comments/route.ts");
+  assert.ok(
+    /isByokAllowed/.test(cron),
+    "the cron must ignore stored BYOK credentials when the plan does not allow them"
+  );
+});
+
+/**
  * The Admin Console entry in the sidebar was gated on the owner's literal email
  * address (plus a substring "admin" match). The gate is now the server-computed
  * isAdmin flag, and the client must never spell an address out again.

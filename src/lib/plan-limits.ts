@@ -147,6 +147,21 @@ export function planFor(planId?: string | null): PlanConfig {
 }
 
 /**
+ * Whether a workspace may run its automation on its own Google Cloud project
+ * (bring your own client id/secret).
+ *
+ * The product model is deliberate: the free trial runs on BigRedHub's shared
+ * Google quota with platform credentials, so a brand-new account needs zero
+ * Google Cloud setup. Paid plans may connect their own client id/secret and
+ * draw from a private quota instead of the shared pool. A test account keeps
+ * access on any stored plan so the owner can QA the whole flow.
+ */
+export function byokAllowed(planId: string | null | undefined, testAccount: boolean): boolean {
+  if (testAccount) return true;
+  return String(planId || "free").toLowerCase() !== "free";
+}
+
+/**
  * Start of the current calendar month in UTC, used as the reply window.
  *
  * UTC rather than local time so a workspace does not get a shorter month when

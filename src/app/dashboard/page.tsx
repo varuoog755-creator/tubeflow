@@ -43,6 +43,7 @@ import {
   ShoppingBag,
   Share2,
   GraduationCap,
+  BookOpen,
   Flame,
   Layers,
   Target,
@@ -59,6 +60,7 @@ import {
 } from "lucide-react";
 
 import { planFor, PLAN_CONFIGS } from "@/lib/plan-limits";
+import GuideContent from "@/components/GuideContent";
 
 // Single source of truth for links we hand to customers. Previously the
 // shortlink base was hardcoded to the old preview domain
@@ -164,7 +166,8 @@ type DashboardTab =
   | "links"
   | "conversions"
   | "settings"
-  | "plans";
+  | "plans"
+  | "guide";
 
 type InboxFilterView =
   | "all"
@@ -239,6 +242,9 @@ export default function DashboardPage() {
   const [byokClientId, setByokClientId] = useState("");
   const [byokClientSecret, setByokClientSecret] = useState("");
   const [byokHasSecret, setByokHasSecret] = useState(false);
+  // null = not loaded yet. Server-computed (test-account exempt): the free
+  // trial runs on BigRedHub's shared quota, own credentials are a paid feature.
+  const [byokAllowedState, setByokAllowedState] = useState<boolean | null>(null);
   const [byokSaving, setByokSaving] = useState(false);
   const [byokMessage, setByokMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showByokSection, setShowByokSection] = useState(false);
@@ -466,6 +472,9 @@ export default function DashboardPage() {
           setByokEnabled(Boolean(byokData.byok_enabled));
           setByokClientId(byokData.byok_client_id || "");
           setByokHasSecret(Boolean(byokData.has_client_secret));
+          setByokAllowedState(
+            typeof byokData.byok_allowed === "boolean" ? byokData.byok_allowed : null
+          );
         }
       } catch {
         // Non-blocking
@@ -494,10 +503,13 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setByokMessage({ type: "success", text: "BYOK Custom GCP credentials saved successfully!" });
+        setByokMessage({
+          type: "success",
+          text: "Saved. Next step: reconnect your YouTube channel (Channels & Setup → Authorized YouTube Channels) so it is authorized under your own Google project.",
+        });
         setByokHasSecret(Boolean(data.has_client_secret));
         setByokClientSecret("");
-        showNotification("success", "BYOK settings saved. All automations will now use your dedicated project quota.");
+        showNotification("success", "BYOK settings saved. Reconnect your channel to activate your private quota.");
       } else {
         setByokMessage({ type: "error", text: data.error || "Failed to save BYOK credentials." });
         showNotification("error", data.error || "Failed to save BYOK credentials.");
@@ -1430,6 +1442,20 @@ export default function DashboardPage() {
                 <span className="text-[10px] font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/20">
                   {planFor(workspacePlan).name.split(" ")[0].toUpperCase()}
                 </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("guide")}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === "guide"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/25"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900/60"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <BookOpen className="w-4 h-4" />
+                  <span>Guide & Help</span>
+                </div>
               </button>
             </nav>
           </div>
@@ -2455,17 +2481,23 @@ export default function DashboardPage() {
                       <span>Daily Automation Capacity</span>
                     </span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                      byokEnabled
+                      byokEnabled && byokClientId
                         ? "bg-purple-50 text-purple-700 border-purple-200"
                         : "bg-emerald-50 text-emerald-700 border-emerald-200"
                     }`}>
-                      {byokEnabled ? "BYOK Active" : "Standard Engine"}
+                      {byokEnabled && byokClientId
+                        ? "Your Own Quota"
+                        : byokAllowedState === false
+                          ? "Trial Quota (Shared)"
+                          : "BigRedHub Shared Quota"}
                     </span>
                   </div>
                   <p className="text-xs text-zinc-600 leading-relaxed">
-                    {byokEnabled
-                      ? "Running on your dedicated private Google Cloud credentials for private high volume comment automation."
-                      : "Running smoothly on BigRedHub Cloud Engine with active comment monitoring and auto-replies."}
+                    {byokEnabled && byokClientId
+                      ? "Running on your own Google Cloud credentials — every scan and reply draws from your private quota."
+                      : byokAllowedState === false
+                        ? "Free trial: automation runs on BigRedHub's shared Google quota — nothing to set up. Your own client ID & key unlock on paid plans."
+                        : "Running on BigRedHub's shared engine. Connect your own Google Cloud client ID & key for a private, dedicated quota."}
                   </p>
                   <div className="pt-1 flex items-center justify-between text-xs text-zinc-600 border-t border-zinc-100">
                     <span>Replies today:</span>
@@ -2473,11 +2505,24 @@ export default function DashboardPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setShowByokGuideModal(true)}
+                    onClick={() => {
+                      if (byokAllowedState === false) {
+                        setActiveTab("plans");
+                      } else {
+                        setActiveTab("settings");
+                        setShowByokSection(true);
+                      }
+                    }}
                     className="w-full text-center py-1.5 px-3 rounded-xl bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-xs font-semibold text-zinc-700 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-500" />
-                    <span>{byokEnabled ? "Manage BYOK Credentials" : "Setup Dedicated Quota (BYOK)"}</span>
+                    <span>
+                      {byokEnabled && byokClientId
+                        ? "Manage Your Credentials"
+                        : byokAllowedState === false
+                          ? "Unlock on Paid Plans"
+                          : "Setup Your Own Quota"}
+                    </span>
                   </button>
                 </div>
 
@@ -3174,6 +3219,33 @@ export default function DashboardPage() {
           )}
 
           {/* TAB 5: SETTINGS & CHANNELS */}
+          {activeTab === "guide" && (
+            <div className="space-y-6 max-w-4xl mx-auto w-full">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h1 className="font-heading font-black text-2xl text-zinc-950 tracking-tight flex items-center gap-2.5">
+                    <span>Guide & Help</span>
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      Everything explained
+                    </span>
+                  </h1>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Setup, dashboard tour, plans & billing, and the Google quota model (trial vs paid) — in one place.
+                  </p>
+                </div>
+                <Link
+                  href="/guide"
+                  target="_blank"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition-colors shrink-0"
+                >
+                  <span>Open full guide page</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+              <GuideContent />
+            </div>
+          )}
+
           {activeTab === "settings" && (
             <div className="space-y-6 max-w-4xl mx-auto w-full">
               <div>
@@ -3297,10 +3369,10 @@ export default function DashboardPage() {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-heading font-bold text-xs text-zinc-900">
-                          Advanced: Dedicated Quota (Agency & High Volume)
+                          Your Own Google Cloud Quota (Client ID & Key)
                         </span>
                         <span className="text-[10px] font-semibold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full border border-zinc-200">
-                          Optional
+                          {byokAllowedState === false ? "Paid plans only" : "Available on your plan"}
                         </span>
                         {byokEnabled && byokClientId && (
                           <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -3309,7 +3381,9 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Agencies or power senders can connect personal Google Cloud credentials for dedicated high volume automation.
+                        Free trial BigRedHub ki shared quota par chalta hai. Paid plan par apni
+                        Google Cloud client ID & key connect karein aur automation apne private
+                        quota par chalayein — koi shared limit nahi.
                       </p>
                     </div>
                   </div>
@@ -3327,6 +3401,30 @@ export default function DashboardPage() {
 
                 {showByokSection && (
                   <div className="p-6 pt-2 border-t border-zinc-100 space-y-5 bg-zinc-50/30">
+                    {byokAllowedState === false ? (
+                      <div className="space-y-3 py-1">
+                        <div className="p-4 rounded-2xl border border-amber-200 bg-amber-50/70 space-y-2">
+                          <p className="text-xs font-bold text-amber-950 flex items-center gap-2">
+                            <Crown className="w-4 h-4 text-amber-600" />
+                            <span>Free trial: BigRedHub ki shared Google quota par chal raha hai</span>
+                          </p>
+                          <p className="text-xs text-amber-900/90 leading-relaxed">
+                            Trial ke liye koi Google Cloud setup nahi chahiye. Paid plan (Pro ya
+                            upar) par aap apni Google Cloud client ID & key lagakar automation
+                            apne private quota par chala sakte hain — shared limits se aazad.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("plans")}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                          <span>See paid plans</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100">
                       <div>
                         <h3 className="font-heading font-bold text-sm text-zinc-950">
@@ -3385,6 +3483,17 @@ export default function DashboardPage() {
                         <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                       </label>
                     </div>
+
+                    {byokEnabled && byokClientId && (
+                      <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                        <span>
+                          Just enabled? <strong>Reconnect your YouTube channel</strong> once
+                          (Channels &amp; Setup → Authorized YouTube Channels → Connect) so the
+                          authorization is issued by your own Google project.
+                        </span>
+                      </div>
+                    )}
 
                     {/* Google Cloud Copy-Paste Companion Box (Matches Google Console Form) */}
                     <div className="rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/40 via-white to-purple-50/20 p-4 space-y-3.5 shadow-2xs">
@@ -3571,6 +3680,8 @@ export default function DashboardPage() {
                         </button>
                       </div>
                     </div>
+                    </>
+                    )}
                   </div>
                 )}
               </div>
@@ -4686,7 +4797,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Option 2: Dedicated Custom Credentials (BYOK - Optional for Pro & Agency) */}
+            {/* Option 2: Dedicated Custom Credentials (BYOK - paid plans) */}
             <div className="p-4 rounded-2xl border border-indigo-200 bg-indigo-50/30 space-y-3.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
@@ -4698,11 +4809,11 @@ export default function DashboardPage() {
                       Dedicated Custom Credentials (BYOK)
                     </h3>
                     <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100/70 border border-indigo-200 px-2 py-0.5 rounded-full">
-                      Pro & Agency Scale
+                      Paid Plans
                     </span>
                   </div>
                   <p className="text-xs text-zinc-600 pl-7 leading-relaxed">
-                    Provide your own Google OAuth Client ID & Secret for high volume automation and private dedicated routing.
+                    Paid plans: connect your own Google OAuth Client ID & Secret so automation runs on your private quota. The free trial uses BigRedHub&apos;s shared quota — no setup needed.
                   </p>
                 </div>
                 <button
@@ -4715,8 +4826,10 @@ export default function DashboardPage() {
                 </button>
               </div>
 
-              {/* Input Fields */}
+              {/* Input Fields (paid plans only — the free trial stays on the shared quota) */}
               <div className="pl-7 space-y-2.5">
+                {byokAllowedState === true ? (
+                <>
                 <div>
                   <label className="text-[11px] font-bold text-zinc-700 block mb-1">
                     Google OAuth Client ID
@@ -4769,6 +4882,13 @@ export default function DashboardPage() {
                   {byokSaving && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                   <span>{byokSaving ? "Saving Credentials..." : "Save Credentials & Connect Channel"}</span>
                 </button>
+                </>
+                ) : (
+                  <p className="text-[11px] text-zinc-600 leading-relaxed">
+                    Free trial BigRedHub ki shared Google quota par chalta hai — koi setup nahi chahiye.
+                    Apni Google Cloud client ID & key paid plans (Pro ya upar) par unlock hoti hai.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -5069,7 +5189,7 @@ export default function DashboardPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
-                    Agency / Enterprise
+                    Paid Plans (Pro & Above)
                   </span>
                   <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                     Zero Coding Required
@@ -5079,7 +5199,8 @@ export default function DashboardPage() {
                   Google Cloud Dedicated Quota (BYOK) Setup Guide
                 </h2>
                 <p className="text-xs text-zinc-500">
-                  3 minute me apna personal 10,000 units/day quota setup karein. Sirf niche diye gaye values copy-paste karne hain.
+                  3 minute me apna personal 10,000 units/day quota setup karein — ye paid plans ke liye hai.
+                  Free trial BigRedHub ki shared quota par chalta hai (usme koi setup nahi). Sirf niche diye gaye values copy-paste karne hain.
                 </p>
               </div>
               <button
@@ -5242,11 +5363,29 @@ export default function DashboardPage() {
                 </p>
               </div>
 
+              {/* Step 5 */}
+              <div className="p-4 rounded-2xl border border-amber-200 bg-amber-50/60 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-amber-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                    5
+                  </span>
+                  <span className="font-bold text-zinc-900 text-xs">
+                    Apna YouTube channel Reconnect karein (Zaroori)
+                  </span>
+                </div>
+                <p className="text-zinc-600 pl-8 text-[11px] leading-relaxed">
+                  Google channel ki permission usi client se bandhti hai jisse issue hui thi. Credentials save karne ke baad
+                  <strong> Channels &amp; Setup → Authorized YouTube Channels → Connect / Reconnect</strong> ek baar dabayein.
+                  Iske baad saari scanning aur replies aapke apne Google project quota par chalengi.
+                </p>
+              </div>
+
               {/* FAQ Box */}
               <div className="p-3.5 rounded-2xl bg-zinc-100 border border-zinc-200 text-zinc-600 space-y-1.5 text-[11px]">
                 <span className="font-bold text-zinc-800">Frequently Asked Questions:</span>
                 <p>• <strong>Kya iske paise lagenge?</strong> Bilkul nahi, Google Cloud YouTube Data API ke 10,000 units/day permanently free deta hai.</p>
                 <p>• <strong>Kya Gmail aur YouTube channel same hona chahiye?</strong> Nahi, kisi bhi Gmail ID se Google Cloud Project banaya ja sakta hai.</p>
+                <p>• <strong>Free trial ke liye setup chahiye?</strong> Nahi — trial BigRedHub ki shared quota par chalta hai. Ye setup paid plans ke liye hai.</p>
               </div>
             </div>
 

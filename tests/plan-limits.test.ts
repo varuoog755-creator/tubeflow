@@ -9,6 +9,7 @@ import {
   decideRuleGuard,
   PLAN_CONFIGS,
   UNLIMITED_PLAN,
+  byokAllowed,
 } from "../src/lib/plan-limits.ts";
 
 // These rules were added in the limits PR and shipped with no test coverage,
@@ -218,6 +219,29 @@ test("Rule guard: a blocked reply explains itself", () => {
     minutesSinceLastReply: 29.5,
   });
   assert.match(String(one.detail), /1 more minute\b/i);
+});
+
+test("BYOK: the free trial stays on BigRedHub's shared quota", () => {
+  // Free trial = platform credentials. Connecting personal Google Cloud
+  // credentials is a paid-plan capability, decided here (pure) and enforced
+  // by the API routes that use it.
+  assert.equal(byokAllowed("free", false), false);
+  assert.equal(byokAllowed(undefined, false), false);
+  assert.equal(byokAllowed(null, false), false);
+  assert.equal(byokAllowed("", false), false);
+});
+
+test("BYOK: paid plans may run on their own Google Cloud credentials", () => {
+  assert.equal(byokAllowed("growth", false), true);
+  assert.equal(byokAllowed("scale", false), true);
+  assert.equal(byokAllowed("agency", false), true);
+  assert.equal(byokAllowed("GROWTH", false), true);
+});
+
+test("BYOK: the test account keeps access on any stored plan", () => {
+  assert.equal(byokAllowed("free", true), true);
+  assert.equal(byokAllowed("growth", true), true);
+  assert.equal(byokAllowed(undefined, true), true);
 });
 
 test("Rule guard: garbage counters cannot unlock a capped rule", () => {

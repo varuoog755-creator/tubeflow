@@ -4,7 +4,7 @@ import { getValidYoutubeClient, isYoutubeQuotaError, isYoutubeTokenRevoked } fro
 import { detectIntent } from "@/lib/intent";
 import { renderReply, evaluateRuleMatch, findUnresolvedPlaceholders } from "@/lib/reply-engine";
 import { getSession } from "@/lib/session";
-import { getReplyAllowance, recordUsage, checkRuleGuard } from "@/lib/limits";
+import { getReplyAllowance, recordUsage, checkRuleGuard, isByokAllowed } from "@/lib/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +69,9 @@ export async function GET(request: NextRequest) {
       }
 
       try {
-        // Check if workspace uses dedicated BYOK credentials
+        // Check if workspace uses dedicated BYOK credentials. Paid plans may;
+        // the free trial stays on BigRedHub's shared quota, so a credential
+        // left over from a plan change never drives the automation.
         let customCreds: { clientId?: string; clientSecret?: string } | undefined = undefined;
         if (channel.workspace_id) {
           const { data: ws } = await supabaseAdmin
@@ -78,7 +80,12 @@ export async function GET(request: NextRequest) {
             .eq("id", channel.workspace_id)
             .maybeSingle();
 
-          if (ws?.byok_enabled && ws?.byok_client_id && ws?.byok_client_secret) {
+          if (
+            ws?.byok_enabled &&
+            ws?.byok_client_id &&
+            ws?.byok_client_secret &&
+            (await isByokAllowed(channel.workspace_id))
+          ) {
             customCreds = {
               clientId: ws.byok_client_id,
               clientSecret: ws.byok_client_secret,

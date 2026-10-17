@@ -3,7 +3,7 @@ import { getSession } from "@/lib/session";
 import { getOAuth2Client, getYoutubeClient } from "@/lib/youtube";
 import { supabaseAdmin } from "@/lib/supabase";
 import { createSessionToken, setSessionCookie } from "@/lib/session";
-import { canConnectChannel, queueNotice } from "@/lib/limits";
+import { canConnectChannel, isByokAllowed, queueNotice } from "@/lib/limits";
 import { google } from "googleapis";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +48,11 @@ export async function GET(request: NextRequest) {
           .eq("id", session.workspaceId)
           .maybeSingle();
 
-        if (ws?.byok_client_id?.trim() && ws?.byok_client_secret?.trim()) {
+        if (
+          ws?.byok_client_id?.trim() &&
+          ws?.byok_client_secret?.trim() &&
+          (await isByokAllowed(session.workspaceId))
+        ) {
           customCreds = { clientId: ws.byok_client_id.trim(), clientSecret: ws.byok_client_secret.trim() };
         }
       }

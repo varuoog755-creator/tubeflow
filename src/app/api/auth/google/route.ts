@@ -5,6 +5,7 @@ import { google } from "googleapis";
 
 import { getSession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isByokAllowed } from "@/lib/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,10 @@ export async function GET(request: NextRequest) {
     let clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     let isByokAuth = false;
 
-    // For paid/agency users who configured BYOK custom credentials:
+    // Paid plans may run on their own Google Cloud credentials (BYOK). The
+    // free trial always runs on BigRedHub's shared quota, so stored BYOK
+    // credentials are ignored unless the plan allows them - the same
+    // server-side decision the limits use, not a dashboard preference.
     if (isChannelConnect) {
       const session = await getSession(request);
       if (session?.workspaceId) {
@@ -30,7 +34,12 @@ export async function GET(request: NextRequest) {
           .eq("id", session.workspaceId)
           .maybeSingle();
 
-        if (ws?.byok_enabled && ws?.byok_client_id?.trim() && ws?.byok_client_secret?.trim()) {
+        if (
+          ws?.byok_enabled &&
+          ws?.byok_client_id?.trim() &&
+          ws?.byok_client_secret?.trim() &&
+          (await isByokAllowed(session.workspaceId))
+        ) {
           clientId = ws.byok_client_id.trim();
           clientSecret = ws.byok_client_secret.trim();
           isByokAuth = true;

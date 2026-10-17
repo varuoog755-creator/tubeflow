@@ -8,12 +8,13 @@ import {
   monthlyAllowance,
   channelAllowance,
   decideRuleGuard,
+  byokAllowed,
   UNLIMITED_PLAN,
   type Allowance,
   type RuleGuardVerdict,
 } from "@/lib/plan-limits";
 
-export { planFor, monthWindowStart, monthWindowEnd, decideRuleGuard, UNLIMITED_PLAN };
+export { planFor, monthWindowStart, monthWindowEnd, decideRuleGuard, UNLIMITED_PLAN, byokAllowed };
 export type { Allowance, PlanConfig, RuleGuardVerdict };
 
 /**
@@ -200,6 +201,35 @@ export async function canConnectChannel(
   const connected = await countConnectedChannels(workspaceId);
   const verdict = channelAllowance(connected, plan.channelLimit, alreadyConnected);
   return { allowed: verdict.allowed, plan, connected: verdict.connected, limit: verdict.limit };
+}
+
+/**
+ * Whether this workspace may run automation on its own Google Cloud project.
+ *
+ * Same decision as canConnectChannel: the stored plan resolves through the
+ * test-account exemption first, then byokAllowed() decides. Used by the OAuth
+ * start, the OAuth callback and the cron so a stored BYOK credential on a
+ * workspace that is not allowed to use it (for example a downgraded account)
+ * never drives the automation.
+ */
+export async function isByokAllowed(workspaceId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from("workspaces")
+    .select("plan, owner_id")
+    .eq("id", workspaceId)
+    .maybeSingle();
+
+  let testAccount = false;
+  if (data?.owner_id) {
+    const { data: owner } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", data.owner_id)
+      .maybeSingle();
+    testAccount = isTestAccount(owner?.email);
+  }
+
+  return byokAllowed(data?.plan, testAccount);
 }
 
 export async function queueNotice(
