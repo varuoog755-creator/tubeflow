@@ -283,8 +283,8 @@ export default function TermsPage() {
           </p>
           <ul className="list-disc pl-5 space-y-1">
             <li>
-              <strong>Cancellation:</strong> You may cancel your subscription at any time via your dashboard or by
-              contacting support. Cancellation takes effect at the conclusion of your current paid billing period.
+              <strong>Cancellation:</strong> You may cancel your subscription at any time by contacting support via
+              email or WhatsApp. Cancellation takes effect at the conclusion of your current paid billing period.
             </li>
             <li>
               <strong>7-Day Renewal Window:</strong> If you are charged for an automatic subscription renewal and
