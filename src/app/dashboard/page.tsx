@@ -3685,7 +3685,7 @@ export default function DashboardPage() {
 
                   <div className="pt-5 mt-4 border-t border-purple-100">
                     <a
-                      href="https://wa.me/919999999999?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Pro%20Plan%20(₹499/mo)."
+                      href="https://wa.me/919896374239?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Pro%20Plan%20(₹499/mo)."
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-1.5"
@@ -3743,7 +3743,7 @@ export default function DashboardPage() {
 
                   <div className="pt-5 mt-4 border-t border-zinc-100">
                     <a
-                      href="https://wa.me/919999999999?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Scale%20Plan%20(₹999/mo)."
+                      href="https://wa.me/919896374239?text=Hi%20BigRedHub,%20I%20want%20to%20upgrade%20my%20account%20to%20Scale%20Plan%20(₹999/mo)."
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full py-2.5 rounded-xl border border-zinc-900 bg-zinc-900 hover:bg-black text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5"
@@ -3800,7 +3800,7 @@ export default function DashboardPage() {
 
                   <div className="pt-5 mt-4 border-t border-zinc-800">
                     <a
-                      href="https://wa.me/919999999999?text=Hi%20BigRedHub,%20I%20want%20to%20activate%20Agency%20Plan%20(₹1,999/mo)."
+                      href="https://wa.me/919896374239?text=Hi%20BigRedHub,%20I%20want%20to%20activate%20Agency%20Plan%20(₹1,999/mo)."
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/30 transition-all flex items-center justify-center gap-1.5"

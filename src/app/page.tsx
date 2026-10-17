@@ -1481,7 +1481,7 @@ Example Replies
                 <ul className="space-y-2.5 text-xs text-zinc-600 mb-8">
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span><strong>50 replies</strong>/month</span>
+                    <span><strong>10 replies</strong>/month</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -1743,6 +1743,21 @@ YouTube Guide
                 <li>
                   <a href="#example-replies" className="hover:text-white transition-colors">
                     Example Replies
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:varuoog755@gmail.com" className="hover:text-white transition-colors">
+                    Support: varuoog755@gmail.com
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://wa.me/919896374239"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white transition-colors"
+                  >
+                    WhatsApp Helpdesk
                   </a>
                 </li>
 <li>
